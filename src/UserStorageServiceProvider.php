@@ -1,12 +1,12 @@
 <?php
 
-namespace Biigle\Modules\Module;
+namespace Biigle\Modules\UserStorage;
 
 use Biigle\Services\Modules;
 use Illuminate\Routing\Router;
 use Illuminate\Support\ServiceProvider;
 
-class ModuleServiceProvider extends ServiceProvider
+class UserStorageServiceProvider extends ServiceProvider
 {
 
    /**
@@ -18,18 +18,18 @@ class ModuleServiceProvider extends ServiceProvider
    */
     public function boot(Modules $modules, Router $router)
     {
-        $this->loadViewsFrom(__DIR__.'/resources/views', 'module');
+        $this->loadViewsFrom(__DIR__.'/resources/views', 'user-storage');
 
-        $router->group([
-            'namespace' => 'Biigle\Modules\Module\Http\Controllers',
-            'middleware' => 'web',
-        ], function ($router) {
-            require __DIR__.'/Http/routes.php';
-        });
+        // $router->group([
+        //     'namespace' => 'Biigle\Modules\UserStorage\Http\Controllers',
+        //     'middleware' => 'web',
+        // ], function ($router) {
+        //     require __DIR__.'/Http/routes.php';
+        // });
 
-        $modules->register('module', [
+        $modules->register('user-storage', [
             'viewMixins' => [
-                'dashboardMain',
+                //
             ],
             'controllerMixins' => [
                 //
@@ -40,7 +40,7 @@ class ModuleServiceProvider extends ServiceProvider
         ]);
 
         $this->publishes([
-            __DIR__.'/public/assets' => public_path('vendor/module'),
+            __DIR__.'/public/assets' => public_path('vendor/user-storage'),
         ], 'public');
     }
 
