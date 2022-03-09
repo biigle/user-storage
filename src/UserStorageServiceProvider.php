@@ -4,6 +4,7 @@ namespace Biigle\Modules\UserStorage;
 
 use Biigle\Services\Modules;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class UserStorageServiceProvider extends ServiceProvider
@@ -18,6 +19,7 @@ class UserStorageServiceProvider extends ServiceProvider
    */
     public function boot(Modules $modules, Router $router)
     {
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->loadViewsFrom(__DIR__.'/resources/views', 'user-storage');
 
         // $router->group([
@@ -42,6 +44,8 @@ class UserStorageServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/public/assets' => public_path('vendor/user-storage'),
         ], 'public');
+
+        Gate::policy(StorageRequest::class, Policies\StorageRequestPolicy::class);
     }
 
     /**
