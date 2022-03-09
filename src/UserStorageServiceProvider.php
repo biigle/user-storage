@@ -22,12 +22,12 @@ class UserStorageServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
         $this->loadViewsFrom(__DIR__.'/resources/views', 'user-storage');
 
-        // $router->group([
-        //     'namespace' => 'Biigle\Modules\UserStorage\Http\Controllers',
-        //     'middleware' => 'web',
-        // ], function ($router) {
-        //     require __DIR__.'/Http/routes.php';
-        // });
+        $router->group([
+            'namespace' => 'Biigle\Modules\UserStorage\Http\Controllers',
+            'middleware' => 'web',
+        ], function ($router) {
+            require __DIR__.'/Http/routes.php';
+        });
 
         $modules->register('user-storage', [
             'viewMixins' => [
@@ -55,6 +55,6 @@ class UserStorageServiceProvider extends ServiceProvider
     */
     public function register()
     {
-        //
+        $this->mergeConfigFrom(__DIR__.'/config/user_storage.php', 'user_storage');
     }
 }

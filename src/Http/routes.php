@@ -1,12 +1,12 @@
 <?php
 
-$router->get('quotes', [
-   'middleware' => 'auth',
-   'as'   => 'quotes',
-   'uses' => 'QuotesController@index',
-]);
-
-$router->get('quotes/new', [
-   'middleware' => 'auth',
-   'uses' => 'QuotesController@quote',
-]);
+$router->group([
+    'namespace' => 'Api',
+    'prefix' => 'api/v1',
+    'middleware' => ['api', 'auth:web,api'],
+], function ($router) {
+    $router->resource('storage-requests', 'StorageRequestController', [
+        'only' => ['store', 'update', 'destroy'],
+        'parameters' => ['storage-requests' => 'id'],
+    ]);
+});
