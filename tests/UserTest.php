@@ -34,7 +34,9 @@ class UserTest extends TestCase
         $this->assertSame(0, $user->storage_quota_used);
 
         $user->storage_quota_used += 100;
-
         $this->assertSame(100, $user->storage_quota_used);
+
+        $user->storage_quota_used -= 101;
+        $this->assertSame(0, $user->storage_quota_used);
     }
 }

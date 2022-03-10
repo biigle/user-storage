@@ -39,7 +39,7 @@ class User extends BaseModel
      */
     public function setStorageQuotaAvailableAttribute($value)
     {
-        $this->setJsonAttr('storage_quota_available', $value);
+        $this->setJsonAttr('storage_quota_available', max(0, $value));
     }
 
     /**
@@ -61,6 +61,6 @@ class User extends BaseModel
     {
         $value = $value === 0 ? null : $value;
 
-        $this->setJsonAttr('storage_quota_used', $value);
+        $this->setJsonAttr('storage_quota_used', max(0, $value));
     }
 }

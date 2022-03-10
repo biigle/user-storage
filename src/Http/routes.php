@@ -10,5 +10,8 @@ $router->group([
         'parameters' => ['storage-requests' => 'id'],
     ]);
 
-    $router->post('storage-requests/{id}/files', 'StorageRequestController@storeFile');
+    $router->resource('storage-requests.files', 'StorageRequestFileController', [
+        'only' => ['store', 'destroy'],
+        'parameters' => ['storage-requests' => 'id'],
+    ]);
 });

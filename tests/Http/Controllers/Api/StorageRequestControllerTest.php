@@ -3,10 +3,10 @@
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
+use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
-use Biigle\Tests\Modules\UserStorage\StorageRequestTest;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
 use Storage;
 
 class StorageRequestControllerTest extends ApiTestCase
@@ -42,194 +42,12 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests")->assertStatus(201);
     }
 
-    public function testStoreFile()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-
-        $this->doTestApiRoute('POST', "/api/v1/storage-requests/{$id}/files");
-
-        $this->beUser();
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(403);
-
-        $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files")
-            ->assertStatus(422);
-
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => 'abc'])
-            ->assertStatus(422);
-
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
-
-        $this->assertTrue($disk->exists("request-{$id}/test.jpg"));
-        $request->refresh();
-        $this->assertSame(['test.jpg'], $request->files);
-        $user = User::convert($request->user);
-        $this->assertSame(44074, $user->storage_quota_used);
-    }
-
-    public function testStoreFilePrefix()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", [
-                'prefix' => 'abc/def',
-                'file' => $file,
-            ])
-            ->assertStatus(200);
-
-        $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
-        $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
-    }
-
-    public function testStoreFileTooLarge()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        config(['user_storage.user_quota' => 10000]);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(422);
-    }
-
-    public function testStoreFileMimeType()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $this->be($request->user);
-        $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.txt', 'text/plain', null, true);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(422);
-
-        // Attempt to spoof MIME type.
-        $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'image/jpeg', null, true);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(422);
-    }
-
-    public function testStoreFileRequestSubmitted()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create([
-            'submitted_at' => '2022-03-10 10:55:00',
-        ]);
-        $id = $request->id;
-
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(422);
-    }
-
-    public function testStoreFileExistsInRequestsDisk()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $disk->put("request-{$id}/test.jpg", 'abc');
-
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
-
-        $this->assertNotSame('abc', $disk->get("request-{$id}/test.jpg"));
-    }
-
-    public function testStoreFileExistsInUserDisk()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        config(['user_storage.user_disk' => 'test']);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $disk->put("user-{$request->user->id}/test.jpg", 'abc');
-
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(422);
-    }
-
-    public function testStoreFileExceedsQuota()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        config(['user_storage.user_quota' => 50000]);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $disk->put("user-{$request->user->id}/test.jpg", 'abc');
-
-        $this->be($request->user);
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(422);
-    }
-
-    public function testStoreFileExceedsConfigQuotaButNotUserQuota()
-    {
-        config(['user_storage.pending_disk' => 'test']);
-        config(['user_storage.user_quota' => 50000]);
-        $disk = Storage::fake('test');
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $user = User::convert($request->user);
-        $user->storage_quota_available = 100000;
-        $user->save();
-        $request->user->refresh();
-
-        $disk->put("user-{$request->user->id}/test.jpg", 'abc');
-
-        $this->be($request->user);
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
-        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
-    }
-
     public function testUpdate()
     {
         // This submits the request with all uploaded files.
         // Reject if no files were uploaded.
         // Set sumbitted_at to mark this.
+        // Implement protected view for admins to review request. List files/folders with download links, offer approve, reject (with reason).
         $this->markTestIncomplete();
     }
 
@@ -243,8 +61,68 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testDestroy()
     {
-        // Submit a job that deletes the files on the requests disk and the user storage
-        // disk.
-        $this->markTestIncomplete();
+        config(['user_storage.storage_disk' => 'storage']);
+        config(['user_storage.pending_disk' => 'pending']);
+        $disk = Storage::fake('storage');
+        Bus::fake();
+
+        $request = StorageRequest::factory()->create([
+            'files' => ['dir/test.jpg'],
+            'expires_at' => '2022-03-10 15:28:00',
+        ]);
+        $id = $request->id;
+
+        $disk->put("user-{$request->user->id}/dir/test.jpg", 'abc');
+
+        $this->doTestApiRoute('DELETE', "/api/v1/storage-requests/{$id}");
+
+        $this->beUser();
+        $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
+
+        $this->be($request->user);
+        $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
+
+        Bus::assertDispatched(function (CleanupStorageRequest $job) use ($request) {
+            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id = $request->user_id;
+        });
+        $this->assertNull($request->fresh());
     }
+
+    public function testDestroyPending()
+    {
+        config(['user_storage.storage_disk' => 'storage']);
+        config(['user_storage.pending_disk' => 'pending']);
+        $disk = Storage::fake('storage');
+        Bus::fake();
+
+        $request = StorageRequest::factory()->create([
+            'files' => ['dir/test.jpg'],
+        ]);
+        $id = $request->id;
+
+        $disk->put("user-{$request->user->id}/dir/test.jpg", 'abc');
+
+        $this->be($request->user);
+        $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
+
+        Bus::assertDispatched(function (CleanupStorageRequest $job) use ($request) {
+            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id = $request->user_id;
+        });
+        $this->assertNull($request->fresh());
+    }
+
+    public function testDestroyEmpty()
+    {
+        Bus::fake();
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->be($request->user);
+        $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
+
+        Bus::assertNothingDispatched();
+        $this->assertNull($request->fresh());
+    }
+
 }

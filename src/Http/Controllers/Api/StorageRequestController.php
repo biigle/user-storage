@@ -4,10 +4,9 @@ namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
-use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequestFile;
+use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
 use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Modules\UserStorage\User;
-use DB;
+use Illuminate\Http\Request;
 
 class StorageRequestController extends Controller
 {
@@ -31,48 +30,26 @@ class StorageRequestController extends Controller
     }
 
     /**
-     * Store a file for a new storage request.
+     * Delete a storage request with all its files.
      *
-     * @param StoreStorageRequestFile $request
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function storeFile(StoreStorageRequestFile $request)
-    {
-        DB::transaction(function () use ($request) {
-            $sr = $request->storageRequest;
-
-            $file = $request->file('file');
-            $filePath = $request->getFilePath();
-            $disk = config('user_storage.pending_disk');
-
-            $user = User::convert($sr->user);
-            $user->storage_quota_used += $file->getSize();
-            $user->save();
-
-            $sr->files = $sr->files + [$filePath];
-            $sr->save();
-
-            $file->storeAs($sr->getPendingPath(), $filePath, $disk);
-        });
-
-    }
-
-    /**
-     * Delete a MAIA job.
-     *
-     * @api {delete} maia-jobs/:id Delete a MAIA job
+     * @api {delete} storage-requests/:id Delete a storage request
      * @apiGroup UserStorage
      * @apiName DestroyStorageRequest
-     * @apiPermission projectEditor
+     * @apiPermission storageRequestOwner
      *
-     * @apiParam {Number} id The job ID.
+     * @apiParam {Number} id The storage request ID.
      *
+     * @param Request $request
      * @param int $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-
+        $sr = StorageRequest::findOrFail($id);
+        $this->authorize('destroy', $sr);
+        if (!empty($sr->files)) {
+            CleanupStorageRequest::dispatch($sr);
+        }
+        $sr->delete();
     }
 }
