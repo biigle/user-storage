@@ -25,6 +25,7 @@ return new class extends Migration
             $table->string('files')->default('');
 
             $table->timestamps();
+            $table->timestamp('submitted_at')->nullable();
             $table->timestamp('expires_at')->nullable();
 
             $table->index('user_id');

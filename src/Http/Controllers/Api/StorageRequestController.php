@@ -3,8 +3,11 @@
 namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
-use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
+use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequestFile;
+use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\User;
+use DB;
 
 class StorageRequestController extends Controller
 {
@@ -25,6 +28,34 @@ class StorageRequestController extends Controller
         return StorageRequest::create([
             'user_id' => $request->user()->id,
         ]);
+    }
+
+    /**
+     * Store a file for a new storage request.
+     *
+     * @param StoreStorageRequestFile $request
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function storeFile(StoreStorageRequestFile $request)
+    {
+        DB::transaction(function () use ($request) {
+            $sr = $request->storageRequest;
+
+            $file = $request->file('file');
+            $filePath = $request->getFilePath();
+            $disk = config('user_storage.pending_disk');
+
+            $user = User::convert($sr->user);
+            $user->storage_quota_used += $file->getSize();
+            $user->save();
+
+            $sr->files = $sr->files + [$filePath];
+            $sr->save();
+
+            $file->storeAs($sr->getPendingPath(), $filePath, $disk);
+        });
+
     }
 
     /**

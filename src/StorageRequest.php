@@ -17,6 +17,7 @@ class StorageRequest extends Model
      * @var array
      */
     protected $casts = [
+        'submitted_at' => 'date',
         'expires_at' => 'date',
     ];
 
@@ -28,6 +29,7 @@ class StorageRequest extends Model
     protected $fillable = [
         'user_id',
         'expires_at',
+        'submitted_at',
     ];
 
     /**
@@ -56,6 +58,42 @@ class StorageRequest extends Model
     public function getFilesAttribute()
     {
         return array_filter(explode(',', $this->attributes['files']));
+    }
+
+    /**
+     * Get the path to the directory or file of this request in the pending storage disk.
+     *
+     * @param string|null $value
+     *
+     * @return string
+     */
+    public function getPendingPath($value = null)
+    {
+        $path = "request-{$this->id}";
+
+        if (!is_null($value)) {
+            $path .= "/{$value}";
+        }
+
+        return $path;
+    }
+
+    /**
+     * Get the path to the directory or file of this request in the storage disk.
+     *
+     * @param string|null $value
+     *
+     * @return string
+     */
+    public function getStoragePath($value = null)
+    {
+        $path = "user-{$this->user_id}";
+
+        if (!is_null($value)) {
+            $path .= "/{$value}";
+        }
+
+        return $path;
     }
 
     /**

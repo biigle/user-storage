@@ -18,6 +18,7 @@ class StorageRequestTest extends ModelTestCase
         $this->assertNotNull($this->model->created_at);
         $this->assertNotNull($this->model->updated_at);
         $this->assertNull($this->model->expires_at);
+        $this->assertNull($this->model->submitted_at);
     }
 
     public function testUserDeletedCascade()
@@ -32,5 +33,19 @@ class StorageRequestTest extends ModelTestCase
         $this->model->files = $files;
         $this->model->save();
         $this->assertSame($files, $this->model->fresh()->files);
+    }
+
+    public function testGetPendingPath()
+    {
+        $id = $this->model->id;
+        $this->assertSame("request-{$id}", $this->model->getPendingPath());
+        $this->assertSame("request-{$id}/abc", $this->model->getPendingPath('abc'));
+    }
+
+    public function testGetStoragePath()
+    {
+        $id = $this->model->user_id;
+        $this->assertSame("user-{$id}", $this->model->getStoragePath());
+        $this->assertSame("user-{$id}/abc", $this->model->getStoragePath('abc'));
     }
 }
