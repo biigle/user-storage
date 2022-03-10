@@ -37,15 +37,28 @@ class StoreStorageRequestFile extends FormRequest
      */
     public function rules()
     {
-        $user = User::convert($this->user());
+        $user = User::convert($this->storageRequest->user);
+
         // The "max" rule expects kilobyte but the quota is in byte.
-        $quotaKb = intval(round($user->storage_quota_available / 1000));
+        $maxKb = intval(round(($user->storage_quota_available - $user->storage_quota_used) / 1024));
 
         $mimes = implode(',', array_merge(Image::MIMES, Video::MIMES));
 
         return [
-            'file' => "required|file|max:{$quotaKb}|mimetypes:{$mimes}",
+            'file' => "required|file|max:{$maxKb}|mimetypes:{$mimes}",
             'prefix' => 'filled',
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array
+     */
+    public function messages()
+    {
+        return [
+            'file.max' => 'The file size exceeds the available storage quota.',
         ];
     }
 

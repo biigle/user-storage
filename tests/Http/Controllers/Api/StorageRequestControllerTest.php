@@ -182,18 +182,54 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testStoreFileExceedsQuota()
     {
-        $this->markTestIncomplete();
+        config(['user_storage.pending_disk' => 'test']);
+        config(['user_storage.user_quota' => 50000]);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $disk->put("user-{$request->user->id}/test.jpg", 'abc');
+
+        $this->be($request->user);
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(200);
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(422);
     }
 
     public function testStoreFileExceedsConfigQuotaButNotUserQuota()
     {
-        $this->markTestIncomplete();
+        config(['user_storage.pending_disk' => 'test']);
+        config(['user_storage.user_quota' => 50000]);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $user = User::convert($request->user);
+        $user->storage_quota_available = 100000;
+        $user->save();
+        $request->user->refresh();
+
+        $disk->put("user-{$request->user->id}/test.jpg", 'abc');
+
+        $this->be($request->user);
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(200);
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(200);
     }
 
     public function testUpdate()
     {
         // This submits the request with all uploaded files.
         // Reject if no files were uploaded.
+        // Set sumbitted_at to mark this.
         $this->markTestIncomplete();
     }
 
@@ -201,6 +237,7 @@ class StorageRequestControllerTest extends ApiTestCase
     {
         // Submit a queued job that moves the files and then notifies the user who
         // created the request.
+        // Set expires_at to mark that the request is confirmed.
         $this->markTestIncomplete();
     }
 
