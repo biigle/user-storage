@@ -4,6 +4,7 @@ namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\ConfirmStorageRequest;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use Illuminate\Support\Facades\Bus;
@@ -47,15 +48,50 @@ class StorageRequestControllerTest extends ApiTestCase
         // This submits the request with all uploaded files.
         // Reject if no files were uploaded.
         // Set sumbitted_at to mark this.
+        // Send notification to admins.
         // Implement protected view for admins to review request. List files/folders with download links, offer approve, reject (with reason).
+        // Handle case in view where the request has been deleted in the meantime.
+        $this->markTestIncomplete();
+    }
+
+    public function testUpdateAlreadyUpdated()
+    {
         $this->markTestIncomplete();
     }
 
     public function testConfirm()
     {
-        // Submit a queued job that moves the files and then notifies the user who
-        // created the request.
-        // Set expires_at to mark that the request is confirmed.
+        Bus::fake();
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->doTestApiRoute('POST', "/api/v1/storage-requests/{$id}/confirm");
+
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/confirm")->assertStatus(403);
+
+        $this->beGlobalAdmin();
+        $this->postJson("/api/v1/storage-requests/{$id}/confirm")->assertStatus(200);
+
+        Bus::assertDispatched(function (ConfirmStorageRequest $job) use ($request) {
+            return $job->request->id === $request->id;
+        });
+    }
+
+    public function testConfirmAlreadyConfirmed()
+    {
+        $this->markTestIncomplete();
+    }
+
+    public function testReject()
+    {
+        // Send notification with reason.
+        $this->markTestIncomplete();
+    }
+
+    public function testRejectAlreadyConfirmed()
+    {
         $this->markTestIncomplete();
     }
 

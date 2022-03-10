@@ -14,4 +14,11 @@ $router->group([
         'only' => ['store', 'destroy'],
         'parameters' => ['storage-requests' => 'id'],
     ]);
+
+    $router->group([
+        'middleware' => ['can:sudo'],
+    ], function ($router) {
+        $router->post('storage-requests/{id}/confirm', 'StorageRequestController@confirm');
+    });
+
 });

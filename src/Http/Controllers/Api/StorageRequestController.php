@@ -5,6 +5,7 @@ namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\ConfirmStorageRequest;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Http\Request;
 
@@ -27,6 +28,26 @@ class StorageRequestController extends Controller
         return StorageRequest::create([
             'user_id' => $request->user()->id,
         ]);
+    }
+
+    /**
+     * Confirm a storage request
+     *
+     * @api {post} storage-requests/:id/confirm Confirm a storage request
+     * @apiGroup UserStorage
+     * @apiName ConfirmStorageRequest
+     * @apiPermission admin
+     *
+     * @apiParam {Number} id The storage request ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function confirm($id)
+    {
+        $sr = StorageRequest::findOrFail($id);
+        $this->authorize('confirm', $sr);
+        ConfirmStorageRequest::dispatch($sr);
     }
 
     /**

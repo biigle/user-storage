@@ -23,4 +23,9 @@ return [
     | This can be the same than storage_disk.
     */
     'pending_disk' => env('USER_STORAGE_PENDING_DISK'),
+
+    /*
+    | Number of months until a confirmed storage request expires.
+    */
+    'expires_months' => env('USER_STORAGE_EXPIRES_MONTHS', 12),
 ];
