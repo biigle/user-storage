@@ -3,7 +3,9 @@
 namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
+use Biigle\Modules\UserStorage\Http\Requests\DestroyStorageRequestFile;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequestFile;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\Modules\UserStorage\User;
 use DB;
 
@@ -40,11 +42,30 @@ class StorageRequestFileController extends Controller
             $user->storage_quota_used += $file->getSize();
             $user->save();
 
-            $sr->files = $sr->files + [$filePath];
+            $sr->files = array_merge($sr->files, [$filePath]);
             $sr->save();
 
             $file->storeAs($sr->getPendingPath(), $filePath, $disk);
         });
+    }
 
+    /**
+     * Delete files of a storage request
+     *
+     * @api {delete} storage-requests/:id/files Delete files
+     * @apiGroup UserStorage
+     * @apiName DestroyStorageRequestFile
+     * @apiPermission storageRequestOwner
+     *
+     * @apiParam {Number} id The storage request ID.
+     *
+     * @apiParam (Required arguments) {File[]} files Array of file paths that should be deleted from this storage request.
+     *
+     * @param DestroyStorageRequestFile $request
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(DestroyStorageRequestFile $request)
+    {
+        DeleteStorageRequestFiles::dispatch($request->storageRequest, $request->input('files'));
     }
 }

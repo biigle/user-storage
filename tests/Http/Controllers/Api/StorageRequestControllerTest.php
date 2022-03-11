@@ -4,7 +4,7 @@ namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
-use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\Modules\UserStorage\Jobs\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
@@ -157,8 +157,8 @@ class StorageRequestControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
-        Bus::assertDispatched(function (CleanupStorageRequest $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "a.jpg" && $job->user->id = $request->user_id;
+        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
+            return count($job->files) === 1 && $job->files[0] === "a.jpg" && $job->user->id === $request->user_id;
         });
         $this->assertNull($request->fresh());
         Notification::assertSentTo([$request->user], StorageRequestRejected::class);
@@ -199,8 +199,8 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
 
-        Bus::assertDispatched(function (CleanupStorageRequest $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id = $request->user_id;
+        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
+            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id === $request->user_id;
         });
         $this->assertNull($request->fresh());
     }
@@ -222,8 +222,8 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
 
-        Bus::assertDispatched(function (CleanupStorageRequest $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id = $request->user_id;
+        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
+            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id === $request->user_id;
         });
         $this->assertNull($request->fresh());
     }

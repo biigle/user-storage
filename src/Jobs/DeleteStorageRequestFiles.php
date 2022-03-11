@@ -12,7 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use League\Flysystem\UnableToRetrieveMetadata;
 use Storage;
 
-class CleanupStorageRequest extends Job implements ShouldQueue
+class DeleteStorageRequestFiles extends Job implements ShouldQueue
 {
     use InteractsWithQueue, SerializesModels;
 
@@ -48,11 +48,13 @@ class CleanupStorageRequest extends Job implements ShouldQueue
      * Create a new job instance.
      *
      * @param StorageRequest $request
+     * @param array $only Delete only this subset of files of the request
      */
-    public function __construct(StorageRequest $request)
+    public function __construct(StorageRequest $request, array $only = [])
     {
         $this->user = $request->user;
-        $this->files = $request->files;
+        $this->files = $only ?: $request->files;
+        $this->deleteAllFiles = empty($only);
         $this->pending = is_null($request->expires_at);
         $this->prefix = $this->pending ? $request->getPendingPath() : $request->getStoragePath();
     }
@@ -82,7 +84,7 @@ class CleanupStorageRequest extends Job implements ShouldQueue
             }
         }
 
-        if ($this->pending) {
+        if ($this->pending && $this->deleteAllFiles) {
             $disk->deleteDirectory($this->prefix);
         } else {
             $disk->delete($files);

@@ -3,7 +3,7 @@
 namespace Biigle\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Database\Factories\StorageRequestFactory;
-use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,7 +42,7 @@ class StorageRequest extends Model
     {
         static::deleting(function ($request) {
             if (!empty($request->files)) {
-                CleanupStorageRequest::dispatch($request);
+                DeleteStorageRequestFiles::dispatch($request);
             }
         });
     }
