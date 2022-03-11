@@ -204,4 +204,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->markTestIncomplete();
     }
 
+    public function testDestoryLastFile()
+    {
+        // Either reject or delete whole request
+        $this->markTestIncomplete();
+    }
+
 }

@@ -3,13 +3,14 @@
 namespace Biigle\Modules\UserStorage\Jobs;
 
 use Biigle\Jobs\Job;
+use Biigle\Modules\UserStorage\Notifications\StorageRequestApproved;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Storage;
 
-class ConfirmStorageRequest extends Job implements ShouldQueue
+class ApproveStorageRequest extends Job implements ShouldQueue
 {
     use InteractsWithQueue, SerializesModels;
 
@@ -42,6 +43,17 @@ class ConfirmStorageRequest extends Job implements ShouldQueue
      */
     public function handle()
     {
-        //
+        if (empty($this->request->files)) {
+            return;
+        }
+
+        $storageDisk = Storage::disk(config('user_storage.storage_disk'));
+        $pendingDisk = Storage::disk(config('user_storage.pending_disk'));
+        foreach ($this->request->files as $file) {
+            $stream = $pendingDisk->readStream($this->request->getPendingPath($file));
+            $storageDisk->writeStream($this->request->getStoragePath($file), $stream);
+        }
+        $pendingDisk->deleteDirectory($this->request->getPendingPath());
+        $this->request->user->notify(new StorageRequestApproved($this->request));
     }
 }

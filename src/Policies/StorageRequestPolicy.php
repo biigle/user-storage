@@ -73,7 +73,7 @@ class StorageRequestPolicy extends CachedPolicy
      *
      * @return bool
      */
-    public function confirm(User $user, StorageRequest $request)
+    public function approve(User $user, StorageRequest $request)
     {
         // Only global admins can do this.
         return false;

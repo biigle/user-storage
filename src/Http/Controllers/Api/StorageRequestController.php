@@ -3,9 +3,10 @@
 namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
+use Biigle\Modules\UserStorage\Http\Requests\ApproveStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
-use Biigle\Modules\UserStorage\Jobs\ConfirmStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest as ApproveStorageRequestJob;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Http\Request;
 
@@ -31,23 +32,23 @@ class StorageRequestController extends Controller
     }
 
     /**
-     * Confirm a storage request
+     * Approve a storage request
      *
-     * @api {post} storage-requests/:id/confirm Confirm a storage request
+     * @api {post} storage-requests/:id/approve Approve a storage request
      * @apiGroup UserStorage
-     * @apiName ConfirmStorageRequest
+     * @apiName ApproveStorageRequest
      * @apiPermission admin
      *
      * @apiParam {Number} id The storage request ID.
      *
-     * @param int $id
+     * @param ApproveStorageRequest $request
      * @return \Illuminate\Http\Response
      */
-    public function confirm($id)
+    public function approve(ApproveStorageRequest $request)
     {
-        $sr = StorageRequest::findOrFail($id);
-        $this->authorize('confirm', $sr);
-        ConfirmStorageRequest::dispatch($sr);
+        $months = config('user_storage.expires_months');
+        $request->storageRequest->update(['expires_at' => now()->addMonths($months)]);
+        ApproveStorageRequestJob::dispatch($request->storageRequest);
     }
 
     /**

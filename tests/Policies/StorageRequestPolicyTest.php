@@ -46,15 +46,15 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertFalse($this->globalAdmin()->can('update', $this->request));
     }
 
-    public function testConfirm()
+    public function testApprove()
     {
-        $this->assertFalse($this->globalGuest()->can('confirm', $this->request));
-        $this->assertFalse($this->user()->can('confirm', $this->request));
-        $this->assertFalse($this->guest()->can('confirm', $this->request));
-        $this->assertFalse($this->editor()->can('confirm', $this->request));
-        $this->assertFalse($this->expert()->can('confirm', $this->request));
-        $this->assertFalse($this->admin()->can('confirm', $this->request));
-        $this->assertTrue($this->globalAdmin()->can('confirm', $this->request));
+        $this->assertFalse($this->globalGuest()->can('approve', $this->request));
+        $this->assertFalse($this->user()->can('approve', $this->request));
+        $this->assertFalse($this->guest()->can('approve', $this->request));
+        $this->assertFalse($this->editor()->can('approve', $this->request));
+        $this->assertFalse($this->expert()->can('approve', $this->request));
+        $this->assertFalse($this->admin()->can('approve', $this->request));
+        $this->assertTrue($this->globalAdmin()->can('approve', $this->request));
     }
 
     public function testDestroy()

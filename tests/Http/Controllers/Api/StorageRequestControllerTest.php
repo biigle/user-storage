@@ -4,7 +4,7 @@ namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
-use Biigle\Modules\UserStorage\Jobs\ConfirmStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use Illuminate\Support\Facades\Bus;
@@ -49,8 +49,6 @@ class StorageRequestControllerTest extends ApiTestCase
         // Reject if no files were uploaded.
         // Set sumbitted_at to mark this.
         // Send notification to admins.
-        // Implement protected view for admins to review request. List files/folders with download links, offer approve, reject (with reason).
-        // Handle case in view where the request has been deleted in the meantime.
         $this->markTestIncomplete();
     }
 
@@ -59,29 +57,48 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->markTestIncomplete();
     }
 
-    public function testConfirm()
+    public function testApprove()
     {
         Bus::fake();
 
-        $request = StorageRequest::factory()->create();
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
         $id = $request->id;
 
-        $this->doTestApiRoute('POST', "/api/v1/storage-requests/{$id}/confirm");
+        $this->doTestApiRoute('POST', "/api/v1/storage-requests/{$id}/approve");
 
         $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/confirm")->assertStatus(403);
+        $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(403);
 
         $this->beGlobalAdmin();
-        $this->postJson("/api/v1/storage-requests/{$id}/confirm")->assertStatus(200);
+        $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(200);
 
-        Bus::assertDispatched(function (ConfirmStorageRequest $job) use ($request) {
+        $this->assertNotNull($request->fresh()->expires_at);
+        Bus::assertDispatched(function (ApproveStorageRequest $job) use ($request) {
             return $job->request->id === $request->id;
         });
     }
 
-    public function testConfirmAlreadyConfirmed()
+    public function testApproveEmpty()
     {
-        $this->markTestIncomplete();
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->beGlobalAdmin();
+        $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(422);
+    }
+
+    public function testApproveAlreadyApproveed()
+    {
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+            'expires_at' => '2022-03-11 11:22:00',
+        ]);
+        $id = $request->id;
+
+        $this->beGlobalAdmin();
+        $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(404);
     }
 
     public function testReject()
@@ -90,7 +107,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->markTestIncomplete();
     }
 
-    public function testRejectAlreadyConfirmed()
+    public function testRejectAlreadyApproveed()
     {
         $this->markTestIncomplete();
     }
