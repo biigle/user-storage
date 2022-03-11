@@ -3,11 +3,14 @@
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
-use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
+use Biigle\Modules\UserStorage\Jobs\RejectStorageRequest;
+use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Notification;
 use Storage;
 
 class StorageRequestControllerTest extends ApiTestCase
@@ -89,7 +92,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(422);
     }
 
-    public function testApproveAlreadyApproveed()
+    public function testApproveAlreadyApproved()
     {
         $request = StorageRequest::factory()->create([
             'files' => ['a.jpg'],
@@ -103,13 +106,45 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testReject()
     {
-        // Send notification with reason.
-        $this->markTestIncomplete();
+        Bus::fake();
+        Notification::fake();
+
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+        $id = $request->id;
+
+        $this->doTestApiRoute('POST', "/api/v1/storage-requests/{$id}/reject");
+
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(403);
+
+        $this->beGlobalAdmin();
+        // Needs a reason
+        $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/reject", [
+                'reason' => 'because',
+            ])
+            ->assertStatus(200);
+
+        Bus::assertDispatched(function (CleanupStorageRequest $job) use ($request) {
+            return count($job->files) === 1 && $job->files[0] === "a.jpg" && $job->user->id = $request->user_id;
+        });
+        $this->assertNull($request->fresh());
+        Notification::assertSentTo([$request->user], StorageRequestRejected::class);
     }
 
-    public function testRejectAlreadyApproveed()
+    public function testRejectAlreadyApproved()
     {
-        $this->markTestIncomplete();
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+            'expires_at' => '2022-03-11 11:22:00',
+        ]);
+        $id = $request->id;
+
+        $this->beGlobalAdmin();
+        $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(404);
     }
 
     public function testDestroy()

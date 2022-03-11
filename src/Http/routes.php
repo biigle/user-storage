@@ -19,6 +19,7 @@ $router->group([
         'middleware' => ['can:sudo'],
     ], function ($router) {
         $router->post('storage-requests/{id}/approve', 'StorageRequestController@approve');
+        $router->post('storage-requests/{id}/reject', 'StorageRequestController@reject');
     });
 
 });

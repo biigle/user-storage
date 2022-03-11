@@ -3,6 +3,7 @@
 namespace Biigle\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Database\Factories\StorageRequestFactory;
+use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
 use Biigle\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,20 @@ class StorageRequest extends Model
         'expires_at',
         'submitted_at',
     ];
+
+    /**
+     * The "booted" method of the model.
+     *
+     * @return void
+     */
+    protected static function booted()
+    {
+        static::deleting(function ($request) {
+            if (!empty($request->files)) {
+                CleanupStorageRequest::dispatch($request);
+            }
+        });
+    }
 
     /**
      * The user who created this storage request.

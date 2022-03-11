@@ -4,9 +4,10 @@ namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\ApproveStorageRequest;
+use Biigle\Modules\UserStorage\Http\Requests\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
-use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest as ApproveStorageRequestJob;
+use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Http\Request;
 
@@ -52,6 +53,28 @@ class StorageRequestController extends Controller
     }
 
     /**
+     * Reject a storage request
+     *
+     * @api {post} storage-requests/:id/reject Reject a storage request
+     * @apiGroup UserStorage
+     * @apiName RejectStorageRequest
+     * @apiPermission admin
+     *
+     * @apiParam {Number} id The storage request ID.
+     *
+     * @param RejectStorageRequest $request
+     * @return \Illuminate\Http\Response
+     */
+    public function reject(RejectStorageRequest $request)
+    {
+        $storageRequest = $request->storageRequest;
+        $storageRequest->user->notify(
+            new StorageRequestRejected($storageRequest, $request->input('reason'))
+        );
+        $storageRequest->delete();
+    }
+
+    /**
      * Delete a storage request with all its files.
      *
      * @api {delete} storage-requests/:id Delete a storage request
@@ -67,11 +90,8 @@ class StorageRequestController extends Controller
      */
     public function destroy(Request $request, $id)
     {
-        $sr = StorageRequest::findOrFail($id);
-        $this->authorize('destroy', $sr);
-        if (!empty($sr->files)) {
-            CleanupStorageRequest::dispatch($sr);
-        }
-        $sr->delete();
+        $storageRequest = StorageRequest::findOrFail($id);
+        $this->authorize('destroy', $storageRequest);
+        $storageRequest->delete();
     }
 }
