@@ -6,10 +6,13 @@ use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\ApproveStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
+use Biigle\Modules\UserStorage\Http\Requests\UpdateStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest as ApproveStorageRequestJob;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
+use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Http\Request;
+use Notification;
 
 class StorageRequestController extends Controller
 {
@@ -30,6 +33,27 @@ class StorageRequestController extends Controller
         return StorageRequest::create([
             'user_id' => $request->user()->id,
         ]);
+    }
+
+    /**
+     * Submit a storage request
+     *
+     * @api {put} storage-requests/:id Submit a storage request
+     * @apiGroup UserStorage
+     * @apiName SubmitStorageRequest
+     * @apiPermission storageRequestOwner
+     *
+     * @apiParam {Number} id The storage request ID.
+     *
+     * @param UpdateStorageRequest $request
+     * @return \Illuminate\Http\Response
+     */
+    public function update(UpdateStorageRequest $request)
+    {
+        $storageRequest = $request->storageRequest;
+        $storageRequest->update(['submitted_at' => now()]);
+        Notification::route('mail', config('biigle.admin_email'))
+            ->notify(new StorageRequestSubmitted($storageRequest));
     }
 
     /**

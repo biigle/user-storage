@@ -3,17 +3,29 @@
 namespace Biigle\Modules\UserStorage\Notifications;
 
 use Biigle\Modules\UserStorage\StorageRequest;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Queue\SerializesModels;
 
-class StorageRequestApproved extends Notification
+class StorageRequestApproved extends Notification implements ShouldQueue
 {
+    use Queueable, SerializesModels;
+
     /**
      * The storage request that was confirmed
      *
      * @var StorageRequest
      */
     protected $request;
+
+    /**
+     * Ignore this job if the image does not exist any more.
+     *
+     * @var bool
+     */
+    protected $deleteWhenMissingModels = true;
 
     /**
      * Create a new notification instance.

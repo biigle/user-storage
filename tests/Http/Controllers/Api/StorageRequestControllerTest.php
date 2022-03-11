@@ -7,8 +7,10 @@ use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\CleanupStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
+use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
 use Storage;
@@ -48,16 +50,43 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testUpdate()
     {
-        // This submits the request with all uploaded files.
-        // Reject if no files were uploaded.
-        // Set sumbitted_at to mark this.
-        // Send notification to admins.
-        $this->markTestIncomplete();
+        Notification::fake();
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+        $id = $request->id;
+
+        $this->doTestApiRoute('PUT', "/api/v1/storage-requests/{$id}");
+
+        $this->beGuest();
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
+
+        $this->be($request->user);
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
+        $this->assertNotNull($request->fresh()->submitted_at);
+
+        Notification::assertSentTo(new AnonymousNotifiable, StorageRequestSubmitted::class);
+    }
+
+    public function testUpdateEmpty()
+    {
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->be($request->user);
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(422);
     }
 
     public function testUpdateAlreadyUpdated()
     {
-        $this->markTestIncomplete();
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+            'submitted_at' => '2022-03-11 16:03:00',
+        ]);
+        $id = $request->id;
+
+        $this->be($request->user);
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(404);
     }
 
     public function testApprove()
