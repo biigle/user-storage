@@ -16,6 +16,7 @@ $router->group([
     ]);
 
     $router->delete('storage-requests/{id}/files', 'StorageRequestFileController@destroy');
+    $router->delete('storage-requests/{id}/directories', 'StorageRequestDirectoryController@destroy');
 
     $router->group([
         'middleware' => ['can:sudo'],
