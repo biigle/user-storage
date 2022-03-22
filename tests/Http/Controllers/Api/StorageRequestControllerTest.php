@@ -176,6 +176,50 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(404);
     }
 
+    public function testExtend()
+    {
+        $expires = now()->addWeeks(3);
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+            'expires_at' => $expires,
+        ]);
+        $id = $request->id;
+
+        $this->doTestApiRoute('POST', "/api/v1/storage-requests/{$id}/extend");
+
+        $this->beGuest();
+        $this->postJson("/api/v1/storage-requests/{$id}/extend")->assertStatus(403);
+
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/extend")->assertStatus(200);
+
+        $request->refresh();
+        $this->assertTrue($request->expires_at > $expires);
+    }
+
+    public function testExtendNotAboutToExpire()
+    {
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+            'expires_at' => now()->addWeeks(5),
+        ]);
+        $id = $request->id;
+
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/extend")->assertStatus(422);
+    }
+
+    public function testExtendNotApproved()
+    {
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+        $id = $request->id;
+
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/extend")->assertStatus(422);
+    }
+
     public function testDestroy()
     {
         config(['user_storage.storage_disk' => 'storage']);

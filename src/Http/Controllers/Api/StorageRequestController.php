@@ -4,6 +4,7 @@ namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\ApproveStorageRequest;
+use Biigle\Modules\UserStorage\Http\Requests\ExtendStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\UpdateStorageRequest;
@@ -96,6 +97,25 @@ class StorageRequestController extends Controller
             new StorageRequestRejected($storageRequest, $request->input('reason'))
         );
         $storageRequest->delete();
+    }
+
+    /**
+     * Extend a storage request
+     *
+     * @api {post} storage-requests/:id/extend Extend a storage request
+     * @apiGroup UserStorage
+     * @apiName ExtendStorageRequest
+     * @apiPermission storageRequestOwner
+     *
+     * @apiParam {Number} id The storage request ID.
+     *
+     * @param ExtendStorageRequest $request
+     * @return \Illuminate\Http\Response
+     */
+    public function extend(ExtendStorageRequest $request)
+    {
+        $months = config('user_storage.expires_months');
+        $request->storageRequest->update(['expires_at' => now()->addMonths($months)]);
     }
 
     /**

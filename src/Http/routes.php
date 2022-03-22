@@ -10,6 +10,8 @@ $router->group([
         'parameters' => ['storage-requests' => 'id'],
     ]);
 
+    $router->post('storage-requests/{id}/extend', 'StorageRequestController@extend');
+
     $router->resource('storage-requests.files', 'StorageRequestFileController', [
         'only' => ['store'],
         'parameters' => ['storage-requests' => 'id'],
