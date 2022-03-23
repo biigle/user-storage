@@ -1,0 +1,57 @@
+.storage-file-uploader-directory {
+    position: relative;
+
+    &.selected > .storage-file-uploader-directory-name {
+        color: white;
+        font-weight: bold;
+    }
+
+    &:before {
+        content: '';
+        position: absolute;
+        top: 30px;
+        left: 10px;
+        width: 1px;
+        height: calc(100% - 30px);
+        background-color: $text-muted;
+    }
+
+    &.selected:before {
+        background-color: white;
+    }
+
+    .storage-file-uploader-directory-name {
+        padding: $padding-small-vertical $padding-small-horizontal;
+        cursor: pointer;
+        border-radius: $border-radius-small;
+        word-wrap: break-word;
+
+        &:hover {
+            color: white;
+            background-color: $gray-lighter;
+        }
+    }
+
+    .storage-file-uploader-directory-list {
+        padding-left: 14px;
+    }
+}
+
+
+.storage-file-uploader-directory-list {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: $padding-small-vertical;
+}
+
+
+.storage-file-uploader-file {
+    padding: $padding-small-vertical $padding-small-horizontal;
+    border-radius: $border-radius-small;
+    word-wrap: break-word;
+
+    &:hover {
+        color: white;
+        background-color: $gray-lighter;
+    }
+}

@@ -28,3 +28,13 @@ $router->group([
     });
 
 });
+
+$router->group([
+    'namespace' => 'Views',
+    'middleware' => ['web', 'auth'],
+], function ($router) {
+    $router->get('storage-requests/create', [
+        'as' => 'create-storage-requests',
+        'uses' => 'StorageRequestController@create',
+    ]);
+});

@@ -1,3 +1,3 @@
-// import Quotes from './quotes';
+import CreateContainer from './createContainer';
 
-// biigle.$mount('quotes-container', Quotes);
+biigle.$mount('create-storage-request-container', CreateContainer);
