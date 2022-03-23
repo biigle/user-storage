@@ -3,6 +3,7 @@
 namespace Biigle\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Console\Commands\CheckExpiredStorageRequests;
+use Biigle\Modules\UserStorage\Console\Commands\PruneExpiredStorageRequests;
 use Biigle\Services\Modules;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
@@ -44,11 +45,18 @@ class UserStorageServiceProvider extends ServiceProvider
         ]);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([CheckExpiredStorageRequests::class]);
+            $this->commands([
+                CheckExpiredStorageRequests::class,
+                PruneExpiredStorageRequests::class,
+            ]);
 
             $this->app->booted(function () {
                 $schedule = app(Schedule::class);
                 $schedule->command(CheckExpiredStorageRequests::class)
+                    ->daily()
+                    ->onOneServer();
+
+                $schedule->command(PruneExpiredStorageRequests::class)
                     ->daily()
                     ->onOneServer();
             });

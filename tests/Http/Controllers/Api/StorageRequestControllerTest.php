@@ -222,9 +222,6 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testDestroy()
     {
-        config(['user_storage.storage_disk' => 'storage']);
-        config(['user_storage.pending_disk' => 'pending']);
-        $disk = Storage::fake('storage');
         Bus::fake();
 
         $request = StorageRequest::factory()->create([
@@ -232,8 +229,6 @@ class StorageRequestControllerTest extends ApiTestCase
             'expires_at' => '2022-03-10 15:28:00',
         ]);
         $id = $request->id;
-
-        $disk->put("user-{$request->user->id}/dir/test.jpg", 'abc');
 
         $this->doTestApiRoute('DELETE', "/api/v1/storage-requests/{$id}");
 
@@ -251,17 +246,12 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testDestroyPending()
     {
-        config(['user_storage.storage_disk' => 'storage']);
-        config(['user_storage.pending_disk' => 'pending']);
-        $disk = Storage::fake('storage');
         Bus::fake();
 
         $request = StorageRequest::factory()->create([
             'files' => ['dir/test.jpg'],
         ]);
         $id = $request->id;
-
-        $disk->put("user-{$request->user->id}/dir/test.jpg", 'abc');
 
         $this->be($request->user);
         $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
