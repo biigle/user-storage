@@ -9,7 +9,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Queue\SerializesModels;
 
-class StorageRequestApproved extends Notification implements ShouldQueue
+class StorageRequestExpiresSoon extends Notification implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -31,6 +31,7 @@ class StorageRequestApproved extends Notification implements ShouldQueue
      * Create a new notification instance.
      *
      * @param StorageRequest $request
+     * @param string $reason
      * @return void
      */
     public function __construct(StorageRequest $request)
@@ -67,14 +68,12 @@ class StorageRequestApproved extends Notification implements ShouldQueue
      */
     public function toMail($notifiable)
     {
-        $message = (new MailMessage)
-            ->subject('Your BIIGLE storage request was approved')
-            ->line("You can now use the uploaded files to create new volumes!");
+        $diff = $this->request->expires_at->diffForHumans();
 
-        // TODO implement action button with link to request view
-        // if (config('app.url')) {
-        //     $message = $message->action('Download report', $this->report->getUrl());
-        // }
+        $message = (new MailMessage)
+            ->subject('Your BIIGLE storage request will expire soon')
+            ->line("Your storage request will expire {$diff}.")
+            ->action("View storage request", '#'); //TODO
 
         return $message;
     }
@@ -87,16 +86,14 @@ class StorageRequestApproved extends Notification implements ShouldQueue
      */
     public function toArray($notifiable)
     {
-        $array = [
-            'title' => 'Your storage request was approved',
-            'message' => "You can now use the uploaded files to create new volumes!",
-        ];
+        $diff = $this->request->expires_at->diffForHumans();
 
-        // TODO implement action button with link to request view
-        // if (config('app.url')) {
-        //     $array['action'] = 'Download report';
-        //     $array['actionLink'] = $this->report->getUrl();
-        // }
+        $array = [
+            'title' => 'Your storage request will expire soon',
+            'message' => "Your storage request will expire {$diff}.",
+            'action' => 'View storage request',
+            'actionLink' => '#', //TODO
+        ];
 
         return $array;
     }

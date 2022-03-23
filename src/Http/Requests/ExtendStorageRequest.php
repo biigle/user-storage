@@ -51,7 +51,9 @@ class ExtendStorageRequest extends FormRequest
                 $validator->errors()->add('id', "The storage request was not approved yet.");
             }
 
-            if ($this->storageRequest->expires_at >= now()->addMonth()) {
+            $warnPeriod = config('user_storage.about_to_expire_weeks');
+
+            if ($this->storageRequest->expires_at >= now()->addWeeks($warnPeriod)) {
                 $validator->errors()->add('id', "The storage request is not about to expire.");
             }
         });

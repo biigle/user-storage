@@ -29,6 +29,18 @@ return [
     */
     'expires_months' => env('USER_STORAGE_EXPIRES_MONTHS', 12),
 
+    /*
+    | Number of weeks before expiration when a storage request is classified as "about
+    | to expire".
+    */
+    'about_to_expire_weeks' => env('USER_STORAGE_ABOUT_TO_EXPIRE_WEEKS', 4),
+
+    /*
+    | Number of weeks to wait after expiration before a storage request is actually
+    | deleted.
+    */
+    'delete_grace_period_weeks' => env('USER_STORAGE_DELETE_GRACE_PERIOD_WEEKS', 2),
+
     'notifications' => [
         /*
         | Set the way notifications for storage requests are sent by default.

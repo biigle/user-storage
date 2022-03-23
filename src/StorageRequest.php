@@ -18,8 +18,8 @@ class StorageRequest extends Model
      * @var array
      */
     protected $casts = [
-        'submitted_at' => 'date',
-        'expires_at' => 'date',
+        'submitted_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     /**

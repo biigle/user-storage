@@ -2,7 +2,9 @@
 
 namespace Biigle\Modules\UserStorage;
 
+use Biigle\Modules\UserStorage\Console\Commands\CheckExpiredStorageRequests;
 use Biigle\Services\Modules;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -40,6 +42,17 @@ class UserStorageServiceProvider extends ServiceProvider
                __DIR__.'/Http/Controllers/Api/',
             ],
         ]);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([CheckExpiredStorageRequests::class]);
+
+            $this->app->booted(function () {
+                $schedule = app(Schedule::class);
+                $schedule->command(CheckExpiredStorageRequests::class)
+                    ->daily()
+                    ->onOneServer();
+            });
+        }
 
         $this->publishes([
             __DIR__.'/public/assets' => public_path('vendor/user-storage'),
