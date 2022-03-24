@@ -22,7 +22,7 @@ return new class extends Migration
                   ->on('users')
                   ->onDelete('cascade');
 
-            $table->string('files')->default('');
+            $table->text('files')->default('');
 
             $table->timestamps();
             $table->timestamp('submitted_at')->nullable();

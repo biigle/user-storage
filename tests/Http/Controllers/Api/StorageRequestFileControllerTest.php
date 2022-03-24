@@ -29,8 +29,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(403);
 
         $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files")
-            ->assertStatus(422);
+        $this->postJson("/api/v1/storage-requests/{$id}/files")->assertStatus(422);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => 'abc'])
             ->assertStatus(422);

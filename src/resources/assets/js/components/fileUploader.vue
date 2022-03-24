@@ -9,7 +9,7 @@
             @input="handleFilesChosen"
             >
 
-        <div class="storage-file-uploader-buttons">
+        <div v-if="!finished" class="storage-file-uploader-buttons">
             <div v-if="loading" class="text-info">
                 <loader :active="true"></loader>
                 Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeForHumans"></span>
@@ -68,6 +68,10 @@
             You have selected more than the <span v-text="maxSizeForHumans"></span> of storage available to you.
         </p>
 
+        <p v-if="finished" class="text-success">
+            The storage request has been submitted. You will be notified when it has been reviewed.
+        </p>
+
         <div v-show="hasItems" class="panel panel-default">
             <directory
                 path="/"
@@ -87,7 +91,8 @@
 import Directory from './fileUploaderDirectory';
 import FileApi from '../api/storageRequestFiles';
 import StorageRequestApi from '../api/storageRequests';
-import {LoaderMixin} from '../import';
+import {LoaderMixin, handleErrorResponse} from '../import';
+import {sizeForHumans} from '../utils';
 
 export default {
     mixins: [LoaderMixin],
@@ -114,7 +119,8 @@ export default {
                 selected: false,
             },
             selectedDirectory: null,
-            uploadedSize: 0,
+            currentUploadedSize: 0,
+            finishedUploadedSize: 0,
             finished: false,
             storageRequest: null,
         };
@@ -138,13 +144,16 @@ export default {
             }, 0);
         },
         totalSizeForHumans() {
-            return this.sizeForHumans(this.totalSize);
+            return sizeForHumans(this.totalSize);
+        },
+        uploadedSize() {
+            return this.currentUploadedSize + this.finishedUploadedSize;
         },
         uploadedPercent() {
             return (this.uploadedSize / this.totalSize * 100).toFixed(2);
         },
         uploadedSizeForHumans() {
-            return this.sizeForHumans(this.uploadedSize);
+            return sizeForHumans(this.uploadedSize);
         },
         editable() {
             return !this.loading && !this.finished;
@@ -156,7 +165,7 @@ export default {
             return this.hasFiles && !this.exceedsMaxSize;
         },
         maxSizeForHumans() {
-            return this.sizeForHumans(this.maxSize);
+            return sizeForHumans(this.maxSize);
         },
     },
     methods: {
@@ -291,18 +300,58 @@ export default {
             }
 
             this.startLoading();
-        },
-        sizeForHumans(size) {
-            let unit = '';
-            let units = ['kB', 'MB', 'GB', 'TB'];
-            do {
-                size /= 1000;
-                unit = units.shift();
-            } while (size > 1000 && units.length > 0);
+            // Reuse already created storage request in case something went wrong.
+            let promise = this.storageRequest
+                ? Promise.resolve({body: this.storageRequest})
+                : StorageRequestApi.save();
 
-            return `${size.toFixed(2)} ${unit}`;
+            promise.then(this.proceedWithUpload)
+                .then(this.finishSubmission)
+                .catch(handleErrorResponse)
+                .finally(this.finishLoading);
+        },
+        proceedWithUpload(response) {
+            this.storageRequest = response.body;
+
+            return this.uploadAllFiles();
+        },
+        uploadAllFiles() {
+            let queue = this.files.slice();
+            let loadNextFile = () => {
+                if (queue.length === 0) {
+                    return;
+                }
+
+                return this.uploadFile(queue.shift()).then(loadNextFile);
+            };
+
+            return loadNextFile();
+        },
+        uploadFile(file) {
+            let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
+            let data = new FormData();
+            data.append('file', file.file);
+            data.append('prefix', file.prefix);
+
+            // Don't use the API resource object because it does not offer tracking of
+            // the upload progress.
+            return this.$http.post(url, data, {
+                    uploadProgress: this.updateCurrentUploadedSize
+                })
+                .then(() => {
+                    this.currentUploadedSize = 0;
+                    this.finishedUploadedSize += file.file.size;
+                });
+        },
+        updateCurrentUploadedSize(event) {
+            if (event.lengthComputable) {
+                this.currentUploadedSize = event.loaded;
+            }
+        },
+        finishSubmission() {
+            return StorageRequestApi.update({id: this.storageRequest.id}, {})
+                .then(() => this.finished = true);
         },
     },
-
 };
 </script>
