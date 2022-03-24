@@ -55,6 +55,7 @@
                 <i class="fa fa-file"></i> <span v-text="file.name"></span>
 
                 <button
+                    v-if="removable"
                     class="btn btn-default btn-xs pull-right"
                     title="Remove the file"
                     @click.stop="handleRemoveFile(file)"
@@ -134,7 +135,9 @@ export default {
             this.$emit('remove-directory', directory, path);
         },
         handleRemoveDirectory() {
-            this.emitRemoveDirectory(this.directory);
+            if (this.removable) {
+                this.emitRemoveDirectory(this.directory);
+            }
         },
         emitRemoveFile(file, path) {
             if (!path) {

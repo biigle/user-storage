@@ -333,7 +333,7 @@ export default {
             data.append('file', file.file);
             data.append('prefix', file.prefix);
 
-            // Don't use the API resource object because it does not offer tracking of
+            // Don't use the API resource object because it does not allow tracking of
             // the upload progress.
             return this.$http.post(url, data, {
                     uploadProgress: this.updateCurrentUploadedSize
