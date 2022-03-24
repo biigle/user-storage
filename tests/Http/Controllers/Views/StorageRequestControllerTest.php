@@ -26,4 +26,23 @@ class StorageRequestControllerTest extends TestCase
             ->get('storage-requests/create')
             ->assertViewIs('user-storage::create');
     }
+
+    public function testIndex()
+    {
+        $this->get('storage-requests')->assertRedirect('login');
+        $user = UserTest::create([
+            'role_id' => Role::guestId(),
+        ]);
+
+        $this->actingAs($user)
+            ->get('storage-requests')
+            ->assertStatus(403);
+
+        $user->role_id = Role::editorId();
+        $user->save();
+
+        $this->actingAs($user)
+            ->get('storage-requests')
+            ->assertViewIs('user-storage::index');
+    }
 }

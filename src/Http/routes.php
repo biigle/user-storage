@@ -37,4 +37,9 @@ $router->group([
         'as' => 'create-storage-requests',
         'uses' => 'StorageRequestController@create',
     ]);
+
+    $router->get('storage-requests', [
+        'as' => 'index-storage-requests',
+        'uses' => 'StorageRequestController@index',
+    ]);
 });

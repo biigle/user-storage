@@ -4,9 +4,6 @@
 
 @push('scripts')
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
-   <script type="text/javascript">
-      // biigle.$declare('volumes.name', '{!! old('name') !!}');
-   </script>
 @endpush
 
 @push('styles')

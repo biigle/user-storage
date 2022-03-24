@@ -69,12 +69,8 @@ class StorageRequestApproved extends Notification implements ShouldQueue
     {
         $message = (new MailMessage)
             ->subject('Your BIIGLE storage request was approved')
-            ->line("You can now use the uploaded files to create new volumes!");
-
-        // TODO implement action button with link to request view
-        // if (config('app.url')) {
-        //     $message = $message->action('Download report', $this->report->getUrl());
-        // }
+            ->line("You can now use the uploaded files to create new volumes!")
+            ->action("View storage request", route('index-storage-requests'));
 
         return $message;
     }
@@ -90,13 +86,9 @@ class StorageRequestApproved extends Notification implements ShouldQueue
         $array = [
             'title' => 'Your storage request was approved',
             'message' => "You can now use the uploaded files to create new volumes!",
+            'action' => 'View storage request',
+            'actionLink' => route('index-storage-requests'),
         ];
-
-        // TODO implement action button with link to request view
-        // if (config('app.url')) {
-        //     $array['action'] = 'Download report';
-        //     $array['actionLink'] = $this->report->getUrl();
-        // }
 
         return $array;
     }

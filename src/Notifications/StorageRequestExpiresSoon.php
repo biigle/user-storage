@@ -73,7 +73,7 @@ class StorageRequestExpiresSoon extends Notification implements ShouldQueue
         $message = (new MailMessage)
             ->subject('Your BIIGLE storage request will expire soon')
             ->line("Your storage request will expire {$diff}.")
-            ->action("View storage request", '#'); //TODO
+            ->action("View storage request", route('index-storage-requests'));
 
         return $message;
     }
@@ -92,7 +92,7 @@ class StorageRequestExpiresSoon extends Notification implements ShouldQueue
             'title' => 'Your storage request will expire soon',
             'message' => "Your storage request will expire {$diff}.",
             'action' => 'View storage request',
-            'actionLink' => '#', //TODO
+            'actionLink' => route('index-storage-requests'),
         ];
 
         return $array;
