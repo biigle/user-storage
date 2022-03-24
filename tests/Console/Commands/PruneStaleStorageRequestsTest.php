@@ -7,7 +7,7 @@ use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Support\Facades\Bus;
 use TestCase;
 
-class PruneExpiredStorageRequestsTest extends TestCase
+class PruneStaleStorageRequestsTest extends TestCase
 {
     public function testHandle()
     {
@@ -15,16 +15,17 @@ class PruneExpiredStorageRequestsTest extends TestCase
 
         $request1 = StorageRequest::factory()->create([
             'files' => ['dir/test.jpg'],
-            'expires_at' => now()->subWeeks(2),
+            'updated_at' => now()->subWeeks(2),
         ]);
         $request2 = StorageRequest::factory()->create([
-            'expires_at' => now()->subDay(),
+            'updated_at' => now()->subDay(),
         ]);
         $request3 = StorageRequest::factory()->create([
-            'expires_at' => now()->addDay(),
+            'updated_at' => now()->subWeeks(2),
+            'submitted_at' => now()->subWeeks(1),
         ]);
 
-        $this->artisan('user-storage:prune-expired')->assertExitCode(0);
+        $this->artisan('user-storage:prune-stale')->assertExitCode(0);
 
         Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request1) {
             return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id === $request1->user_id;

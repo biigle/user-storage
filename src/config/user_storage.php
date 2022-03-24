@@ -37,7 +37,8 @@ return [
 
     /*
     | Number of weeks to wait after expiration before a storage request is actually
-    | deleted.
+    | deleted. This is also used to prune stale storage requests, i.e. requests that have
+    | been created but were not submitted, yet.
     */
     'delete_grace_period_weeks' => env('USER_STORAGE_DELETE_GRACE_PERIOD_WEEKS', 1),
 
