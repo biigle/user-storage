@@ -45,8 +45,11 @@
                 path="/"
                 :directory="rootDirectory"
                 :root="true"
+                :removable="editable"
                 @select="selectDirectory"
                 @unselect="unselectDirectory"
+                @remove-directory="removeDirectory"
+                @remove-file="removeFile"
                 ></directory>
         </div>
     </div>
@@ -74,6 +77,7 @@ export default {
                 selected: false,
             },
             selectedDirectory: null,
+            editable: true,
         };
     },
     computed: {
@@ -158,6 +162,31 @@ export default {
             if (this.hasSelectedDirectory) {
                 this.selectedDirectory.selected = false;
                 this.selectedDirectory = null;
+            }
+        },
+        removeDirectory(directory, path) {
+            let directories = this.rootDirectory.directories;
+            let breadcrumbs = path.split('/').slice(1, -1);
+            breadcrumbs.forEach(function (name) {
+                directories = directories[name].directories;
+            });
+            Vue.delete(directories, directory.name);
+            if (directory.selected) {
+                this.selectedDirectory = null;
+            }
+        },
+        removeFile(file, path) {
+            let directory = this.rootDirectory;
+            if (path !== '/') {
+                let breadcrumbs = path.split('/').slice(1);
+                breadcrumbs.forEach(function (name) {
+                    directory = directory.directories[name];
+                });
+            }
+            let files = directory.files;
+            let index = files.indexOf(file);
+            if (index !== -1) {
+                files.splice(index, 1);
             }
         },
     },

@@ -11,10 +11,10 @@
         &:before {
             content: '';
             position: absolute;
-            top: 30px;
+            top: 32px;
             left: 10px;
             width: 1px;
-            height: calc(100% - 30px);
+            height: calc(100% - 32px);
             background-color: $text-muted;
         }
 
@@ -26,17 +26,26 @@
             padding-left: 14px;
         }
     }
+}
 
-    .storage-file-uploader-directory-name {
-        padding: $padding-small-vertical $padding-small-horizontal;
-        cursor: pointer;
-        border-radius: $border-radius-small;
-        word-wrap: break-word;
+.storage-file-uploader-directory-name {
+    padding: $padding-small-vertical $padding-small-horizontal;
+    cursor: pointer;
+    border-radius: $border-radius-small;
+    word-wrap: break-word;
+    height: 32px;
 
-        &:hover {
-            color: white;
-            background-color: $gray-lighter;
-        }
+    &:hover {
+        color: white;
+        background-color: $gray-lighter;
+    }
+
+    button {
+        display: none;
+    }
+
+    &:hover button {
+        display: block;
     }
 }
 
@@ -52,9 +61,18 @@
     padding: $padding-small-vertical $padding-small-horizontal;
     border-radius: $border-radius-small;
     word-wrap: break-word;
+    height: 32px;
 
     &:hover {
         color: white;
         background-color: $gray-lighter;
+    }
+
+    button {
+        display: none;
+    }
+
+    &:hover button {
+        display: block;
     }
 }
