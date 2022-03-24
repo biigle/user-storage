@@ -89,7 +89,6 @@
 
 <script>
 import Directory from './fileUploaderDirectory';
-import FileApi from '../api/storageRequestFiles';
 import StorageRequestApi from '../api/storageRequests';
 import {LoaderMixin, handleErrorResponse} from '../import';
 import {sizeForHumans} from '../utils';
