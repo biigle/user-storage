@@ -8,6 +8,20 @@
             class="storage-file-uploader-directory-name clearfix"
             @click="handleClick"
             >
+
+            <i
+                v-if="collapsed"
+                class="fa fa-angle-right fa-fw"
+                title="Expand this directory"
+                @click.stop="handleUncollapse"
+                ></i>
+            <i
+                v-else
+                class="fa fa-angle-down fa-fw"
+                title="Collapse this directory"
+                @click.stop="handleCollapse"
+                ></i>
+
             <i class="fa fa-folder"></i> <span v-text="path"></span>
 
             <button
@@ -19,7 +33,10 @@
                 <i class="fa fa-trash"></i>
             </button>
         </div>
-        <ul v-if="hasItems" class="storage-file-uploader-directory-list">
+        <ul
+            v-show="!collapsed"
+            class="storage-file-uploader-directory-list"
+            >
             <li v-for="(dir, path) in directory.directories">
                 <file-uploader-directory
                     :path="path"
@@ -44,6 +61,13 @@
                     >
                     <i class="fa fa-trash"></i>
                 </button>
+            </li>
+            <li
+                v-if="!hasItems"
+                class="storage-file-uploader-file text-muted"
+                title="This directory is empty"
+                >
+                (empty)
             </li>
         </ul>
     </div>
@@ -72,7 +96,7 @@ export default {
     },
     data() {
         return {
-            //
+            collapsed: false,
         };
     },
     computed: {
@@ -124,6 +148,19 @@ export default {
         handleRemoveFile(file) {
             if (this.removable) {
                 this.emitRemoveFile(file);
+            }
+        },
+        handleCollapse() {
+            this.collapsed = true;
+        },
+        handleUncollapse() {
+            this.collapsed = false;
+        },
+    },
+    watch: {
+        hasItems(hasItems) {
+            if (!hasItems) {
+                this.collapsed = false;
             }
         },
     },

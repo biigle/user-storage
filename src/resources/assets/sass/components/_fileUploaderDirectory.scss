@@ -12,7 +12,7 @@
             content: '';
             position: absolute;
             top: 32px;
-            left: 10px;
+            left: 13px;
             width: 1px;
             height: calc(100% - 32px);
             background-color: $text-muted;
@@ -29,7 +29,7 @@
 }
 
 .storage-file-uploader-directory-name {
-    padding: $padding-small-vertical $padding-small-horizontal;
+    padding: $padding-small-vertical;
     cursor: pointer;
     border-radius: $border-radius-small;
     word-wrap: break-word;

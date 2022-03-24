@@ -12,16 +12,27 @@
         <div class="storage-file-uploader-buttons">
             <button
                 class="btn btn-default"
+                title="Add a new directory"
+                @click="addDirectory"
+                >
+                <i class="fa fa-folder"></i> Add directory
+            </button>
+
+            <button
+                v-if="hasSelectedDirectory"
+                class="btn btn-default"
+                title="Add new files"
                 @click="addFiles"
                 >
                 <i class="fa fa-file"></i> Add files
             </button>
-
             <button
+                v-else
                 class="btn btn-default"
-                @click="addDirectory"
+                title="Please create or select a directory to add files to"
+                disabled
                 >
-                <i class="fa fa-folder"></i> Add directory
+                <i class="fa fa-file"></i> Add files
             </button>
 
             <button
@@ -31,14 +42,6 @@
                 <i class="fa fa-upload"></i> Submit
             </button>
         </div>
-
-        <p v-if="hasSelectedDirectory" class="text-muted">
-            New files and directories will be added to the selected directory <span v-text="selectedDirectoryName"></span>.
-        </p>
-        <p v-else class="text-muted">
-            New files and directories will be added to the top-level directory.
-        </p>
-
 
         <div v-show="hasItems" class="panel panel-default">
             <directory
@@ -88,7 +91,7 @@ export default {
             return this.selectedDirectory.name;
         },
         hasItems() {
-            return this.rootDirectory.files.length > 0 || Object.keys(this.rootDirectory.directories).length > 0;
+            return Object.keys(this.rootDirectory.directories).length > 0;
         },
         hasNoFiles() {
             return true;
@@ -96,13 +99,16 @@ export default {
     },
     methods: {
         handleFilesChosen(event) {
-            let newFiles = event.target.files;
-            let files = this.rootDirectory.files;
-            let i = 0;
-
-            if (this.hasSelectedDirectory) {
-                files = this.selectedDirectory.files;
+            // Force users to create new directories for their files. Otherwise they
+            // could upload all their files in the same directory in multiple storage
+            // requests, which should be avoided.
+            if (!this.hasSelectedDirectory) {
+                return;
             }
+
+            let newFiles = event.target.files;
+            let files = this.selectedDirectory.files;
+            let i = 0;
 
             let newNames = [];
             for (i = 0; i < newFiles.length; i++) {
@@ -123,14 +129,16 @@ export default {
             }
         },
         handleNewDirectory(path) {
+            let newDirectory;
             let directories = this.rootDirectory.directories;
             if (this.hasSelectedDirectory) {
                 directories = this.selectedDirectory.directories;
+                this.selectedDirectory.selected = false;
             }
 
             path.split('/').forEach(function (name) {
                 if (!directories.hasOwnProperty(name)) {
-                    Vue.set(directories, name, {
+                    newDirectory = Vue.set(directories, name, {
                         name: name,
                         directories: {},
                         files: [],
@@ -140,6 +148,9 @@ export default {
 
                 directories = directories[name].directories;
             });
+
+            newDirectory.selected = true;
+            this.selectedDirectory = newDirectory;
         },
         addDirectory() {
             let name = prompt('Please enter the new directory name');
@@ -177,12 +188,10 @@ export default {
         },
         removeFile(file, path) {
             let directory = this.rootDirectory;
-            if (path !== '/') {
-                let breadcrumbs = path.split('/').slice(1);
-                breadcrumbs.forEach(function (name) {
-                    directory = directory.directories[name];
-                });
-            }
+            let breadcrumbs = path.split('/').slice(1);
+            breadcrumbs.forEach(function (name) {
+                directory = directory.directories[name];
+            });
             let files = directory.files;
             let index = files.indexOf(file);
             if (index !== -1) {
