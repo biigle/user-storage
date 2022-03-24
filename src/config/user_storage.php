@@ -11,7 +11,7 @@ return [
     |
     | Default: 10 GB
     */
-    'user_quota' => env('USER_STORAGE_USER_QUOTA', 10737418240),
+    'user_quota' => env('USER_STORAGE_USER_QUOTA', 1E+10),
 
     /*
     | Name of the storage disk to use for (approved) user storage files.

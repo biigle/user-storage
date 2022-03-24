@@ -21,7 +21,10 @@
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
       </p>
       <div id="create-storage-request-container">
-        <file-uploader accept="{{$allowedMimeTypes}}"></file-uploader>
+        <file-uploader
+            accept="{{$allowedMimeTypes}}"
+            v-bind:max-size="{{$maxSize}}"
+            ></file-uploader>
       </div>
     </div>
 </div>

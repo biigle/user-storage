@@ -10,38 +10,63 @@
             >
 
         <div class="storage-file-uploader-buttons">
-            <button
-                class="btn btn-default"
-                title="Add a new directory"
-                @click="addDirectory"
-                >
-                <i class="fa fa-folder"></i> Add directory
-            </button>
+            <div v-if="loading" class="text-info">
+                <loader :active="true"></loader>
+                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeForHumans"></span>
+                (<span v-text="uploadedPercent"></span>%)
+            </div>
+            <div v-else>
+                <button
+                    class="btn btn-default"
+                    title="Add a new directory"
+                    @click="addDirectory"
+                    >
+                    <i class="fa fa-folder"></i> Add directory
+                </button>
 
-            <button
-                v-if="hasSelectedDirectory"
-                class="btn btn-default"
-                title="Add new files"
-                @click="addFiles"
-                >
-                <i class="fa fa-file"></i> Add files
-            </button>
-            <button
-                v-else
-                class="btn btn-default"
-                title="Please create or select a directory to add files to"
-                disabled
-                >
-                <i class="fa fa-file"></i> Add files
-            </button>
+                <button
+                    v-if="hasSelectedDirectory"
+                    class="btn btn-default"
+                    title="Add new files"
+                    @click="addFiles"
+                    >
+                    <i class="fa fa-file"></i> Add files
+                </button>
+                <button
+                    v-else
+                    class="btn btn-default"
+                    title="Please create or select a directory to add files to"
+                    disabled
+                    >
+                    <i class="fa fa-file"></i> Add files
+                </button>
 
-            <button
-                class="btn btn-success pull-right"
-                :disabled="hasNoFiles"
-                >
-                <i class="fa fa-upload"></i> Submit
-            </button>
+                <span class="pull-right">
+                    <button
+                        v-if="hasFiles"
+                        title="Submit the storage request and upload the files"
+                        class="btn btn-success"
+                        @click="handleSubmit"
+                        :disabled="exceedsMaxSize"
+                        >
+                        <i class="fa fa-upload"></i> Submit
+                        <span v-text="totalSizeForHumans"></span>
+                    </button>
+                    <button
+                        v-else
+                        class="btn btn-success"
+                        title="Add files to submit in this storage request"
+                        disabled
+                        >
+                        <i class="fa fa-upload"></i> Submit
+                    </button>
+                </span>
+            </div>
         </div>
+
+        <p v-if="exceedsMaxSize" class="text-danger">
+            You have selected more than the <span v-text="maxSizeForHumans"></span> of storage available to you.
+        </p>
 
         <div v-show="hasItems" class="panel panel-default">
             <directory
@@ -60,12 +85,20 @@
 
 <script>
 import Directory from './fileUploaderDirectory';
+import FileApi from '../api/storageRequestFiles';
+import StorageRequestApi from '../api/storageRequests';
+import {LoaderMixin} from '../import';
 
 export default {
+    mixins: [LoaderMixin],
     props: {
         accept: {
             type: String,
             default: '',
+        },
+        maxSize: {
+            type: Number,
+            default: -1,
         },
     },
     components: {
@@ -73,14 +106,17 @@ export default {
     },
     data() {
         return {
+            files: [],
             rootDirectory: {
-                name: name,
+                name: '',
                 directories: {},
                 files: [],
                 selected: false,
             },
             selectedDirectory: null,
-            editable: true,
+            uploadedSize: 0,
+            finished: false,
+            storageRequest: null,
         };
     },
     computed: {
@@ -93,8 +129,34 @@ export default {
         hasItems() {
             return Object.keys(this.rootDirectory.directories).length > 0;
         },
-        hasNoFiles() {
-            return true;
+        hasFiles() {
+            return this.files.length > 0;
+        },
+        totalSize() {
+            return this.files.reduce(function (carry, file) {
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeForHumans() {
+            return this.sizeForHumans(this.totalSize);
+        },
+        uploadedPercent() {
+            return (this.uploadedSize / this.totalSize * 100).toFixed(2);
+        },
+        uploadedSizeForHumans() {
+            return this.sizeForHumans(this.uploadedSize);
+        },
+        editable() {
+            return !this.loading && !this.finished;
+        },
+        exceedsMaxSize() {
+            return this.maxSize !== -1  && this.totalSize > this.maxSize;
+        },
+        canSubmit() {
+            return this.hasFiles && !this.exceedsMaxSize;
+        },
+        maxSizeForHumans() {
+            return this.sizeForHumans(this.maxSize);
         },
     },
     methods: {
@@ -127,6 +189,8 @@ export default {
             for (i = 0; i < newFiles.length; i++) {
                 files.push(newFiles[i]);
             }
+
+            this.syncFiles();
         },
         handleNewDirectory(path) {
             let newDirectory;
@@ -185,6 +249,8 @@ export default {
             if (directory.selected) {
                 this.selectedDirectory = null;
             }
+
+            this.syncFiles();
         },
         removeFile(file, path) {
             let directory = this.rootDirectory;
@@ -197,10 +263,46 @@ export default {
             if (index !== -1) {
                 files.splice(index, 1);
             }
+
+            this.syncFiles();
+        },
+        extractFiles(directory, prefix) {
+            prefix = prefix ? `${prefix}/${directory.name}` : directory.name;
+
+            let files = [];
+            for (let key in directory.directories) {
+                files = files.concat(this.extractFiles(directory.directories[key], prefix))
+            }
+
+            return files.concat(directory.files.map(function (file) {
+                return {
+                    prefix: prefix,
+                    size: file.size,
+                    file: file,
+                };
+            }));
+        },
+        syncFiles() {
+            this.files = this.extractFiles(this.rootDirectory);
+        },
+        handleSubmit() {
+            if (!this.canSubmit) {
+                return;
+            }
+
+            this.startLoading();
+        },
+        sizeForHumans(size) {
+            let unit = '';
+            let units = ['kB', 'MB', 'GB', 'TB'];
+            do {
+                size /= 1000;
+                unit = units.shift();
+            } while (size > 1000 && units.length > 0);
+
+            return `${size.toFixed(2)} ${unit}`;
         },
     },
-    mounted() {
-        //
-    },
+
 };
 </script>

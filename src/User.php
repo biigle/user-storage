@@ -63,4 +63,14 @@ class User extends BaseModel
 
         $this->setJsonAttr('storage_quota_used', max(0, $value));
     }
+
+    /**
+     * Get the remaining storage quota of the user in bytes.
+     *
+     * @return int
+     */
+    public function getStorageQuotaRemainingAttribute()
+    {
+        return $this->storage_quota_available - $this->storage_quota_used;
+    }
 }

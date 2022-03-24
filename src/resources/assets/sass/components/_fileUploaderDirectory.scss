@@ -8,22 +8,22 @@
 
 
     &:not(.root) {
-        &:before {
-            content: '';
-            position: absolute;
-            top: 32px;
-            left: 13px;
-            width: 1px;
-            height: calc(100% - 32px);
-            background-color: $text-muted;
-        }
+        // &:before {
+        //     content: '';
+        //     position: absolute;
+        //     top: 32px;
+        //     left: 26px;
+        //     width: 1px;
+        //     height: calc(100% - 32px);
+        //     background-color: $text-muted;
+        // }
 
-        &.selected:before {
-            background-color: white;
-        }
+        // &.selected:before {
+        //     background-color: white;
+        // }
 
         .storage-file-uploader-directory-list {
-            padding-left: 14px;
+            padding-left: 15px;
         }
     }
 }
@@ -59,6 +59,7 @@
 
 .storage-file-uploader-file {
     padding: $padding-small-vertical $padding-small-horizontal;
+    padding-left: $padding-small-horizontal + 17px;
     border-radius: $border-radius-small;
     word-wrap: break-word;
     height: 32px;

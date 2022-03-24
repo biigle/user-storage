@@ -39,4 +39,18 @@ class UserTest extends TestCase
         $user->storage_quota_used -= 101;
         $this->assertSame(0, $user->storage_quota_used);
     }
+
+    public function testGetStorageQuotaRemaining()
+    {
+        config(['user_storage.user_quota' => 500]);
+        $user = User::convert(BaseUser::factory()->make());
+
+        $this->assertSame(500, $user->storage_quota_remaining);
+
+        $user->storage_quota_available = 300;
+        $this->assertSame(300, $user->storage_quota_remaining);
+
+        $user->storage_quota_used = 100;
+        $this->assertSame(200, $user->storage_quota_remaining);
+    }
 }
