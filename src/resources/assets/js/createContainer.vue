@@ -1,5 +1,5 @@
 <script>
-import {handleErrorResponse} from './import';
+// import {handleErrorResponse} from './import';
 import FileUploader from './components/fileUploader';
 
 export default {

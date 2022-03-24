@@ -3,7 +3,11 @@
         class="storage-file-uploader-directory"
         :class="classObject"
         >
-        <div class="storage-file-uploader-directory-name" @click="handleClick">
+        <div
+            v-if="!root"
+            class="storage-file-uploader-directory-name"
+            @click="handleClick"
+            >
             <i class="fa fa-folder"></i> <span v-text="path"></span>
         </div>
         <ul v-if="hasItems" class="storage-file-uploader-directory-list">
@@ -37,6 +41,10 @@ export default {
             type: Object,
             required: true,
         },
+        root: {
+            type: Boolean,
+            default: false,
+        },
     },
     data() {
         return {
@@ -47,6 +55,7 @@ export default {
         classObject() {
             return {
                 selected: this.directory.selected,
+                root: this.root,
             };
         },
         hasItems() {

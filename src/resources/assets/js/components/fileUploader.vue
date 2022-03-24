@@ -1,5 +1,5 @@
 <template>
-    <div class="storage-file-uploader well well-sm">
+    <div class="storage-file-uploader">
         <input
             ref="fileInput"
             class="hidden"
@@ -14,24 +14,14 @@
                 class="btn btn-default"
                 @click="addFiles"
                 >
-                <span v-if="hasSelectedDirectory">
-                    <i class="fa fa-file"></i> Add files to <span v-text="selectedDirectoryName"></span>
-                </span>
-                <span v-else>
-                    <i class="fa fa-file"></i> Add files
-                </span>
+                <i class="fa fa-file"></i> Add files
             </button>
 
             <button
                 class="btn btn-default"
                 @click="addDirectory"
                 >
-                <span v-if="hasSelectedDirectory">
-                    <i class="fa fa-folder"></i> Add directory to <span v-text="selectedDirectoryName"></span>
-                </span>
-                <span v-else>
-                    <i class="fa fa-folder"></i> Add directory
-                </span>
+                <i class="fa fa-folder"></i> Add directory
             </button>
 
             <button
@@ -42,22 +32,23 @@
             </button>
         </div>
 
-        <directory
-            v-for="(dir, path) in rootDirectories"
-            :key="path"
-            :path="path"
-            :directory="dir"
-            @select="selectDirectory"
-            @unselect="unselectDirectory"
-            ></directory>
-        <ul class="storage-file-uploader-directory-list">
-            <li
-                v-for="file in rootFiles"
-                class="storage-file-uploader-file"
-                >
-                <i class="fa fa-file"></i> <span v-text="file.name"></span>
-            </li>
-        </ul>
+        <p v-if="hasSelectedDirectory" class="text-muted">
+            New files and directories will be added to the selected directory <span v-text="selectedDirectoryName"></span>.
+        </p>
+        <p v-else class="text-muted">
+            New files and directories will be added to the top-level directory.
+        </p>
+
+
+        <div v-show="hasItems" class="panel panel-default">
+            <directory
+                path="/"
+                :directory="rootDirectory"
+                :root="true"
+                @select="selectDirectory"
+                @unselect="unselectDirectory"
+                ></directory>
+        </div>
     </div>
 </template>
 
@@ -76,8 +67,12 @@ export default {
     },
     data() {
         return {
-            rootDirectories: {},
-            rootFiles: [],
+            rootDirectory: {
+                name: name,
+                directories: {},
+                files: [],
+                selected: false,
+            },
             selectedDirectory: null,
         };
     },
@@ -88,6 +83,9 @@ export default {
         selectedDirectoryName() {
             return this.selectedDirectory.name;
         },
+        hasItems() {
+            return this.rootDirectory.files.length > 0 || Object.keys(this.rootDirectory.directories).length > 0;
+        },
         hasNoFiles() {
             return true;
         },
@@ -95,8 +93,7 @@ export default {
     methods: {
         handleFilesChosen(event) {
             let newFiles = event.target.files;
-            let directories = this.rootDirectories;
-            let files = this.rootFiles;
+            let files = this.rootDirectory.files;
             let i = 0;
 
             if (this.hasSelectedDirectory) {
@@ -122,7 +119,7 @@ export default {
             }
         },
         handleNewDirectory(path) {
-            let directories = this.rootDirectories;
+            let directories = this.rootDirectory.directories;
             if (this.hasSelectedDirectory) {
                 directories = this.selectedDirectory.directories;
             }
