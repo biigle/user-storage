@@ -1,11 +1,11 @@
 <template>
     <div
-        class="storage-file-uploader-directory"
+        class="storage-file-browser-directory"
         :class="classObject"
         >
         <div
             v-if="!root"
-            class="storage-file-uploader-directory-name clearfix"
+            class="storage-file-browser-directory-name clearfix"
             @click="handleClick"
             >
 
@@ -35,10 +35,10 @@
         </div>
         <ul
             v-show="!collapsed"
-            class="storage-file-uploader-directory-list"
+            class="storage-file-browser-directory-list"
             >
             <li v-for="(dir, path) in directory.directories">
-                <file-uploader-directory
+                <file-browser-directory
                     :path="path"
                     :directory="dir"
                     :removable="removable"
@@ -46,11 +46,11 @@
                     @unselect="emitUnselect"
                     @remove-directory="emitRemoveDirectory"
                     @remove-file="emitRemoveFile"
-                    ></file-uploader-directory>
+                    ></file-browser-directory>
             </li>
             <li
                 v-for="file in directory.files"
-                class="storage-file-uploader-file clearfix"
+                class="storage-file-browser-file clearfix"
                 >
                 <i class="fa fa-file"></i> <span v-text="file.name"></span>
 
@@ -65,7 +65,7 @@
             </li>
             <li
                 v-if="!hasItems"
-                class="storage-file-uploader-file text-muted"
+                class="storage-file-browser-file text-muted"
                 title="This directory is empty"
                 >
                 (empty)
@@ -76,7 +76,7 @@
 
 <script>
 export default {
-    name: 'file-uploader-directory',
+    name: 'file-browser-directory',
     props: {
         path: {
             type: String,

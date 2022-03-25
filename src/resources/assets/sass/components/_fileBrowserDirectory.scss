@@ -1,34 +1,20 @@
-.storage-file-uploader-directory {
+.storage-file-browser-directory {
     position: relative;
 
-    &.selected > .storage-file-uploader-directory-name {
+    &.selected > .storage-file-browser-directory-name {
         color: white;
         font-weight: bold;
     }
 
 
     &:not(.root) {
-        // &:before {
-        //     content: '';
-        //     position: absolute;
-        //     top: 32px;
-        //     left: 26px;
-        //     width: 1px;
-        //     height: calc(100% - 32px);
-        //     background-color: $text-muted;
-        // }
-
-        // &.selected:before {
-        //     background-color: white;
-        // }
-
-        .storage-file-uploader-directory-list {
+        .storage-file-browser-directory-list {
             padding-left: 15px;
         }
     }
 }
 
-.storage-file-uploader-directory-name {
+.storage-file-browser-directory-name {
     padding: $padding-small-vertical;
     cursor: pointer;
     border-radius: $border-radius-small;
@@ -50,14 +36,14 @@
 }
 
 
-.storage-file-uploader-directory-list {
+.storage-file-browser-directory-list {
     list-style: none;
     padding-left: 0;
     margin-bottom: $padding-small-vertical;
 }
 
 
-.storage-file-uploader-file {
+.storage-file-browser-file {
     padding: $padding-small-vertical $padding-small-horizontal;
     padding-left: $padding-small-horizontal + 17px;
     border-radius: $border-radius-small;

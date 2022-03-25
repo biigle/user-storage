@@ -4,6 +4,9 @@
 
 @push('scripts')
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
+    <script type="text/javascript">
+        biigle.$declare('user-storage.maxSize', {!! $maxSize !!});
+    </script>
 @endpush
 
 @push('styles')
@@ -17,11 +20,90 @@
       <p>
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
       </p>
-      <div id="create-storage-request-container">
-        <file-uploader
+      <div id="create-storage-request-container" class="create-storage-request">
+        <input
+            ref="fileInput"
+            class="hidden"
+            type="file"
+            multiple
             accept="{{$allowedMimeTypes}}"
-            v-bind:max-size="{{$maxSize}}"
-            ></file-uploader>
+            v-on:input="handleFilesChosen"
+            >
+
+        <div v-if="!finished" class="create-storage-request-buttons">
+            <div v-cloak v-if="loading" class="text-info">
+                <loader v-bind:active="true"></loader>
+                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeForHumans"></span>
+                (<span v-text="uploadedPercent"></span>%)
+            </div>
+            <div v-else>
+                <button
+                    class="btn btn-default"
+                    title="Add a new directory"
+                    v-on:click="addDirectory"
+                    >
+                    <i class="fa fa-folder"></i> Add directory
+                </button>
+
+                <button
+                    v-cloak
+                    v-if="hasSelectedDirectory"
+                    class="btn btn-default"
+                    title="Add new files"
+                    v-on:click="addFiles"
+                    >
+                    <i class="fa fa-file"></i> Add files
+                </button>
+                <button
+                    v-else
+                    class="btn btn-default"
+                    title="Please create or select a directory to add files to"
+                    disabled
+                    >
+                    <i class="fa fa-file"></i> Add files
+                </button>
+
+                <span class="pull-right">
+                    <button
+                        v-cloak
+                        v-if="hasFiles"
+                        title="Submit the storage request and upload the files"
+                        class="btn btn-success"
+                        v-on:click="handleSubmit"
+                        v-bind:disabled="exceedsMaxSize"
+                        >
+                        <i class="fa fa-upload"></i> Submit
+                        <span v-text="totalSizeForHumans"></span>
+                    </button>
+                    <button
+                        v-else
+                        class="btn btn-success"
+                        title="Add files to submit in this storage request"
+                        disabled
+                        >
+                        <i class="fa fa-upload"></i> Submit
+                    </button>
+                </span>
+            </div>
+        </div>
+
+        <p v-cloak v-if="exceedsMaxSize" class="text-danger">
+            You have selected more than the <span v-text="maxSizeForHumans"></span> of storage available to you.
+        </p>
+
+        <p v-cloak v-if="finished" class="text-success">
+            The storage request has been submitted. You will be notified when it has been reviewed.
+        </p>
+
+        <file-browser
+            v-cloak
+            v-bind:root-directory="rootDirectory"
+            v-bind:editable="editable"
+            v-on:select="selectDirectory"
+            v-on:unselect="unselectDirectory"
+            v-on:remove-directory="removeDirectory"
+            v-on:remove-file="removeFile"
+            ></file-browser>
       </div>
     </div>
 </div>

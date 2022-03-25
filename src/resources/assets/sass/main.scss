@@ -1,5 +1,9 @@
 @import "variables";
 
+.create-storage-request-buttons {
+    padding-bottom: $padding-base-vertical;
+}
+
 #index-storage-request-container {
     .user-storage-title {
         position: relative;
@@ -13,6 +17,6 @@
 
 }
 
-@import "components/fileUploader";
-@import "components/fileUploaderDirectory";
+@import "components/fileBrowser";
+@import "components/fileBrowserDirectory";
 @import "components/storageRequestList";

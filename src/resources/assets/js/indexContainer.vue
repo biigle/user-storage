@@ -30,7 +30,7 @@ export default {
     },
     methods: {
         handleSelect(request) {
-
+            //
         },
         handleDelete(request) {
             if (!confirm('Do you really want to delete the storage request with all files?')) {
