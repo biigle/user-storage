@@ -26,6 +26,7 @@ class StorageRequestFactory extends Factory
             'user_id' => User::factory(),
             'files' => [],
             'expires_at' => null,
+            'submitted_at' => null,
         ];
     }
 }

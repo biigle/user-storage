@@ -6,7 +6,7 @@ $router->group([
     'middleware' => ['api', 'auth:web,api'],
 ], function ($router) {
     $router->resource('storage-requests', 'StorageRequestController', [
-        'only' => ['store', 'update', 'destroy'],
+        'only' => ['show', 'store', 'update', 'destroy'],
         'parameters' => ['storage-requests' => 'id'],
     ]);
 

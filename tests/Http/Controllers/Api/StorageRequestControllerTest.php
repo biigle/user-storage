@@ -17,6 +17,25 @@ use Storage;
 
 class StorageRequestControllerTest extends ApiTestCase
 {
+    public function testShow()
+    {
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+        $id = $request->id;
+
+        $this->doTestApiRoute('GET', "/api/v1/storage-requests/{$id}");
+
+        $this->beUser();
+        $this->getJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
+
+        $this->be($request->user);
+        unset($request->user);
+        $this->getJson("/api/v1/storage-requests/{$id}")
+            ->assertStatus(200)
+            ->assertExactJson($request->toArray());
+    }
+
     public function testStore()
     {
         $this->doTestApiRoute('POST', "/api/v1/storage-requests");

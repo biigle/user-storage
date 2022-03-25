@@ -33,10 +33,21 @@
             v-cloak
             v-bind:requests="requests"
             v-bind:expire-date="expireDate"
+            v-bind:selected-request="selectedRequest"
             v-on:select="handleSelect"
             v-on:delete="handleDelete"
             v-on:extend="handleExtend"
             ></request-list>
+
+        <file-browser
+            v-cloak
+            v-if="hasSelectedRequest"
+            v-bind:root-directory="selectedRequestRoot"
+            v-bind:editable="true"
+            v-on:remove-directory="removeDirectory"
+            v-on:remove-file="removeFile"
+            ></file-browser>
+
         @if (count($requests) > 0)
             <p class="text-muted">
                 Need more storage space? <a href="mailto:{{config('biigle.admin_email')}}">Get in touch</a>.

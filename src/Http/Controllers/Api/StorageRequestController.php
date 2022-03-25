@@ -37,6 +37,27 @@ class StorageRequestController extends Controller
     }
 
     /**
+     * Show a storage request
+     *
+     * @api {get} storage-requests/:id Show a storage request
+     * @apiGroup UserStorage
+     * @apiName ShowStorageRequest
+     * @apiPermission storageRequestOwner
+     *
+     * @apiParam {Number} id The storage request ID.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        $request = StorageRequest::findOrFail($id);
+        $this->authorize('access', $request);
+
+        return $request;
+    }
+
+    /**
      * Submit a storage request
      *
      * @api {put} storage-requests/:id Submit a storage request

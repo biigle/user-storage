@@ -2,6 +2,7 @@
 <a
     href="#"
     class="list-group-item"
+    :class="classObject"
     @click.prevent="handleSelect"
     >
     #<span v-text="request.id"></span> created <span v-text="request.created_at_for_humans"></span> with <span v-text="request.files_count"></span> file(s).
@@ -58,7 +59,11 @@ export default {
         },
         expireDate: {
             type: Date,
-            default: null
+            default: null,
+        },
+        selected: {
+            type: Boolean,
+            default: false,
         },
     },
     computed: {
@@ -85,6 +90,11 @@ export default {
             }
 
             return this.request.files_count || 0;
+        },
+        classObject() {
+            return {
+                active: this.selected,
+            };
         },
     },
     methods: {

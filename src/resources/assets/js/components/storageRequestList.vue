@@ -5,6 +5,7 @@
         :key="request.id"
         :request="request"
         :expire-date="expireDate"
+        :selected="isSelectedRequest(request)"
         @select="emitSelect"
         @delete="emitDelete"
         @extend="emitExtend"
@@ -34,6 +35,10 @@ export default {
             type: Date,
             default: null
         },
+        selectedRequest: {
+            type: Object,
+            default: null,
+        },
     },
     computed: {
         noItems() {
@@ -49,6 +54,9 @@ export default {
         },
         emitSelect(request) {
             this.$emit('select', request);
+        },
+        isSelectedRequest(request) {
+            return this.selectedRequest ? this.selectedRequest.id === request.id : false;
         },
     },
 };
