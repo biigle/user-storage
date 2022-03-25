@@ -95,7 +95,7 @@ class DeleteStorageRequestFiles extends Job implements ShouldQueue
             $disk->deleteDirectory($this->prefix);
         } else {
             $disk->delete($files);
-            if (count($disk->files($this->prefix)) === 0) {
+            if (count($disk->allFiles($this->prefix)) === 0) {
                 $disk->deleteDirectory($this->prefix);
             }
         }

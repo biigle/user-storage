@@ -66,6 +66,24 @@ class DeleteStorageRequestFilesTest extends TestCase
         $this->assertFalse($disk->exists("request-{$request->id}"));
     }
 
+    public function testHandlePendingOnly()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+        $request = StorageRequest::factory()->create([
+            'files' => ['a/a.jpg', 'a/b.jpg'],
+        ]);
+
+        $disk->put("request-{$request->id}/a/a.jpg", 'abc');
+        $disk->put("request-{$request->id}/a/b.jpg", 'abc');
+
+        $job = new DeleteStorageRequestFiles($request, ['a/a.jpg']);
+        $job->handle();
+
+        $this->assertFalse($disk->exists("request-{$request->id}/a/a.jpg"));
+        $this->assertTrue($disk->exists("request-{$request->id}/a/b.jpg"));
+    }
+
     public function testHandleUserDeleted()
     {
         config(['user_storage.storage_disk' => 'test']);
