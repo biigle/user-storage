@@ -242,6 +242,8 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
+        $this->assertSame(['b.jpg'], $request->fresh()->files);
+
         Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
             $this->assertCount(1, $job->files);
             $this->assertSame('a.jpg', $job->files[0]);
