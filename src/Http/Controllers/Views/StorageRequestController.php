@@ -28,16 +28,17 @@ class StorageRequestController extends Controller
         $requests = StorageRequest::where('user_id', $user->id)
             ->whereNotNull('submitted_at')
             ->orderBy('submitted_at', 'desc')
-            ->get();
+            ->get()
+            ->each(function ($request) {
+                $request->setHidden(['files']);
+            });
 
-        $now = now();
         $expireDate = now()->addWeeks(config('user_storage.about_to_expire_weeks'));
 
         return view('user-storage::index', [
             'usedQuota' => $usedQuota,
             'availableQuota' => $availableQuota,
             'requests' => $requests,
-            'now' => $now,
             'expireDate' => $expireDate,
         ]);
     }

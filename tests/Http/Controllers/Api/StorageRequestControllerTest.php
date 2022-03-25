@@ -191,7 +191,9 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests/{$id}/extend")->assertStatus(403);
 
         $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/extend")->assertStatus(200);
+        $this->postJson("/api/v1/storage-requests/{$id}/extend")
+            ->assertStatus(200)
+            ->assertJsonFragment(['id' => $request->id]);
 
         $request->refresh();
         $this->assertTrue($request->expires_at > $expires);

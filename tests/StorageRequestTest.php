@@ -48,4 +48,23 @@ class StorageRequestTest extends ModelTestCase
         $this->assertSame("user-{$id}", $this->model->getStoragePath());
         $this->assertSame("user-{$id}/abc", $this->model->getStoragePath('abc'));
     }
+
+    public function testGetCreatedAtForHumans()
+    {
+        $this->assertNotNull($this->model->created_at_for_humans);
+    }
+
+    public function testGetExpiresAtForHumans()
+    {
+        $this->assertNull($this->model->expires_at_for_humans);
+        $this->model->expires_at = now();
+        $this->assertNotNull($this->model->expires_at_for_humans);
+    }
+
+    public function testGetFilesCount()
+    {
+        $this->assertSame(0, $this->model->files_count);
+        $this->model->files = ['a.jpg'];
+        $this->assertSame(1, $this->model->files_count);
+    }
 }

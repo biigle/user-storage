@@ -5,7 +5,10 @@
 @push('scripts')
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
     <script type="text/javascript">
-      // biigle.$declare('volumes.name', '{!! old('name') !!}');
+      biigle.$declare('user-storage.requests', {!! $requests !!});
+      biigle.$declare('user-storage.expireDate', '{!! $expireDate->toJson() !!}');
+      biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
+      biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
    </script>
 @endpush
 
@@ -14,34 +17,31 @@
 @endpush
 
 @section('content')
-<div class="container">
+<div class="container" id="index-storage-request-container">
    <div class="col-sm-8 col-sm-offset-2 col-lg-6 col-lg-offset-3">
-      <h2>
-        Your storage requests<br>
-        <small>x of y used</small>
-    </h2>
-        <ul class="list-group">
-            @forelse($requests as $request)
-                <li class="list-group-item">
-                    <span class="text-muted">#{{$request->id}}</span>
-                    {{count($request->files)}} files.
-                    <span class="pull-right">
-                        @if (!$request->expires_at)
-                            <span class="label label-default" title="Waiting for review">pending</span>
-                        @elseif ($request->expires_at > $now)
-                            @if ($request->expires_at < $expireDate)
-                                <span class="label label-warning" title="Expires {{$request->expires_at->diffForHumans()}}">expires {{$request->expires_at->diffForHumans()}}</span>
-                            @else
-                                <span class="label label-success" title="Expires {{$request->expires_at->diffForHumans()}}">approved</span>
-                            @endif
-                        @else
-                            <span class="label label-danger" title="The storage request is expired and will be deleted soon">expired</span>
-                        @endif
-                    </span>
-                </li>
-            @empty
-            @endforelse
-        </ul>
+        <h2 class="user-storage-title">
+            <loader
+                v-cloak
+                v-bind:active="loading"
+                ></loader>
+            Your storage requests<br>
+            <small v-cloak>
+                <span v-text="usedQuota"></span> of <span v-text="availableQuota"></span> used (<span v-text="usedQuotaPercent"></span>%)
+            </small>
+        </h2>
+        <request-list
+            v-cloak
+            v-bind:requests="requests"
+            v-bind:expire-date="expireDate"
+            v-on:select="handleSelect"
+            v-on:delete="handleDelete"
+            v-on:extend="handleExtend"
+            ></request-list>
+        @if (count($requests) > 0)
+            <p class="text-muted">
+                Need more storage space? <a href="mailto:{{config('biigle.admin_email')}}">Get in touch</a>.
+            </p>
+        @endif
     </div>
 </div>
 @endsection

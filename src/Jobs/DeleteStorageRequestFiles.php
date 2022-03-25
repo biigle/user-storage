@@ -31,6 +31,13 @@ class DeleteStorageRequestFiles extends Job implements ShouldQueue
     public $files;
 
     /**
+     * Whether all files should be deleted from the storage request.
+     *
+     * @var bool
+     */
+    public $deleteAllFiles;
+
+    /**
      * Whether the request was pending or not.
      *
      * @var bool

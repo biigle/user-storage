@@ -1,0 +1,11 @@
+.storage-request-list {
+    .list-group-item {
+        &:hover .delete-button {
+            display: inline-block;
+        }
+
+        .delete-button {
+            display: none;
+        }
+    }
+}

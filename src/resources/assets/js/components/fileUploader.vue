@@ -149,7 +149,7 @@ export default {
             return this.currentUploadedSize + this.finishedUploadedSize;
         },
         uploadedPercent() {
-            return (this.uploadedSize / this.totalSize * 100).toFixed(2);
+            return Math.round(this.uploadedSize / this.totalSize * 100);
         },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);

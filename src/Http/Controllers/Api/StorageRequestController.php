@@ -116,6 +116,9 @@ class StorageRequestController extends Controller
     {
         $months = config('user_storage.expires_months');
         $request->storageRequest->update(['expires_at' => now()->addMonths($months)]);
+        $request->storageRequest->setHidden(['files']);
+
+        return $request->storageRequest;
     }
 
     /**

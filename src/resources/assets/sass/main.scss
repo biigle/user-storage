@@ -1,4 +1,18 @@
 @import "variables";
 
+#index-storage-request-container {
+    .user-storage-title {
+        position: relative;
+
+        .loader {
+            position: absolute;
+            right: $padding-base-horizontal;
+            bottom: 0;
+        }
+    }
+
+}
+
 @import "components/fileUploader";
 @import "components/fileUploaderDirectory";
+@import "components/storageRequestList";

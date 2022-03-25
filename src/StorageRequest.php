@@ -34,6 +34,17 @@ class StorageRequest extends Model
     ];
 
     /**
+     * The accessors to append to the model's array form.
+     *
+     * @var array
+     */
+    protected $appends = [
+        'created_at_for_humans',
+        'expires_at_for_humans',
+        'files_count',
+    ];
+
+    /**
      * The "booted" method of the model.
      *
      * @return void
@@ -72,7 +83,31 @@ class StorageRequest extends Model
      */
     public function getFilesAttribute()
     {
-        return array_filter(explode(',', $this->attributes['files']));
+        return array_filter(explode(',', $this->attributes['files'] ?? ''));
+    }
+
+    /**
+     * Get the created_at_for_humans attribute
+     */
+    public function getCreatedAtForHumansAttribute()
+    {
+        return $this->created_at->diffForHumans();
+    }
+
+    /**
+     * Get the expires_at_for_humans attribute
+     */
+    public function getExpiresAtForHumansAttribute()
+    {
+        return $this->expires_at ? $this->expires_at->diffForHumans() : null;
+    }
+
+    /**
+     * Get the files_count attribute
+     */
+    public function getFilesCountAttribute()
+    {
+        return count($this->files);
     }
 
     /**
