@@ -34,9 +34,9 @@
             v-bind:requests="requests"
             v-bind:expire-date="expireDate"
             v-bind:selected-request="selectedRequest"
-            v-on:select="handleSelect"
-            v-on:delete="handleDelete"
-            v-on:extend="handleExtend"
+            v-on:select="handleSelectRequest"
+            v-on:delete="handleDeleteRequest"
+            v-on:extend="handleExtendRequest"
             ></request-list>
 
         <file-browser

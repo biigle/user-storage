@@ -1,5 +1,6 @@
 <script>
 import FileBrowser from './components/fileBrowser';
+import FilesApi from './api/storageRequestFiles';
 import RequestApi from './api/storageRequests';
 import RequestList from './components/storageRequestList';
 import {LoaderMixin, handleErrorResponse} from './import';
@@ -65,7 +66,11 @@ export default {
         },
     },
     methods: {
-        handleSelect(request) {
+        handleSelectRequest(request) {
+            if (this.loading) {
+                return;
+            }
+
             if (request.files) {
                 this.selectedRequest = request;
 
@@ -79,21 +84,25 @@ export default {
         },
         setFilesAndSelectRequest(response) {
             let request = this.requests.find((r) => r.id === response.body.id);
-            request.files = response.body.files;
+            Vue.set(request, 'files', response.body.files);
             request.files_count = response.body.files_count;
 
             this.selectedRequest = request;
         },
-        handleDelete(request) {
+        handleDeleteRequest(request) {
+            if (this.loading) {
+                return;
+            }
+
             if (!confirm('Do you really want to delete the storage request with all files?')) {
                 return;
             }
             this.startLoading();
             RequestApi.delete({id: request.id}, {})
-                .then(() => this.handleDeleted(request), handleErrorResponse)
+                .then(() => this.handleRequestDeleted(request), handleErrorResponse)
                 .finally(this.finishLoading);
         },
-        handleDeleted(request) {
+        handleRequestDeleted(request) {
             let index = this.requests.indexOf(request);
             if (index !== -1) {
                 this.requests.splice(index, 1);
@@ -103,22 +112,46 @@ export default {
                 this.selectedRequest = null;
             }
         },
-        handleExtend(request) {
+        handleExtendRequest(request) {
+            if (this.loading) {
+                return;
+            }
+
             this.startLoading();
             RequestApi.extend({id: request.id}, {})
-                .then(this.handleExtended, handleErrorResponse)
+                .then(this.handleRequestExtended, handleErrorResponse)
                 .finally(this.finishLoading);
         },
-        handleExtended(response) {
+        handleRequestExtended(response) {
             let request = this.requests.find((r) => r.id === response.body.id);
             request.expires_at = response.body.expires_at;
             request.expires_at_for_humans = response.body.expires_at_for_humans;
         },
         removeDirectory(directory, path) {
+            if (this.loading) {
+                return;
+            }
+
             console.log(directory, path);
         },
         removeFile(file, path) {
-            console.log(file, path);
+            if (this.loading) {
+                return;
+            }
+
+            this.startLoading();
+            // Remove the leading slash from the path.
+            path = `${path.slice(1)}/${file.name}`;
+            FilesApi.delete({id: this.selectedRequest.id}, {files: [path]})
+                .then(() => this.fileRemoved(path), handleErrorResponse)
+                .finally(this.finishLoading);
+        },
+        fileRemoved(path) {
+            let index = this.selectedRequest.files.indexOf(path);
+            if (index !== -1) {
+                this.selectedRequest.files.splice(index, 1);
+                this.selectedRequest.files_count -= 1;
+            }
         },
     },
     created() {
