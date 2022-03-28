@@ -54,7 +54,7 @@ class DestroyStorageRequestFile extends FormRequest
             if (count($union) > $filesCount) {
                 $validator->errors()->add('files', 'Some specified files do not belong to the storage request.');
             } elseif (count($files) === $filesCount) {
-                $validator->errors()->add('files', 'You cannot delete all files of the storage request with this endpoint. Delete the whole request instead.');
+                $validator->errors()->add('files', 'You cannot delete all files of the storage request this way. Delete the whole request instead.');
             }
         });
     }

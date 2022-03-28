@@ -1,4 +1,5 @@
 <script>
+import DirectoriesApi from './api/storageRequestDirectories';
 import FileBrowser from './components/fileBrowser';
 import FilesApi from './api/storageRequestFiles';
 import RequestApi from './api/storageRequests';
@@ -19,6 +20,7 @@ export default {
             usedQuotaBytes: 0,
             availableQuotaBytes: 0,
             selectedRequest: null,
+            itemDeleted: false,
         };
     },
     computed: {
@@ -111,6 +113,7 @@ export default {
             if (this.selectedRequest && this.selectedRequest.id === request.id) {
                 this.selectedRequest = null;
             }
+            this.itemDeleted = true;
         },
         handleExtendRequest(request) {
             if (this.loading) {
@@ -132,7 +135,19 @@ export default {
                 return;
             }
 
-            console.log(directory, path);
+            this.startLoading();
+            // Remove the leading slash from the path.
+            path = path.slice(1);
+            DirectoriesApi.delete({id: this.selectedRequest.id}, {directories: [path]})
+                .then(() => this.directoryRemoved(path), handleErrorResponse)
+                .finally(this.finishLoading);
+        },
+        directoryRemoved(prefix) {
+            this.selectedRequest.files = this.selectedRequest.files.filter(function (p) {
+                return !p.startsWith(prefix + '/');
+            });
+            this.selectedRequest.files_count = this.selectedRequest.files.length;
+            this.itemDeleted = true;
         },
         removeFile(file, path) {
             if (this.loading) {
@@ -152,6 +167,7 @@ export default {
                 this.selectedRequest.files.splice(index, 1);
                 this.selectedRequest.files_count -= 1;
             }
+            this.itemDeleted = true;
         },
     },
     created() {

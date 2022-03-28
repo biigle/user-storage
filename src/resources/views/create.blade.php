@@ -38,6 +38,16 @@
             </div>
             <div v-else>
                 <button
+                    v-cloak
+                    v-if="hasSelectedDirectory"
+                    class="btn btn-default"
+                    title="Add a new subdirectory"
+                    v-on:click="addDirectory"
+                    >
+                    <i class="fa fa-folder"></i> Add subdirectory
+                </button>
+                <button
+                    v-else
                     class="btn btn-default"
                     title="Add a new directory"
                     v-on:click="addDirectory"

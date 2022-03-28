@@ -68,9 +68,9 @@ class DestroyStorageRequestDirectory extends FormRequest
             $filesCount = count($this->files);
 
             if ($filesCount === 0) {
-                $validator->errors()->add('files', 'No files were found for the specified directories.');
+                $validator->errors()->add('directories', 'No files were found for the specified directories.');
             } elseif ($filesCount === count($this->storageRequest->files)) {
-                $validator->errors()->add('files', 'You cannot delete all files of the storage request with this endpoint. Delete the whole request instead.');
+                $validator->errors()->add('directories', 'You cannot delete all files of the storage request this way. Delete the whole request instead.');
             }
         });
     }

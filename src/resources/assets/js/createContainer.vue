@@ -153,11 +153,16 @@ export default {
                 directories = directories[name].directories;
             });
             Vue.delete(directories, directory.name);
-            if (directory.selected) {
+            if (this.hasSelectedSubdirectory(directory)) {
                 this.selectedDirectory = null;
             }
 
             this.syncFiles();
+        },
+        hasSelectedSubdirectory(directory) {
+            return Object.keys(directory.directories).reduce((carry, key) => {
+                return carry || this.hasSelectedSubdirectory(directory.directories[key]);
+            }, directory.selected);
         },
         removeFile(file, path) {
             let directory = this.rootDirectory;

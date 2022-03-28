@@ -29,6 +29,9 @@
                 <span v-text="usedQuota"></span> of <span v-text="availableQuota"></span> used (<span v-text="usedQuotaPercent"></span>%)
             </small>
         </h2>
+        <p v-cloak v-if="itemDeleted" class="text-info">
+            Refresh the page after a few seconds to view your updated storage quota.
+        </p>
         <request-list
             v-cloak
             v-bind:requests="requests"
