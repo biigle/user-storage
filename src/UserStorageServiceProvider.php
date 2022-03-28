@@ -35,6 +35,7 @@ class UserStorageServiceProvider extends ServiceProvider
 
         $modules->register('user-storage', [
             'viewMixins' => [
+                'adminIndex',
                 'dashboardButtons',
                 'navbarMenuItem',
             ],

@@ -35,7 +35,7 @@
             </p>
         </div>
         <div v-else>
-            <div v-cloak v-if="rejecting" class="clearfix">
+            <div v-cloak v-if="rejecting" class="form-group clearfix">
                 <form v-on:submit.prevent="handleReject">
                     <div class="form-group">
                         <textarea class="form-control" v-model="rejectReason" placeholder="Reason for rejection" required></textarea>
@@ -61,7 +61,7 @@
                     </button>
                 </form>
             </div>
-            <div v-else class="clearfix">
+            <div v-else class="form-group clearfix">
                 <button
                     class="btn btn-success pull-right"
                     title="Approve the request"
