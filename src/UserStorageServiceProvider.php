@@ -5,11 +5,13 @@ namespace Biigle\Modules\UserStorage;
 use Biigle\Modules\UserStorage\Console\Commands\CheckExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneStaleStorageRequests;
+use Biigle\Modules\UserStorage\Support\FilesystemManager;
 use Biigle\Services\Modules;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Storage;
 
 class UserStorageServiceProvider extends ServiceProvider
 {
@@ -85,5 +87,6 @@ class UserStorageServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__.'/config/user_storage.php', 'user_storage');
+        Storage::swap(new FilesystemManager($this->app));
     }
 }

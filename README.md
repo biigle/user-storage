@@ -9,7 +9,7 @@ This is the BIIGLE module to allow file upload and storage for users.
 1. Run `composer require biigle/user-storage`.
 2. Add `Biigle\Modules\UserStorage\UserStorageServiceProvider::class` to the `providers` array in `config/app.php`.
 3. Run `php artisan vendor:publish --tag=public` to refresh the public assets of the modules. Do this for every update of this module.
-4. Set the environment variables `USER_STORAGE_STORAGE_DISK` and `USER_STORAGE_PENDING_DISK` to the names of the storage disk for user storage files and for pending storage requests, respectively. The same disk can be used for both. The content of the storage disks should be publicly accessible. Example for a local disk:
+4. Set the environment variables `USER_STORAGE_STORAGE_DISK` and `USER_STORAGE_PENDING_DISK` to the names of the storage disk for user storage files and for pending storage requests, respectively. The same disk can be used for both. The content of the storage disks should be publicly accessible. **The storage disk driver must support a `root` path** (absolute or as a prefix). Example for a local disk:
     ```php
     'user-storage' => [
         'driver' => 'local',
