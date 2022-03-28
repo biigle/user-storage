@@ -17,6 +17,7 @@ class FilesystemManager extends BaseManager
      */
     protected function resolve($name, $config = null)
     {
+        // Resolve dynamic "user-xxx" storage disks.
         if (preg_match('/^user-[0-9]+$/', $name) === 1) {
             $config = $this->getConfig(config('user_storage.storage_disk'));
             if (array_key_exists('root', $config)) {

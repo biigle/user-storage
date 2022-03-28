@@ -2,6 +2,7 @@
 
 namespace Biigle\Modules\UserStorage;
 
+use Biigle\Http\Requests\UpdateUserSettings;
 use Biigle\Modules\UserStorage\Console\Commands\CheckExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneStaleStorageRequests;
@@ -49,6 +50,11 @@ class UserStorageServiceProvider extends ServiceProvider
             ],
         ]);
 
+        if (config('user_storage.notifications.allow_user_settings')) {
+            $modules->registerViewMixin('user-storage', 'settings.notifications');
+            UpdateUserSettings::addRule('storage_request_notifications', 'filled|in:email,web');
+        }
+
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CheckExpiredStorageRequests::class,
@@ -87,6 +93,7 @@ class UserStorageServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__.'/config/user_storage.php', 'user_storage');
+        // This is used to resolve dynamic "user-xxx" storage disks.
         Storage::swap(new FilesystemManager($this->app));
     }
 }
