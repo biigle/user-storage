@@ -34,7 +34,7 @@
         <button
             class="btn btn-default btn-xs delete-button"
             title="Delete this storage request"
-            @click.stop="handleDelete"
+            @click.prevent="handleDelete"
             >
             <i class="fa fa-trash"></i>
         </button>
@@ -42,7 +42,7 @@
             v-if="expiresSoon"
             class="btn btn-default btn-xs"
             title="Extend this storage request"
-            @click.stop="handleExtend"
+            @click.prevent="handleExtend"
             >
             <i class="fa fa-redo"></i>
         </button>
