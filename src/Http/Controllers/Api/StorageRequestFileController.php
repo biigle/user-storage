@@ -66,6 +66,12 @@ class StorageRequestFileController extends Controller
      */
     public function destroy(DestroyStorageRequestFile $request)
     {
-        DeleteStorageRequestFiles::dispatch($request->storageRequest, $request->input('files'));
+        $files = $request->input('files');
+        DeleteStorageRequestFiles::dispatch($request->storageRequest, $files);
+
+        $request->storageRequest->files = array_values(array_diff(
+            $request->storageRequest->files, $files
+        ));
+        $request->storageRequest->save();
     }
 }

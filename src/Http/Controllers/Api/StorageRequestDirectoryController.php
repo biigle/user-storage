@@ -26,5 +26,10 @@ class StorageRequestDirectoryController extends Controller
     public function destroy(DestroyStorageRequestDirectory $request)
     {
         DeleteStorageRequestFiles::dispatch($request->storageRequest, $request->files);
+
+        $request->storageRequest->files = array_values(array_diff(
+            $request->storageRequest->files, $request->files
+        ));
+        $request->storageRequest->save();
     }
 }
