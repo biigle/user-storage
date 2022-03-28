@@ -42,4 +42,9 @@ $router->group([
         'as' => 'index-storage-requests',
         'uses' => 'StorageRequestController@index',
     ]);
+
+    $router->get('storage-requests/{id}/review', [
+        'as' => 'review-storage-request',
+        'uses' => 'StorageRequestController@review',
+    ]);
 });

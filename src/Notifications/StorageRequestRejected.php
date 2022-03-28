@@ -14,13 +14,6 @@ class StorageRequestRejected extends Notification implements ShouldQueue
     use Queueable, SerializesModels;
 
     /**
-     * The storage request that was confirmed
-     *
-     * @var StorageRequest
-     */
-    protected $request;
-
-    /**
      * Reason why the request was rejected.
      *
      * @var string
@@ -28,22 +21,13 @@ class StorageRequestRejected extends Notification implements ShouldQueue
     protected $reason;
 
     /**
-     * Ignore this job if the image does not exist any more.
-     *
-     * @var bool
-     */
-    protected $deleteWhenMissingModels = true;
-
-    /**
      * Create a new notification instance.
      *
-     * @param StorageRequest $request
      * @param string $reason
      * @return void
      */
-    public function __construct(StorageRequest $request, $reason)
+    public function __construct($reason)
     {
-        $this->request = $request;
         $this->reason = $reason;
     }
 
@@ -78,6 +62,7 @@ class StorageRequestRejected extends Notification implements ShouldQueue
     {
         $message = (new MailMessage)
             ->subject('Your BIIGLE storage request was rejected')
+            ->line("Your storage request was rejected.")
             ->line("All uploaded files have been deleted.")
             ->line("Reason: {$this->reason}");
 
@@ -93,8 +78,8 @@ class StorageRequestRejected extends Notification implements ShouldQueue
     public function toArray($notifiable)
     {
         $array = [
-            'title' => 'Your BIIGLE storage request was approved',
-            'message' => "All uploaded files have been deleted. Reason: {$this->reason}",
+            'title' => 'Your BIIGLE storage request was rejected',
+            'message' => "Your storage request was rejected. All uploaded files have been deleted. Reason: {$this->reason}",
         ];
 
         return $array;

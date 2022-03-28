@@ -59,12 +59,12 @@ class StorageRequestSubmitted extends Notification implements ShouldQueue
     {
         $fileCount = count($this->request->files);
         $name = "{$this->request->user->firstname} {$this->request->user->lastname}";
+        $affiliation = $this->request->user->affiliation ?: 'no affiliation';
 
         $message = (new MailMessage)
             ->subject('New storage request')
-            ->line("A new storage request with {$fileCount} file(s) was created by {$name}.")
-            // TODO add actual link
-            ->action('Review', '');
+            ->line("A new storage request with {$fileCount} file(s) was created by {$name} ($affiliation).")
+            ->action('Review', route('review-storage-request', $this->request->id));
 
         return $message;
     }

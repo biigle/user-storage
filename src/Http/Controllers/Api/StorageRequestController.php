@@ -115,7 +115,7 @@ class StorageRequestController extends Controller
     {
         $storageRequest = $request->storageRequest;
         $storageRequest->user->notify(
-            new StorageRequestRejected($storageRequest, $request->input('reason'))
+            new StorageRequestRejected($request->input('reason'))
         );
         $storageRequest->delete();
     }

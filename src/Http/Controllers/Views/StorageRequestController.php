@@ -60,4 +60,21 @@ class StorageRequestController extends Controller
             'maxSize' => $maxSize,
         ]);
     }
+
+    /**
+     * Show the view to review a storage request.
+     *
+     * @param int $id Storage request ID
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function review($id)
+    {
+        $request = StorageRequest::whereNull('expires_at')->findOrFail($id);
+        $this->authorize('approve', $request);
+
+        return view('user-storage::review', [
+            'request' => $request,
+        ]);
+    }
 }

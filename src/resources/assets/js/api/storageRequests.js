@@ -11,7 +11,7 @@
  * resource.approve({id: requestId}).then(...)
  *
  * Reject a storage request:
- * resource.reject({id: requestId}).then(...)
+ * resource.reject({id: requestId}, {reason: reasonText}).then(...)
  *
  * Extend a storage request:
  * resource.extend({id: requestId}).then(...)

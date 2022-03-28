@@ -69,7 +69,8 @@ class StorageRequestApproved extends Notification implements ShouldQueue
     {
         $message = (new MailMessage)
             ->subject('Your BIIGLE storage request was approved')
-            ->line("You can now use the uploaded files to create new volumes!")
+            ->line("Your storage request was approved!")
+            ->line("You can now use the uploaded files to create new volumes.")
             ->action("View storage request", route('index-storage-requests'));
 
         return $message;
@@ -85,7 +86,7 @@ class StorageRequestApproved extends Notification implements ShouldQueue
     {
         $array = [
             'title' => 'Your storage request was approved',
-            'message' => "You can now use the uploaded files to create new volumes!",
+            'message' => "Your storage request was approved! You can now use the uploaded files to create new volumes.",
             'action' => 'View storage request',
             'actionLink' => route('index-storage-requests'),
         ];

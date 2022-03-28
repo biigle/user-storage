@@ -5,7 +5,7 @@ import FilesApi from './api/storageRequestFiles';
 import RequestApi from './api/storageRequests';
 import RequestList from './components/storageRequestList';
 import {LoaderMixin, handleErrorResponse} from './import';
-import {sizeForHumans} from './utils';
+import {buildDirectoryTree, sizeForHumans} from './utils';
 
 export default {
     mixins: [LoaderMixin],
@@ -37,34 +37,7 @@ export default {
             return this.selectedRequest !== null;
         },
         selectedRequestRoot() {
-            let root = {
-                name: '',
-                directories: {},
-                files: [],
-            };
-
-            if (this.selectedRequest.files) {
-                this.selectedRequest.files.forEach(function (path) {
-                    let breadcrumbs = path.split('/');
-                    let file = breadcrumbs.pop();
-                    let currentDir = root;
-                    breadcrumbs.forEach(function (name) {
-                        if (!currentDir.directories.hasOwnProperty(name)) {
-                            currentDir.directories[name] = {
-                                name: name,
-                                directories: {},
-                                files: [],
-                            };
-                        }
-
-                        currentDir = currentDir.directories[name];
-                    });
-
-                    currentDir.files.push({name: file});
-                });
-            }
-
-            return root;
+            return buildDirectoryTree(this.selectedRequest);
         },
     },
     methods: {
