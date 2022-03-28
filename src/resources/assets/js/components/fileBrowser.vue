@@ -2,10 +2,11 @@
     <div class="storage-file-browser">
         <div v-show="hasItems" class="panel panel-default">
             <directory
-                path="/"
                 :directory="rootDirectory"
                 :root="true"
                 :removable="editable"
+                :selectable="selectable"
+                :download-url="downloadUrl"
                 @select="emitSelect"
                 @unselect="emitUnselect"
                 @remove-directory="emitRemoveDirectory"
@@ -30,6 +31,14 @@ export default {
         editable: {
             type: Boolean,
             default: false,
+        },
+        selectable: {
+            type: Boolean,
+            default: false,
+        },
+        downloadUrl: {
+            type: String,
+            default: '',
         },
     },
     data() {

@@ -109,6 +109,7 @@
             v-cloak
             v-bind:root-directory="rootDirectory"
             v-bind:editable="editable"
+            v-bind:selectable="true"
             v-on:select="selectDirectory"
             v-on:unselect="unselectDirectory"
             v-on:remove-directory="removeDirectory"

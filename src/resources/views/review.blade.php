@@ -23,6 +23,7 @@
         <file-browser
             v-cloak
             v-bind:root-directory="requestRoot"
+            download-url="{{url("api/v1/storage-requests/{$request->id}/files")}}"
             ></file-browser>
 
         <div v-cloak v-if="finished">

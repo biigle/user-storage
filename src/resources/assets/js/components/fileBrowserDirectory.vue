@@ -11,13 +11,13 @@
 
             <i
                 v-if="collapsed"
-                class="fa fa-angle-right fa-fw"
+                class="fa fa-angle-right fa-fw collapse-caret"
                 title="Expand this directory"
                 @click.stop="handleUncollapse"
                 ></i>
             <i
                 v-else
-                class="fa fa-angle-down fa-fw"
+                class="fa fa-angle-down fa-fw collapse-caret"
                 title="Collapse this directory"
                 @click.stop="handleCollapse"
                 ></i>
@@ -40,8 +40,11 @@
             <li v-for="(dir, path) in directory.directories">
                 <file-browser-directory
                     :path="path"
+                    :dirname="fullPath"
                     :directory="dir"
                     :removable="removable"
+                    :selectable="selectable"
+                    :download-url="downloadUrl"
                     @select="emitSelect"
                     @unselect="emitUnselect"
                     @remove-directory="emitRemoveDirectory"
@@ -52,7 +55,16 @@
                 v-for="file in directory.files"
                 class="storage-file-browser-file clearfix"
                 >
-                <i class="fa fa-file"></i> <span v-text="file.name"></span>
+                <a
+                    v-if="downloadUrl"
+                    :href="fullDownloadUrl(file.name)"
+                    title="View file"
+                    >
+                    <i class="fa fa-file"></i> <span v-text="file.name"></span>
+                </a>
+                <span v-else>
+                    <i class="fa fa-file"></i> <span v-text="file.name"></span>
+                </span>
 
                 <button
                     v-if="removable"
@@ -80,7 +92,11 @@ export default {
     props: {
         path: {
             type: String,
-            required: true,
+            default: '',
+        },
+        dirname: {
+            type: String,
+            default: '/',
         },
         directory: {
             type: Object,
@@ -94,6 +110,14 @@ export default {
             type: Boolean,
             default: false,
         },
+        selectable: {
+            type: Boolean,
+            default: false,
+        },
+        downloadUrl: {
+            type: String,
+            default: '',
+        },
     },
     data() {
         return {
@@ -105,10 +129,18 @@ export default {
             return {
                 selected: this.directory.selected,
                 root: this.root,
+                selectable: this.selectable,
             };
         },
         hasItems() {
             return this.directory.files.length > 0 || Object.keys(this.directory.directories).length > 0;
+        },
+        fullPath() {
+            if (this.dirname === '/') {
+                return '/' + this.path;
+            }
+
+            return this.dirname + '/' + this.path;
         },
     },
     methods: {
@@ -119,6 +151,10 @@ export default {
             this.$emit('unselect', directory);
         },
         handleClick() {
+            if (!this.selectable) {
+                return;
+            }
+
             if (this.directory.selected) {
                 this.emitUnselect(this.directory);
             } else {
@@ -126,31 +162,19 @@ export default {
             }
         },
         emitRemoveDirectory(directory, path) {
-            if (!path) {
-                path = this.path;
-            } else {
-                path = this.root ? `/${path}` : `${this.path}/${path}`;
-            }
-
             this.$emit('remove-directory', directory, path);
         },
         handleRemoveDirectory() {
             if (this.removable) {
-                this.emitRemoveDirectory(this.directory);
+                this.emitRemoveDirectory(this.directory, this.fullPath);
             }
         },
         emitRemoveFile(file, path) {
-            if (!path) {
-                path = this.path;
-            } else {
-                path = this.root ? `/${path}` : `${this.path}/${path}`;
-            }
-
             this.$emit('remove-file', file, path);
         },
         handleRemoveFile(file) {
             if (this.removable) {
-                this.emitRemoveFile(file);
+                this.emitRemoveFile(file, this.fullPath);
             }
         },
         handleCollapse() {
@@ -158,6 +182,12 @@ export default {
         },
         handleUncollapse() {
             this.collapsed = false;
+        },
+        fullDownloadUrl(filename) {
+            // Remove leading slash.
+            let path = this.fullPath.slice(1) + '/' + filename;
+
+            return this.downloadUrl + '?path=' + encodeURIComponent(path);
         },
     },
     watch: {

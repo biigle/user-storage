@@ -6,8 +6,15 @@ use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\DestroyStorageRequestFile;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequestFile;
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use DB;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use League\Flysystem\UnableToReadFile;
+use League\Flysystem\UnableToRetrieveMetadata;
+use RuntimeException;
+use Storage;
 
 class StorageRequestFileController extends Controller
 {
@@ -47,6 +54,64 @@ class StorageRequestFileController extends Controller
 
             $file->storeAs($sr->getPendingPath(), $filePath, $disk);
         });
+    }
+
+    /**
+     * Show a file of a storage request.
+     *
+     * @api {get} storage-requests/:id/files/:path Show a file
+     * @apiGroup UserStorage
+     * @apiName ShowStorageRequestFile
+     * @apiPermission admin
+     *
+     * @apiParam {Number} id The storage request ID
+     *
+     * @apiParam (Required parameters) {String} path The file path
+     *
+     * @param Request $request
+     * @param int $id
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function show(Request $request, $id)
+    {
+        if (!$request->user()->can('sudo')) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        $storageRequest = StorageRequest::findOrFail($id);
+        $path = $request->input('path');
+
+        if (!in_array($path, $storageRequest->files)) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
+
+        if (is_null($storageRequest->expires_at)) {
+                $disk = Storage::disk(config('user_storage.pending_disk'));
+                $path = $storageRequest->getPendingPath($path);
+            } else {
+                $disk = Storage::disk(config('user_storage.storage_disk'));
+                $path = $storageRequest->getStoragePath($path);
+            }
+
+        try {
+            $url = $disk->temporaryUrl($path, now()->addDay());
+
+            return redirect($url);
+        } catch (RuntimeException $e) {
+            // Temporary URLs not supported.
+            // Continue with code below.
+        }
+
+        try {
+            $filename = basename($path);
+
+            return $disk->download($path, $filename, [
+                'Content-Disposition' => "inline; filename=\"{$filename}\"",
+            ]);
+        } catch (UnableToRetrieveMetadata | UnableToReadFile $e) {
+            abort(Response::HTTP_NOT_FOUND);
+        }
     }
 
     /**

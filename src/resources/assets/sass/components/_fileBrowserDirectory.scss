@@ -12,11 +12,16 @@
             padding-left: 15px;
         }
     }
+
+    &.selectable {
+        .storage-file-browser-directory-name {
+            cursor: pointer;
+        }
+    }
 }
 
 .storage-file-browser-directory-name {
     padding: $padding-small-vertical;
-    cursor: pointer;
     border-radius: $border-radius-small;
     word-wrap: break-word;
     height: 32px;
@@ -32,6 +37,10 @@
 
     &:hover button {
         display: block;
+    }
+
+    .collapse-caret {
+        cursor: pointer;
     }
 }
 
@@ -61,5 +70,9 @@
 
     &:hover button {
         display: block;
+    }
+
+    a {
+        color: $text-color;
     }
 }

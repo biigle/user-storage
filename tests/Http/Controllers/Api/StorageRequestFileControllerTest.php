@@ -8,6 +8,7 @@ use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Mockery;
 use Storage;
 
 class StorageRequestFileControllerTest extends ApiTestCase
@@ -213,6 +214,76 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(200);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(200);
+    }
+
+    public function testShow() {
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg', 'b.jpg'],
+        ]);
+        $id = $request->id;
+
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+        $disk->put("request-{$id}/a.jpg", 'abc');
+        $disk->put("request-{$id}/c.jpg", 'abc');
+
+        $this->doTestApiRoute('GET', "/api/v1/storage-requests/{$id}/files?path=a.jpg");
+
+        $this->beUser();
+        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(404);
+
+        $this->be($request->user);
+        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(404);
+
+        $this->beGlobalAdmin();
+        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(200);
+        $this->get("/api/v1/storage-requests/{$id}/files?path=b.jpg")->assertStatus(404);
+        $this->get("/api/v1/storage-requests/{$id}/files?path=c.jpg")->assertStatus(404);
+    }
+
+    public function testShowApproved() {
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+            'expires_at' => '2022-03-28 14:03:00',
+        ]);
+        $id = $request->id;
+
+        config(['user_storage.storage_disk' => 'test']);
+        $disk = Storage::fake('test');
+        $disk->put("user-{$request->user_id}/a.jpg", 'abc');
+
+        $this->beGlobalAdmin();
+        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(200);
+    }
+
+    public function testShowPublic() {
+        $mock = Mockery::mock();
+        $mock->shouldReceive('temporaryUrl')->once()->andReturn('myurl');
+        Storage::shouldReceive('disk')->andReturn($mock);
+
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+        $id = $request->id;
+
+        $this->beGlobalAdmin();
+        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")
+            ->assertRedirect('myurl');
+    }
+
+    public function testShowUrlEncode() {
+        $request = StorageRequest::factory()->create([
+            'files' => ['my dir/a.jpg'],
+        ]);
+        $id = $request->id;
+
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+        $disk->put("request-{$id}/my dir/a.jpg", 'abc');
+
+        $this->beGlobalAdmin();
+        $this->get("/api/v1/storage-requests/{$id}/files?path=my%20dir%2Fa.jpg")
             ->assertStatus(200);
     }
 
