@@ -17,6 +17,9 @@
     "autoload": {
       "psr-4": {
          "Biigle\\Modules\\UserStorage\\": "src"
-      }
+      },
+      "files": [
+         "src/Support/helpers.php"
+      ]
     }
 }
