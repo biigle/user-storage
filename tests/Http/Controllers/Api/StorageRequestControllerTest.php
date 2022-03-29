@@ -67,6 +67,13 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests")->assertStatus(201);
     }
 
+    public function testStoreMaintenanceMode()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $this->beGuest();
+        $this->postJson("/api/v1/storage-requests")->assertStatus(403);
+    }
+
     public function testUpdate()
     {
         Notification::fake();
@@ -106,6 +113,18 @@ class StorageRequestControllerTest extends ApiTestCase
 
         $this->be($request->user);
         $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(404);
+    }
+
+    public function testUpdateMaintenanceMode()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+        $id = $request->id;
+
+        $this->be($request->user);
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
     }
 
     public function testApprove()

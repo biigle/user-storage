@@ -24,6 +24,18 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertTrue($this->globalAdmin()->can('create', StorageRequest::class));
     }
 
+    public function testCreateMaintenanceMode()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $this->assertFalse($this->globalGuest()->can('create', StorageRequest::class));
+        $this->assertFalse($this->user()->can('create', StorageRequest::class));
+        $this->assertFalse($this->guest()->can('create', StorageRequest::class));
+        $this->assertFalse($this->editor()->can('create', StorageRequest::class));
+        $this->assertFalse($this->expert()->can('create', StorageRequest::class));
+        $this->assertFalse($this->admin()->can('create', StorageRequest::class));
+        $this->assertTrue($this->globalAdmin()->can('create', StorageRequest::class));
+    }
+
     public function testAccess()
     {
         $this->assertFalse($this->globalGuest()->can('access', $this->request));
@@ -41,6 +53,18 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertFalse($this->user()->can('update', $this->request));
         $this->assertFalse($this->guest()->can('update', $this->request));
         $this->assertTrue($this->editor()->can('update', $this->request));
+        $this->assertFalse($this->expert()->can('update', $this->request));
+        $this->assertFalse($this->admin()->can('update', $this->request));
+        $this->assertFalse($this->globalAdmin()->can('update', $this->request));
+    }
+
+    public function testUpdateMaintenanceMode()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $this->assertFalse($this->globalGuest()->can('update', $this->request));
+        $this->assertFalse($this->user()->can('update', $this->request));
+        $this->assertFalse($this->guest()->can('update', $this->request));
+        $this->assertFalse($this->editor()->can('update', $this->request));
         $this->assertFalse($this->expert()->can('update', $this->request));
         $this->assertFalse($this->admin()->can('update', $this->request));
         $this->assertFalse($this->globalAdmin()->can('update', $this->request));

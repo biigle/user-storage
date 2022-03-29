@@ -24,9 +24,15 @@
                 v-cloak
                 v-bind:active="loading"
                 ></loader>
-            <a class="btn btn-default pull-right" href="{{route('create-storage-requests')}}" title="Create a new storage request to upload files">
-                <i class="fa fa-upload"></i> New request
-            </a>
+            @can('create', \Biigle\Modules\UserStorage\StorageRequest::class)
+                <a class="btn btn-default pull-right" href="{{route('create-storage-requests')}}" title="Create a new storage request to upload files">
+                    <i class="fa fa-upload"></i> New request
+                </a>
+            @else
+                <button class="btn btn-default pull-right" title="You cannot create new storage requests right now" disabled>
+                    <i class="fa fa-upload"></i> New request
+                </button>
+            @endcan
             Your storage requests<br>
             <small v-cloak>
                 <span v-text="usedQuota"></span> of <span v-text="availableQuota"></span> used (<span v-text="usedQuotaPercent"></span>%)

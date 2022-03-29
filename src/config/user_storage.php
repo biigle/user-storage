@@ -42,6 +42,12 @@ return [
     */
     'delete_grace_period_weeks' => env('USER_STORAGE_DELETE_GRACE_PERIOD_WEEKS', 1),
 
+    /*
+     | Enable to disallow creation of new storage requests and upload of files.
+     | Global admins are exempted.
+     */
+    'maintenance_mode' => env('USER_STORAGE_MAINTENANCE_MODE', false),
+
     'notifications' => [
         /*
         | Set the way notifications for storage requests are sent by default.

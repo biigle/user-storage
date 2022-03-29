@@ -28,19 +28,23 @@ class StorageRequestControllerTest extends TestCase
             ->assertViewIs('user-storage::create');
     }
 
+    public function testCreateMaintenanceMode()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $user = UserTest::create([
+            'role_id' => Role::editorId(),
+        ]);
+        $this->actingAs($user)
+            ->get('storage-requests/create')
+            ->assertStatus(403);
+    }
+
     public function testIndex()
     {
         $this->get('storage-requests')->assertRedirect('login');
         $user = UserTest::create([
             'role_id' => Role::guestId(),
         ]);
-
-        $this->actingAs($user)
-            ->get('storage-requests')
-            ->assertStatus(403);
-
-        $user->role_id = Role::editorId();
-        $user->save();
 
         $this->actingAs($user)
             ->get('storage-requests')

@@ -217,6 +217,18 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(200);
     }
 
+    public function testStoreMaintenanceMode()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->be($request->user);
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(403);
+    }
+
     public function testShow() {
         $request = StorageRequest::factory()->create([
             'files' => ['a.jpg', 'b.jpg'],

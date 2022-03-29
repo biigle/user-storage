@@ -19,8 +19,6 @@ class StorageRequestController extends Controller
      */
     public function index(Request $request)
     {
-        $this->authorize('create', StorageRequest::class);
-
         $user = User::convert($request->user());
         $usedQuota = $user->storage_quota_used;
         $availableQuota = $user->storage_quota_available;

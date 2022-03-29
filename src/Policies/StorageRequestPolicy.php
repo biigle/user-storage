@@ -37,6 +37,10 @@ class StorageRequestPolicy extends CachedPolicy
      */
     public function create(User $user)
     {
+        if (config('user_storage.maintenance_mode')) {
+            return false;
+        }
+
         return $user->role_id === Role::editorId() || $user->role_id === Role::adminId();
     }
 
@@ -62,6 +66,10 @@ class StorageRequestPolicy extends CachedPolicy
      */
     public function update(User $user, StorageRequest $request)
     {
+        if (config('user_storage.maintenance_mode')) {
+            return false;
+        }
+
         return $this->access($user, $request);
     }
 

@@ -3,7 +3,7 @@
         <i class="fa fa-upload"></i> Upload Files
     </a>
 @else
-    <button class="btn btn-default" title="Guests are not allowed to upload files" disabled>
+    <button class="btn btn-default" title="You cannot upload files right now" disabled>
         <i class="fa fa-upload"></i> Upload Files
     </button>
 @endcan
