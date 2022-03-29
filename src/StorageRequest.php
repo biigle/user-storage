@@ -31,6 +31,7 @@ class StorageRequest extends Model
         'user_id',
         'expires_at',
         'submitted_at',
+        'files',
     ];
 
     /**

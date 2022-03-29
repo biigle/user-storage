@@ -10,6 +10,7 @@ if (!function_exists('size_for_humans')) {
             $unit = array_shift($units);
         } while ($size > 1000 && count($units) > 0);
 
-        return round($size, 2).'&nbsp;'.$unit;
+        // Use non-breaking space here.
+        return round($size, 2).' '.$unit;
     }
 }

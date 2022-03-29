@@ -4,6 +4,7 @@ namespace Biigle\Modules\UserStorage;
 
 use Biigle\Http\Requests\UpdateUserSettings;
 use Biigle\Modules\UserStorage\Console\Commands\CheckExpiredStorageRequests;
+use Biigle\Modules\UserStorage\Console\Commands\MigrateToStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneStaleStorageRequests;
 use Biigle\Modules\UserStorage\Support\FilesystemManager;
@@ -59,6 +60,7 @@ class UserStorageServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 CheckExpiredStorageRequests::class,
+                MigrateToStorageRequests::class,
                 PruneExpiredStorageRequests::class,
                 PruneStaleStorageRequests::class,
             ]);
