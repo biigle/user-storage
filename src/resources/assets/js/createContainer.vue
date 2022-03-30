@@ -1,13 +1,12 @@
 <script>
-import FileBrowser from './components/fileBrowser';
 import StorageRequestApi from './api/storageRequests';
-import {LoaderMixin, handleErrorResponse} from './import';
+import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 export default {
     mixins: [LoaderMixin],
     components: {
-        fileBrowser: FileBrowser,
+        fileBrowser: FileBrowserComponent,
     },
     data() {
         return {

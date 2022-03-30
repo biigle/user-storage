@@ -1,17 +1,16 @@
 <script>
 import DirectoriesApi from './api/storageRequestDirectories';
-import FileBrowser from './components/fileBrowser';
 import FilesApi from './api/storageRequestFiles';
 import RequestApi from './api/storageRequests';
 import RequestList from './components/storageRequestList';
-import {LoaderMixin, handleErrorResponse} from './import';
+import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {buildDirectoryTree, sizeForHumans} from './utils';
 
 export default {
     mixins: [LoaderMixin],
     components: {
         requestList: RequestList,
-        fileBrowser: FileBrowser,
+        fileBrowser: FileBrowserComponent,
     },
     data() {
         return {
