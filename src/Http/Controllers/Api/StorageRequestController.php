@@ -161,5 +161,12 @@ class StorageRequestController extends Controller
         $storageRequest = StorageRequest::findOrFail($id);
         $this->authorize('destroy', $storageRequest);
         $storageRequest->delete();
+
+        if (!$this->isAutomatedRequest()) {
+            return $this->fuzzyRedirect()
+                ->with('message', 'All files of the previous upload have been discarded.')
+                ->with('messageType', 'success');
+        }
+
     }
 }

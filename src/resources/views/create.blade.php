@@ -6,6 +6,7 @@
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
     <script type="text/javascript">
         biigle.$declare('user-storage.maxSize', {!! $maxSize !!});
+        biigle.$declare('user-storage.previousRequest', {!! $previousRequest !!});
     </script>
 @endpush
 
@@ -21,6 +22,26 @@
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
       </p>
       <div id="create-storage-request-container" class="create-storage-request">
+          @if ($previousRequest && $previousRequest->files_count > 0)
+            <div class="panel panel-info">
+                <div class="panel-body text-info">
+                    Some files were initialized from a previously aborted upload.
+                    <form class="form-inline pull-right" action="{{url("api/v1/storage-requests/{$previousRequest->id}")}}" method="POST">
+                        <button
+                            type="submit"
+                            class="btn btn-default btn-xs"
+                            title="Delete all files of the previous upload"
+                            v-bind:disabled="loading"
+                            >
+                            Discard all files
+                        </button>
+                        <input type="hidden" name="_redirect" value="{{ route('create-storage-requests') }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="_method" value="DELETE">
+                    </form>
+                </div>
+            </div>
+          @endif
         <input
             ref="fileInput"
             class="hidden"
