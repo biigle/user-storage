@@ -30,9 +30,13 @@ class FilesystemManagerTest extends TestCase
 
     public function testAppendUrlSuffix()
     {
+        $root = storage_path('framework/testing/disks/test');
+        (new Filesystem)->cleanDirectory($root);
+
         config(['user_storage.storage_disk' => 'test']);
         config(['filesystems.disks.test' => [
             'driver' => 'local',
+            'root' => $root,
             'url' => 'http://example.com/storage',
         ]]);
 
