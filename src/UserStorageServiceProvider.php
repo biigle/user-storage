@@ -9,6 +9,7 @@ use Biigle\Modules\UserStorage\Console\Commands\PruneExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneStaleStorageRequests;
 use Biigle\Modules\UserStorage\Support\FilesystemManager;
 use Biigle\Services\Modules;
+use Biigle\User;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Gate;
@@ -86,6 +87,19 @@ class UserStorageServiceProvider extends ServiceProvider
         ], 'public');
 
         Gate::policy(StorageRequest::class, Policies\StorageRequestPolicy::class);
+
+        // Override gate to allow own user disk.
+        $abilities = Gate::abilities();
+        if (array_key_exists('use-disk', $abilities)) {
+            $useDiskAbility = $abilities['use-disk'];
+            Gate::define('use-disk', function (User $user, $disk) use ($useDiskAbility) {
+                if ($disk === "user-{$user->id}") {
+                    return true;
+                }
+
+                return $useDiskAbility($user, $disk);
+            });
+        }
     }
 
     /**
