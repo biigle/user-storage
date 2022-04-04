@@ -107,6 +107,10 @@ export default {
                 return;
             }
 
+            if (!confirm('Do you really want to delete the directory with all files?')) {
+                return;
+            }
+
             this.startLoading();
             // Remove the leading slash from the path.
             path = path.slice(1);
@@ -123,6 +127,10 @@ export default {
         },
         removeFile(file, path) {
             if (this.loading) {
+                return;
+            }
+
+            if (!confirm('Do you really want to delete the file?')) {
                 return;
             }
 

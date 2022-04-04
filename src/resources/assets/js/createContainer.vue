@@ -26,6 +26,8 @@ export default {
             },
             selectedDirectory: null,
             storageRequest: null,
+            usedQuotaBytes: 0,
+            availableQuotaBytes: 0,
         };
     },
     computed: {
@@ -59,13 +61,19 @@ export default {
             return !this.loading && !this.finished;
         },
         exceedsMaxSize() {
-            return this.maxSize !== -1  && this.totalSize > this.maxSize;
+            return this.availableQuotaBytes !== -1  && this.totalSize > this.availableQuotaBytes;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
         },
-        maxSizeForHumans() {
-            return sizeForHumans(this.maxSize);
+        usedQuota() {
+            return sizeForHumans(this.usedQuotaBytes);
+        },
+        availableQuota() {
+            return sizeForHumans(this.availableQuotaBytes);
+        },
+        usedQuotaPercent() {
+            return Math.round(this.usedQuotaBytes / this.availableQuotaBytes * 100);
         },
     },
     methods: {
@@ -318,10 +326,11 @@ export default {
         },
     },
     created() {
-        this.maxSize = biigle.$require('user-storage.maxSize');
+        this.usedQuotaBytes = biigle.$require('user-storage.usedQuota');
+        this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
-        if (this.storageRequest.files.length > 0) {
+        if (this.storageRequest && this.storageRequest.files.length > 0) {
             this.addExistingFiles(this.storageRequest.files);
             this.loadedUnfinishedRequest = true;
         }

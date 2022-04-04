@@ -5,8 +5,9 @@
 @push('scripts')
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
     <script type="text/javascript">
-        biigle.$declare('user-storage.maxSize', {!! $maxSize !!});
         biigle.$declare('user-storage.previousRequest', {!! $previousRequest !!});
+        biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
+        biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
     </script>
 @endpush
 
@@ -15,13 +16,18 @@
 @endpush
 
 @section('content')
-<div class="container">
+<div id="create-storage-request-container" class="container">
    <div class="col-sm-8 col-sm-offset-2 col-lg-6 col-lg-offset-3">
-      <h2>New storage request</h2>
+      <h2>
+        New storage request<br>
+        <small v-cloak>
+            <span v-text="usedQuota"></span> of <span v-text="availableQuota"></span> used (<span v-text="usedQuotaPercent"></span>%)
+        </small>
+      </h2>
       <p>
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
       </p>
-      <div id="create-storage-request-container" class="create-storage-request">
+      <div class="create-storage-request">
           @if ($previousRequest && $previousRequest->files_count > 0)
             <div class="panel panel-info">
                 <div class="panel-body text-info">
@@ -119,7 +125,7 @@
         </div>
 
         <p v-cloak v-if="exceedsMaxSize" class="text-danger">
-            You have selected more than the <span v-text="maxSizeForHumans"></span> of storage available to you.
+            You have selected more than the <span v-text="availableQuota"></span> of storage available to you.
         </p>
 
         <p v-cloak v-if="finished" class="text-success">

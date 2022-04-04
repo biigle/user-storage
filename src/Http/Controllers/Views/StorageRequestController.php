@@ -51,8 +51,9 @@ class StorageRequestController extends Controller
     {
         $this->authorize('create', StorageRequest::class);
 
-        $user = $request->user();
-        $maxSize = User::convert($user)->storage_quota_remaining;
+        $user = User::convert($request->user());
+        $usedQuota = $user->storage_quota_used;
+        $availableQuota = $user->storage_quota_available;
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
             ->where('user_id', $user->id)
@@ -60,8 +61,9 @@ class StorageRequestController extends Controller
 
         return view('user-storage::create', [
             'allowedMimeTypes' => implode(',', array_merge(Image::MIMES, Video::MIMES)),
-            'maxSize' => $maxSize,
             'previousRequest' => $previousRequest,
+            'usedQuota' => $usedQuota,
+            'availableQuota' => $availableQuota,
         ]);
     }
 
