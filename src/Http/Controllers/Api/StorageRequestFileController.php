@@ -9,6 +9,7 @@ use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use DB;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use League\Flysystem\UnableToReadFile;
@@ -52,7 +53,11 @@ class StorageRequestFileController extends Controller
             $sr->files = array_merge($sr->files, [$filePath]);
             $sr->save();
 
-            $file->storeAs($sr->getPendingPath(), $filePath, $disk);
+            $success = $file->storeAs($sr->getPendingPath(), $filePath, $disk);
+
+            if ($success === false) {
+                throw new Exception("Unable to save file");
+            }
         });
     }
 
