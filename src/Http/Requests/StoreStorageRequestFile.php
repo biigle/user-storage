@@ -80,9 +80,25 @@ class StoreStorageRequestFile extends FormRequest
                 return;
             }
 
-            $path = $this->storageRequest->getStoragePath($this->getFilePath());
-            $disk = config('user_storage.user_disk');
-            if (Storage::disk($disk)->exists($path)) {
+            $path = $this->getFilePath();
+            $existingFiles = StorageRequest::where('id', '!=', $this->storageRequest->id)
+                ->where('user_id', $this->storageRequest->user_id)
+                // Limit to requests that seem to contain the file. We can't be sure here
+                // because the files are stored as single string in the DB. Executing the
+                // query will run the model accessor that converts the files to an actual
+                // array.
+                ->where('files', 'ilike', "%{$path}%")
+                ->pluck('files')
+                ->flatten();
+
+            // Deny uploading of files that already exist in another request. This could
+            // lead to the following issue:
+            // The file exists in request A and B. Its size was added twice during each
+            // upload to the used quota of the user. But ultimately the file exists only
+            // once in storage. If requests A and B are deleted with all files, the size
+            // of the duplicate file will remain in the used quota because it could be
+            // deleted only once.
+            if ($existingFiles->contains($path)) {
                 $validator->errors()->add('file', 'The file already exists in the user storage.');
             }
         });

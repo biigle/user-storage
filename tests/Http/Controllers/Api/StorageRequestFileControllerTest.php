@@ -137,7 +137,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422);
     }
 
-    public function testStoreExistsInRequestsDisk()
+    public function testStoreExistsInSameRequest()
     {
         config(['user_storage.pending_disk' => 'test']);
         $disk = Storage::fake('test');
@@ -155,16 +155,20 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertNotSame('abc', $disk->get("request-{$id}/test.jpg"));
     }
 
-    public function testStoreExistsInUserDisk()
+    public function testStoreExistsInOtherRequest()
     {
-        config(['user_storage.pending_disk' => 'test']);
-        config(['user_storage.user_disk' => 'test']);
-        $disk = Storage::fake('test');
-
         $request = StorageRequest::factory()->create();
-        $id = $request->id;
 
-        $disk->put("user-{$request->user->id}/test.jpg", 'abc');
+        StorageRequest::factory()->create([
+            'user_id' => $request->user_id,
+            'files' => ['test.jpg'],
+        ]);
+        StorageRequest::factory()->create([
+            'user_id' => $request->user_id,
+            'files' => ['test2.jpg', 'test3.jpg'],
+        ]);
+
+        $id = $request->id;
 
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->be($request->user);
