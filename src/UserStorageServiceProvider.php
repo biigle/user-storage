@@ -43,6 +43,7 @@ class UserStorageServiceProvider extends ServiceProvider
                 'adminIndex',
                 'adminShowUser',
                 'dashboardButtons',
+                'manualTutorial',
                 'navbarMenuItem',
             ],
             'controllerMixins' => [
