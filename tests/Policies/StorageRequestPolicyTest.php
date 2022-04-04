@@ -4,6 +4,7 @@ namespace Biigle\Tests\Modules\UserStorage\Policies;
 
 use ApiTestCase;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Role;
 
 class StorageRequestPolicyTest extends ApiTestCase
 {
@@ -68,6 +69,13 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertFalse($this->expert()->can('update', $this->request));
         $this->assertFalse($this->admin()->can('update', $this->request));
         $this->assertFalse($this->globalAdmin()->can('update', $this->request));
+    }
+
+    public function testUpdateMaintenanceModeOwnGlobalAdmin()
+    {
+        config(['user_storage.maintenance_mode' => true]);
+        $this->request->update(['user_id' => $this->globalAdmin()->id]);
+        $this->assertTrue($this->globalAdmin()->can('update', $this->request));
     }
 
     public function testApprove()

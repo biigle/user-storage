@@ -67,7 +67,7 @@ class StorageRequestPolicy extends CachedPolicy
     public function update(User $user, StorageRequest $request)
     {
         if (config('user_storage.maintenance_mode')) {
-            return false;
+            return $user->can('sudo') && $user->id === $request->user_id;
         }
 
         return $this->access($user, $request);
