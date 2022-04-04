@@ -224,6 +224,7 @@ export default {
                     prefix: prefix,
                     size: file.size,
                     file: file,
+                    directory: directory,
                 };
             }));
         },
@@ -278,6 +279,10 @@ export default {
                 .then(() => {
                     this.currentUploadedSize = 0;
                     this.finishedUploadedSize += file.file.size;
+                    // Set saved to handle these files and directories differently when
+                    // they should be deleted.
+                    file.file.saved = true;
+                    file.directory.saved = true;
                 });
         },
         updateCurrentUploadedSize(event) {
