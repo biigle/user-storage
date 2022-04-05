@@ -53,7 +53,10 @@ class StorageRequestFileController extends Controller
             $sr->files = array_merge($sr->files, [$filePath]);
             $sr->save();
 
-            $success = $file->storeAs($sr->getPendingPath(), $filePath, $disk);
+            $success = $file->storeAs($sr->getPendingPath(), $filePath, [
+                'disk' => $disk,
+                'contentType' => $file->getMimeType(),
+            ]);
 
             if ($success === false) {
                 throw new Exception("Unable to save file");
