@@ -7,7 +7,7 @@
             </h3>
         </div>
         <div class="panel-body">
-            <p class="h1 text-center">{!!size_for_humans(Biigle\User::sum(DB::raw('cast("attrs"->>\'storage_quota_used\' as integer)')))!!}</p>
+            <p class="h1 text-center">{!!size_for_humans(Biigle\User::sum(DB::raw('cast("attrs"->>\'storage_quota_used\' as bigint)')))!!}</p>
         </div>
     </div>
 </div>
