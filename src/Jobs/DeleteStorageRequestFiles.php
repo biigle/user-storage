@@ -6,6 +6,7 @@ use Biigle\Jobs\Job;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use Biigle\User as BaseUser;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -92,12 +93,17 @@ class DeleteStorageRequestFiles extends Job implements ShouldQueue
         }
 
         if ($this->pending && $this->deleteAllFiles) {
-            $disk->deleteDirectory($this->prefix);
+            $success = $disk->deleteDirectory($this->prefix);
         } else {
-            $disk->delete($files);
-            if (count($disk->allFiles($this->prefix)) === 0) {
-                $disk->deleteDirectory($this->prefix);
+            $success = $disk->delete($files);
+            if ($success && count($disk->allFiles($this->prefix)) === 0) {
+                $success = $disk->deleteDirectory($this->prefix);
             }
+        }
+
+        if (!$success) {
+            $fileString = implode(', ', $this->files);
+            throw new Exception("Could not delete files for storage request with prefix '{$this->prefix}'. Files: {$fileString}.");
         }
 
         if (!is_null($this->user)) {

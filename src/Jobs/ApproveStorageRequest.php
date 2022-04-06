@@ -5,6 +5,7 @@ namespace Biigle\Modules\UserStorage\Jobs;
 use Biigle\Jobs\Job;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestApproved;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
@@ -51,9 +52,16 @@ class ApproveStorageRequest extends Job implements ShouldQueue
         $pendingDisk = Storage::disk(config('user_storage.pending_disk'));
         foreach ($this->request->files as $file) {
             $stream = $pendingDisk->readStream($this->request->getPendingPath($file));
-            $storageDisk->writeStream($this->request->getStoragePath($file), $stream);
+            $success = $storageDisk->writeStream($this->request->getStoragePath($file), $stream);
+
+            if (!$success) {
+                throw new Exception("Could not copy file '{$file}' of storage request {$this->request->id}");
+            }
         }
-        $pendingDisk->deleteDirectory($this->request->getPendingPath());
+        $success = $pendingDisk->deleteDirectory($this->request->getPendingPath());
+        if (!$success) {
+            throw new Exception("Could not delete pending files of storage request {$this->request->id}");
+        }
         $this->request->user->notify(new StorageRequestApproved($this->request));
     }
 }
