@@ -2,7 +2,9 @@
 
 namespace Biigle\Tests\Modules\UserStorage;
 
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Illuminate\Support\Facades\Bus;
 use ModelTestCase;
 
 class StorageRequestTest extends ModelTestCase
@@ -23,8 +25,12 @@ class StorageRequestTest extends ModelTestCase
 
     public function testUserDeletedCascade()
     {
+        Bus::fake();
+        // The delete files job is only dispatched if the request has files.
+        $this->model->update(['files' => ['a.jpg']]);
         $this->model->user->delete();
         $this->assertNull($this->model->fresh());
+        Bus::assertDispatched(DeleteStorageRequestFiles::class);
     }
 
     public function testGetSetFiles()

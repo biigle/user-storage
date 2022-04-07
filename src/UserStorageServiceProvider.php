@@ -7,6 +7,7 @@ use Biigle\Modules\UserStorage\Console\Commands\CheckExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\MigrateToStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneExpiredStorageRequests;
 use Biigle\Modules\UserStorage\Console\Commands\PruneStaleStorageRequests;
+use Biigle\Modules\UserStorage\Observers\UserObserver;
 use Biigle\Modules\UserStorage\Support\FilesystemManager;
 use Biigle\Services\Modules;
 use Biigle\User;
@@ -101,6 +102,8 @@ class UserStorageServiceProvider extends ServiceProvider
                 return $useDiskAbility($user, $disk);
             });
         }
+
+        User::observe(new UserObserver);
     }
 
     /**
