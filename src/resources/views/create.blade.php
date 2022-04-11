@@ -64,6 +64,15 @@
                 (<span v-text="uploadedPercent"></span>%). <span v-if="uploadedPercent === 100">Processing...</span>
             </div>
             <div v-else>
+
+                <button
+                    class="btn btn-default"
+                    title="Add a new root directory"
+                    v-on:click="addRootDirectory"
+                    >
+                    <i class="fa fa-folder"></i> Add directory
+                </button>
+
                 <button
                     v-cloak
                     v-if="hasSelectedDirectory"
@@ -76,12 +85,11 @@
                 <button
                     v-else
                     class="btn btn-default"
-                    title="Add a new directory"
-                    v-on:click="addDirectory"
+                    title="Please create or select a directory to add a subdirectory to"
+                    disabled
                     >
-                    <i class="fa fa-folder"></i> Add directory
+                    <i class="fa fa-folder"></i> Add subdirectory
                 </button>
-
                 <button
                     v-cloak
                     v-if="hasSelectedDirectory"

@@ -117,11 +117,13 @@ export default {
                 selected: false,
             };
         },
-        handleNewDirectory(path) {
+        handleNewDirectory(path, root) {
             let newDirectory;
             let directories = this.rootDirectory.directories;
             if (this.hasSelectedDirectory) {
-                directories = this.selectedDirectory.directories;
+                if (!root) {
+                    directories = this.selectedDirectory.directories;
+                }
                 this.selectedDirectory.selected = false;
             }
 
@@ -136,11 +138,14 @@ export default {
             newDirectory.selected = true;
             this.selectedDirectory = newDirectory;
         },
-        addDirectory() {
+        addDirectory(root) {
             let name = prompt('Please enter the new directory name');
             if (name) {
-                this.handleNewDirectory(name);
+                this.handleNewDirectory(name, root === true);
             }
+        },
+        addRootDirectory() {
+            this.addDirectory(true);
         },
         addFiles() {
             this.$refs.fileInput.click();
