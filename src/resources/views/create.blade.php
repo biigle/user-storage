@@ -5,7 +5,7 @@
 @push('scripts')
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
     <script type="text/javascript">
-        biigle.$declare('user-storage.previousRequest', {!! $previousRequest !!});
+        biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
     </script>
