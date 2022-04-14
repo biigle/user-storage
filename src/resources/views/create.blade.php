@@ -8,6 +8,7 @@
         biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
+        biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
     </script>
 @endpush
 
@@ -57,7 +58,7 @@
             v-on:input="handleFilesChosen"
             >
 
-        <div v-if="!finished" class="create-storage-request-buttons">
+        <div v-if="!finished" class="create-storage-request-buttons clearfix">
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
                 Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeForHumans"></span>
@@ -118,7 +119,6 @@
                         v-bind:disabled="exceedsMaxSize"
                         >
                         <i class="fa fa-upload"></i> Submit
-                        <span v-text="totalSizeForHumans"></span>
                     </button>
                     <button
                         v-else
@@ -136,8 +136,15 @@
             You have selected more than the <span v-text="availableQuota"></span> of storage available to you.
         </p>
 
+        <p v-cloak v-if="exceedsMaxFilesize" class="text-danger">
+            Files larger than the maximum allowed size of <span v-text="maxFilesize"></span> have been ignored.
+        </p>
+
         <p v-cloak v-if="finished" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
+        </p>
+        <p v-cloak v-else v-if="hasFiles" class="text-muted">
+            Selected files with a total size of <span v-text="totalSizeForHumans"></span>.
         </p>
 
         <file-browser
@@ -150,6 +157,7 @@
             v-on:remove-directory="removeDirectory"
             v-on:remove-file="removeFile"
             ></file-browser>
+
       </div>
     </div>
 </div>

@@ -54,6 +54,7 @@ class StorageRequestController extends Controller
         $user = User::convert($request->user());
         $usedQuota = $user->storage_quota_used;
         $availableQuota = $user->storage_quota_available;
+        $maxFilesize = config('user_storage.max_file_size');
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
             ->where('user_id', $user->id)
@@ -64,6 +65,7 @@ class StorageRequestController extends Controller
             'previousRequest' => $previousRequest,
             'usedQuota' => $usedQuota,
             'availableQuota' => $availableQuota,
+            'maxFilesize' => $maxFilesize,
         ]);
     }
 

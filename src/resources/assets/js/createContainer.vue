@@ -28,6 +28,8 @@ export default {
             storageRequest: null,
             usedQuotaBytes: 0,
             availableQuotaBytes: 0,
+            maxFilesizeBytes: 0,
+            exceedsMaxFilesize: false,
         };
     },
     computed: {
@@ -75,6 +77,9 @@ export default {
         usedQuotaPercent() {
             return Math.round(this.usedQuotaBytes / this.availableQuotaBytes * 100);
         },
+        maxFilesize() {
+            return sizeForHumans(this.maxFilesizeBytes);
+        },
     },
     methods: {
         handleFilesChosen(event) {
@@ -85,7 +90,14 @@ export default {
                 return;
             }
 
-            let newFiles = event.target.files;
+            let newFiles = Array.from(event.target.files).filter((file) => {
+                return file.size <= this.maxFilesizeBytes;
+            });
+
+            if (newFiles.length < event.target.files.length) {
+                this.exceedsMaxFilesize = true;
+            }
+
             let files = this.selectedDirectory.files;
             let i = 0;
 
@@ -333,6 +345,7 @@ export default {
     created() {
         this.usedQuotaBytes = biigle.$require('user-storage.usedQuota');
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
+        this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {

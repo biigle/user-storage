@@ -7,6 +7,13 @@ return [
     'max_pending_requests' => env('USER_STORAGE_MAX_PENDING_REQUESTS', 3),
 
     /*
+    | Maximum allowed size of a single uploaded file in bytes.
+    |
+    | Default: 5 GB
+    */
+    'max_file_size' => env('USER_STORAGE_MAX_FILE_SIZE', 5E+9),
+
+    /*
     | Allowed maximum combined file size for storage per user (in bytes).
     |
     | Default: 10 GB

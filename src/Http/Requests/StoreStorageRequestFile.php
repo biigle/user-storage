@@ -39,8 +39,11 @@ class StoreStorageRequestFile extends FormRequest
     {
         $user = User::convert($this->storageRequest->user);
 
+        $maxQuota = $user->storage_quota_remaining;
+        $maxFile = config('user_storage.max_file_size');
+
         // The "max" rule expects kilobyte but the quota is in byte.
-        $maxKb = intval(round($user->storage_quota_remaining / 1024));
+        $maxKb = intval(round(min($maxQuota, $maxFile) / 1000));
 
         $mimes = implode(',', array_merge(Image::MIMES, Video::MIMES));
 
