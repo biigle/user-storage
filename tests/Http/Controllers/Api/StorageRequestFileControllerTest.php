@@ -9,6 +9,7 @@ use Biigle\Modules\UserStorage\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Mockery;
+use RuntimeException;
 use Storage;
 
 class StorageRequestFileControllerTest extends ApiTestCase
@@ -256,6 +257,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         config(['user_storage.pending_disk' => 'test']);
         $disk = Storage::fake('test');
+        $disk->buildTemporaryUrlsUsing(function () {
+            // Act as if the storage disk driver does not support temporary URLs.
+            throw new RuntimeException;
+        });
         $disk->put("request-{$id}/a.jpg", 'abc');
         $disk->put("request-{$id}/c.jpg", 'abc');
 
@@ -282,6 +287,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         config(['user_storage.storage_disk' => 'test']);
         $disk = Storage::fake('test');
+        $disk->buildTemporaryUrlsUsing(function () {
+            // Act as if the storage disk driver does not support temporary URLs.
+            throw new RuntimeException;
+        });
         $disk->put("user-{$request->user_id}/a.jpg", 'abc');
 
         $this->beGlobalAdmin();
@@ -311,6 +320,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         config(['user_storage.pending_disk' => 'test']);
         $disk = Storage::fake('test');
+        $disk->buildTemporaryUrlsUsing(function () {
+            // Act as if the storage disk driver does not support temporary URLs.
+            throw new RuntimeException;
+        });
         $disk->put("request-{$id}/my dir/a.jpg", 'abc');
 
         $this->beGlobalAdmin();
