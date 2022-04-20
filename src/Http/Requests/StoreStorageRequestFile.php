@@ -116,6 +116,7 @@ class StoreStorageRequestFile extends FormRequest
     {
         $filename = $this->file('file')->getClientOriginalName();
         if ($prefix = $this->input('prefix')) {
+            $prefix = rtrim($prefix, '/');
             $filename = "{$prefix}/{$filename}";
         }
 

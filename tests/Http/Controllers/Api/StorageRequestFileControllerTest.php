@@ -88,6 +88,26 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
     }
 
+    public function testStorePrefixTrailingSlash()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => 'abc/def/',
+                'file' => $file,
+            ])
+            ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
+        $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
+    }
+
     public function testStoreTooLargeQuota()
     {
         config(['user_storage.pending_disk' => 'test']);
