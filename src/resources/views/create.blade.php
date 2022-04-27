@@ -143,7 +143,7 @@
         <p v-cloak v-if="finished" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
-        <p v-cloak v-else v-if="hasFiles" class="text-muted">
+        <p v-cloak v-if="!finished && hasFiles" class="text-muted">
             Selected files with a total size of <span v-text="totalSizeForHumans"></span>.
         </p>
 
