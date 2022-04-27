@@ -227,7 +227,7 @@ export default {
                 promise = Vue.Promise.resolve();
             }
 
-            promise.then(function () {
+            promise.then(() => {
                 let index = files.indexOf(file);
                 if (index !== -1) {
                     files.splice(index, 1);
