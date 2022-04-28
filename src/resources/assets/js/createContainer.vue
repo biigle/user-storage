@@ -139,9 +139,14 @@ export default {
                 this.selectedDirectory.selected = false;
             }
 
-            path.split('/').forEach((name) => {
+            // Windows-style directory separators are converted before.
+            this.sanitizePath(path).split('/').forEach((name) => {
                 if (!directories.hasOwnProperty(name)) {
-                    newDirectory = Vue.set(directories, name, this.getNewDirectory(name));
+                    newDirectory = Vue.set(
+                        directories,
+                        name,
+                        this.getNewDirectory(name)
+                    );
                 }
 
                 directories = directories[name].directories;
@@ -340,6 +345,26 @@ export default {
                 name: filename,
                 size: 0,
             });
+        },
+        sanitizePath(path) {
+            // Convert Windows directory separators to Unix.
+            path = path.replace(/\\/g, '/');
+
+            // Remove all characters that we don't want to see in a directory name
+            // (except "/"" directory separators that are removed later).
+            // \p{Letter} is a unicode property escape, see:
+            // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Unicode_Property_Escapes
+            path = path.replace(/[^\p{Letter}0-9\- \/\.\(\)\[\]]/ug, '');
+
+            // Trim unwanted characters
+            path = path.trim();
+            path = path.replace(/^[^\p{Letter}0-9]/ug, '');
+            path = path.replace(/[^\p{Letter}0-9\)\]]$/ug, '');
+
+            // Remove double slashes.
+            path = path.replace(/\/+/g, '/');
+
+            return path;
         },
     },
     created() {
