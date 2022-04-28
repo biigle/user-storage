@@ -3,6 +3,7 @@
 namespace Biigle\Modules\UserStorage\Http\Requests;
 
 use Biigle\Image;
+use Biigle\Modules\UserStorage\Rules\FilePrefix;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
 use Biigle\Video;
@@ -49,7 +50,7 @@ class StoreStorageRequestFile extends FormRequest
 
         return [
             'file' => "required|file|max:{$maxKb}|mimetypes:{$mimes}",
-            'prefix' => 'filled',
+            'prefix' => ['filled', new FilePrefix],
         ];
     }
 
@@ -63,6 +64,21 @@ class StoreStorageRequestFile extends FormRequest
         return [
             'file.max' => 'The file size exceeds the available storage quota.',
         ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     *
+     * @return void
+     */
+    protected function prepareForValidation()
+    {
+        if ($this->input('prefix')) {
+            $this->merge([
+                // Remove double slashes.
+                'prefix' => $this->sanitizePrefix($this->input('prefix')),
+            ]);
+        }
     }
 
     /**
@@ -116,10 +132,26 @@ class StoreStorageRequestFile extends FormRequest
     {
         $filename = $this->file('file')->getClientOriginalName();
         if ($prefix = $this->input('prefix')) {
-            $prefix = rtrim($prefix, '/');
             $filename = "{$prefix}/{$filename}";
         }
 
         return $filename;
+    }
+
+    /**
+     * Sanitize the path prefix.
+     *
+     * @param string $prefix
+     *
+     * @return string
+     */
+    public function sanitizePrefix($prefix)
+    {
+        // Remove double slashes.
+        $prefix = preg_replace('/\/+/', '/', $this->input('prefix'));
+        // Remove trailing slash.
+        $prefix = rtrim($prefix, '/');
+
+        return $prefix;
     }
 }

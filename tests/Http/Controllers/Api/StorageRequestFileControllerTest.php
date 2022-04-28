@@ -108,6 +108,88 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
     }
 
+    public function testStorePrefixDoubleSlash()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => 'abc//def',
+                'file' => $file,
+            ])
+            ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
+        $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
+    }
+
+    public function testStorePrefixUnicode()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => 'abc/d北f1',
+                'file' => $file,
+            ])
+            ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/abc/d北f1/test.jpg"));
+        $this->assertSame(['abc/d北f1/test.jpg'], $request->fresh()->files);
+    }
+
+    public function testStorePrefixInvalidCharactersStart()
+    {
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => '"abc/def',
+                'file' => $file,
+            ])
+            ->assertStatus(422);
+    }
+
+    public function testStorePrefixInvalidCharactersEnd()
+    {
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => 'abc/def"',
+                'file' => $file,
+            ])
+            ->assertStatus(422);
+    }
+
+    public function testStorePrefixInvalidInbetween()
+    {
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => 'abc\def',
+                'file' => $file,
+            ])
+            ->assertStatus(422);
+    }
+
     public function testStoreTooLargeQuota()
     {
         config(['user_storage.pending_disk' => 'test']);
