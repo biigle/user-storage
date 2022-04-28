@@ -347,6 +347,8 @@ export default {
             });
         },
         sanitizePath(path) {
+            // Scnchronize this with Rules/FilePrefix.php.
+
             // Convert Windows directory separators to Unix.
             path = path.replace(/\\/g, '/');
 
@@ -354,12 +356,11 @@ export default {
             // (except "/"" directory separators that are removed later).
             // \p{Letter} is a unicode property escape, see:
             // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Unicode_Property_Escapes
-            path = path.replace(/[^\p{Letter}0-9\- \/\.\(\)\[\]]/ug, '');
+            path = path.replace(/[^\p{L}\p{N}\- \/\.\(\)\[\]]/ug, '');
 
             // Trim unwanted characters
-            path = path.trim();
-            path = path.replace(/^[^\p{Letter}0-9]/ug, '');
-            path = path.replace(/[^\p{Letter}0-9\)\]]$/ug, '');
+            path = path.replace(/^[^\p{L}\p{N}]/ug, '');
+            path = path.replace(/[^\p{L}\p{N}\)\]]$/ug, '');
 
             // Remove double slashes.
             path = path.replace(/\/+/g, '/');
