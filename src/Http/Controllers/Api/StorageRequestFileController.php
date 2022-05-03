@@ -14,11 +14,19 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use League\Flysystem\UnableToReadFile;
 use League\Flysystem\UnableToRetrieveMetadata;
+use League\Flysystem\UnableToWriteFile;
 use RuntimeException;
 use Storage;
 
 class StorageRequestFileController extends Controller
 {
+    /**
+     * Times to retry uploading a new file to storage.
+     *
+     * @var int
+     */
+    const RETRY_UPLOAD = 3;
+
     /**
      * Store a file for a new storage request.
      *
@@ -53,13 +61,25 @@ class StorageRequestFileController extends Controller
             $sr->files = array_merge($sr->files, [$filePath]);
             $sr->save();
 
-            $success = $file->storeAs($sr->getPendingPath(), $filePath, [
-                'disk' => $disk,
-                'contentType' => $file->getMimeType(),
-            ]);
+            // Retry the upload a few times, as we observed storage backends that threw
+            // random errors which did not happen again after a retry.
+            for ($i = 0; $i < self::RETRY_UPLOAD; $i++) {
+                try {
+                    $success = $file->storeAs($sr->getPendingPath(), $filePath, [
+                        'disk' => $disk,
+                        'contentType' => $file->getMimeType(),
+                    ]);
+                } catch (UnableToWriteFile $e) {
+                    $success = false;
+                }
+
+                if ($success === true) {
+                    break;
+                }
+            }
 
             if ($success === false) {
-                throw new Exception("Unable to save file");
+                throw new Exception("Unable to save file.");
             }
         });
     }

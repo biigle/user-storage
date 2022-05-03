@@ -6,8 +6,10 @@ use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\User;
+use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use League\Flysystem\UnableToWriteFile;
 use Mockery;
 use RuntimeException;
 use Storage;
@@ -349,6 +351,23 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(403);
+    }
+
+    public function testStoreRetryOnFailure()
+    {
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $file = Mockery::mock($file);
+        $file->shouldReceive('storeAs')
+            ->times(3)
+            ->andThrow(UnableToWriteFile::class);
+
+        $this->be($request->user);
+        $this->expectException(Exception::class);
+        $this->withoutExceptionHandling()
+            ->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file]);
     }
 
     public function testShow() {
