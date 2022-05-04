@@ -361,7 +361,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $file = Mockery::mock($file);
         $file->shouldReceive('storeAs')
-            ->times(3)
+            ->times(2)
             ->andThrow(UnableToWriteFile::class);
 
         $this->be($request->user);

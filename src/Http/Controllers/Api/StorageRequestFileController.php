@@ -25,7 +25,7 @@ class StorageRequestFileController extends Controller
      *
      * @var int
      */
-    const RETRY_UPLOAD = 3;
+    const RETRY_UPLOAD = 2;
 
     /**
      * Store a file for a new storage request.
