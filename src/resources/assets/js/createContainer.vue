@@ -5,6 +5,9 @@ import StorageRequestApi from './api/storageRequests';
 import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
+// Number of times a file upload is retried.
+const RETRY_UPLOAD = 2;
+
 export default {
     mixins: [LoaderMixin],
     components: {
@@ -295,11 +298,14 @@ export default {
 
             return loadNextFile();
         },
-        uploadFile(file) {
+        uploadFile(file, retryCount) {
+            retryCount = retryCount || 1;
             let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
             let data = new FormData();
             data.append('file', file.file);
             data.append('prefix', file.prefix);
+
+            this.currentUploadedSize = 0;
 
             // Don't use the API resource object because it does not allow tracking of
             // the upload progress.
@@ -313,6 +319,14 @@ export default {
                     // they should be deleted.
                     file.file.saved = true;
                     file.directory.saved = true;
+                }, (e) => {
+                    // Try uploading again on server error until number of retries is
+                    // reached.
+                    if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
+                        return this.uploadFile(file, retryCount + 1);
+                    }
+
+                    throw e;
                 });
         },
         updateCurrentUploadedSize(event) {
