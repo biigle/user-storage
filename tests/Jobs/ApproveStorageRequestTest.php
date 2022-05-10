@@ -33,6 +33,27 @@ class ApproveStorageRequestTest extends TestCase
         Notification::assertSentTo([$request->user], StorageRequestApproved::class);
     }
 
+    public function testHandleSameDisk()
+    {
+        Notification::fake();
+        config(['user_storage.storage_disk' => 'storage']);
+        config(['user_storage.pending_disk' => 'storage']);
+        $storageDisk = Storage::fake('storage');
+
+        $request = StorageRequest::factory()->create([
+            'files' => ['a.jpg'],
+        ]);
+
+        $storageDisk->put($request->getPendingPath('a.jpg'), 'abc');
+
+        $job = new ApproveStorageRequest($request);
+        $job->handle();
+
+        $this->assertFalse($storageDisk->exists($request->getPendingPath()));
+        $this->assertTrue($storageDisk->exists($request->getStoragePath('a.jpg')));
+        Notification::assertSentTo([$request->user], StorageRequestApproved::class);
+    }
+
     public function testHandleEmpty()
     {
         Notification::fake();

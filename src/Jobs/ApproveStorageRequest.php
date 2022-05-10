@@ -50,9 +50,22 @@ class ApproveStorageRequest extends Job implements ShouldQueue
 
         $storageDisk = Storage::disk(config('user_storage.storage_disk'));
         $pendingDisk = Storage::disk(config('user_storage.pending_disk'));
+        $useCopy = false;
+
+        if ($storageDisk === $pendingDisk) {
+            $useCopy = true;
+        }
+
         foreach ($this->request->files as $file) {
-            $stream = $pendingDisk->readStream($this->request->getPendingPath($file));
-            $success = $storageDisk->writeStream($this->request->getStoragePath($file), $stream);
+            if ($useCopy) {
+                $success = $storageDisk->copy(
+                    $this->request->getPendingPath($file),
+                    $this->request->getStoragePath($file)
+                );
+            } else {
+                $stream = $pendingDisk->readStream($this->request->getPendingPath($file));
+                $success = $storageDisk->writeStream($this->request->getStoragePath($file), $stream);
+            }
 
             if (!$success) {
                 throw new Exception("Could not copy file '{$file}' of storage request {$this->request->id}");
