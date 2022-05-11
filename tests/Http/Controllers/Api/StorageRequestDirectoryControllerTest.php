@@ -3,20 +3,27 @@
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Queue;
 use Storage;
 
 class StorageRequestDirectoryControllerTest extends ApiTestCase
 {
     public function testDestory()
     {
-        Bus::fake();
-        $request = StorageRequest::factory()->create([
-            'files' => ['a/a.jpg', 'b/b.jpg'],
+        Queue::fake();
+        $request = StorageRequest::factory()->create();
+        $file1 = StorageRequestFile::factory()->create([
+            'path' => 'a/a.jpg',
+            'storage_request_id' => $request->id,
+        ]);
+        $file2 = StorageRequestFile::factory()->create([
+            'path' => 'b/b.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -38,11 +45,11 @@ class StorageRequestDirectoryControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
-        $this->assertSame(['b/b.jpg'], $request->fresh()->files);
+        $this->assertNull($file1->fresh());
+        $this->assertNotNull($file2->fresh());
 
-        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
-            $this->assertCount(1, $job->files);
-            $this->assertSame('a/a.jpg', $job->files[0]);
+        Queue::assertPushed(function (DeleteStorageRequestFile $job) {
+            $this->assertSame('a/a.jpg', $job->path);
 
             return true;
         });
@@ -50,8 +57,10 @@ class StorageRequestDirectoryControllerTest extends ApiTestCase
 
     public function testDestoryNotExists()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a/a.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file1 = StorageRequestFile::factory()->create([
+            'path' => 'a/a.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -64,8 +73,14 @@ class StorageRequestDirectoryControllerTest extends ApiTestCase
 
     public function testDestoryAllFiles()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a/a.jpg', 'b/b.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file1 = StorageRequestFile::factory()->create([
+            'path' => 'a/a.jpg',
+            'storage_request_id' => $request->id,
+        ]);
+        $file2 = StorageRequestFile::factory()->create([
+            'path' => 'b/b.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -78,8 +93,14 @@ class StorageRequestDirectoryControllerTest extends ApiTestCase
 
     public function testDestoryActualDirectory()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['abc/a.jpg', 'def/b.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file1 = StorageRequestFile::factory()->create([
+            'path' => 'abc/a.jpg',
+            'storage_request_id' => $request->id,
+        ]);
+        $file2 = StorageRequestFile::factory()->create([
+            'path' => 'def/b.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 

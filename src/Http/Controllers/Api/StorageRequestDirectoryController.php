@@ -4,7 +4,9 @@ namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 
 use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\DestroyStorageRequestDirectory;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
+use Biigle\Modules\UserStorage\StorageRequestFile;
+use Queue;
 
 class StorageRequestDirectoryController extends Controller
 {
@@ -25,11 +27,11 @@ class StorageRequestDirectoryController extends Controller
      */
     public function destroy(DestroyStorageRequestDirectory $request)
     {
-        DeleteStorageRequestFiles::dispatch($request->storageRequest, $request->files);
+        $request->files->load('request');
+        Queue::bulk($request->files->map(function ($file) {
+            return new DeleteStorageRequestFile($file);
+        }));
 
-        $request->storageRequest->files = array_values(array_diff(
-            $request->storageRequest->files, $request->files
-        ));
-        $request->storageRequest->save();
+        StorageRequestFile::whereIn('id', $request->files->pluck('id'))->delete();
     }
 }
