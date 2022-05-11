@@ -5,8 +5,9 @@ namespace Biigle\Modules\UserStorage\Http\Controllers\Api;
 use Biigle\Http\Controllers\Api\Controller;
 use Biigle\Modules\UserStorage\Http\Requests\DestroyStorageRequestFile;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequestFile;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
 use DB;
 use Exception;
@@ -54,12 +55,16 @@ class StorageRequestFileController extends Controller
             $filePath = $request->getFilePath();
             $disk = config('user_storage.pending_disk');
 
-            $user = User::convert($sr->user);
-            $user->storage_quota_used += $file->getSize();
-            $user->save();
-
-            $sr->files = array_merge($sr->files, [$filePath]);
-            $sr->save();
+            $fileModel = $sr->files()->where('path', $filePath)->first();
+            if ($fileModel) {
+                $fileModel->update(['size' => $file->getSize()]);
+            } else {
+                $sr->files()->create([
+                    'path' => $filePath,
+                    'size' => $file->getSize(),
+                    'mime_type_valid' => true,
+                ]);
+            }
 
             // Retry the upload a few times, as we observed storage backends that threw
             // random errors which did not happen again after a retry.
@@ -87,14 +92,12 @@ class StorageRequestFileController extends Controller
     /**
      * Show a file of a storage request.
      *
-     * @api {get} storage-requests/:id/files/:path Show a file
+     * @api {get} storage-request-files/:id Show a file
      * @apiGroup UserStorage
      * @apiName ShowStorageRequestFile
      * @apiPermission admin
      *
-     * @apiParam {Number} id The storage request ID
-     *
-     * @apiParam (Required parameters) {String} path The file path
+     * @apiParam {Number} id The storage request file ID
      *
      * @param Request $request
      * @param int $id
@@ -107,19 +110,14 @@ class StorageRequestFileController extends Controller
             abort(Response::HTTP_NOT_FOUND);
         }
 
-        $storageRequest = StorageRequest::findOrFail($id);
-        $path = $request->input('path');
+        $file = StorageRequestFile::with('request')->findOrFail($id);
 
-        if (!in_array($path, $storageRequest->files)) {
-            abort(Response::HTTP_NOT_FOUND);
-        }
-
-        if (is_null($storageRequest->expires_at)) {
+        if (is_null($file->request->expires_at)) {
                 $disk = Storage::disk(config('user_storage.pending_disk'));
-                $path = $storageRequest->getPendingPath($path);
+                $path = $file->request->getPendingPath($file->path);
             } else {
                 $disk = Storage::disk(config('user_storage.storage_disk'));
-                $path = $storageRequest->getStoragePath($path);
+                $path = $file->request->getStoragePath($file->path);
             }
 
         try {
@@ -145,26 +143,19 @@ class StorageRequestFileController extends Controller
     /**
      * Delete files of a storage request
      *
-     * @api {delete} storage-requests/:id/files Delete files
+     * @api {delete} storage-request-files/:id Delete files
      * @apiGroup UserStorage
      * @apiName DestroyStorageRequestFile
      * @apiPermission storageRequestOwner
      *
-     * @apiParam {Number} id The storage request ID.
-     *
-     * @apiParam (Required arguments) {File[]} files Array of file paths that should be deleted from this storage request.
+     * @apiParam {Number} id The storage request file ID.
      *
      * @param DestroyStorageRequestFile $request
      * @return \Illuminate\Http\Response
      */
     public function destroy(DestroyStorageRequestFile $request)
     {
-        $files = $request->input('files');
-        DeleteStorageRequestFiles::dispatch($request->storageRequest, $files);
-
-        $request->storageRequest->files = array_values(array_diff(
-            $request->storageRequest->files, $files
-        ));
-        $request->storageRequest->save();
+        DeleteStorageRequestFile::dispatch($request->file);
+        $request->file->delete();
     }
 }

@@ -2,17 +2,17 @@
 
 namespace Biigle\Modules\UserStorage\Http\Requests;
 
-use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Illuminate\Foundation\Http\FormRequest;
 
 class DestroyStorageRequestFile extends FormRequest
 {
     /**
-     * Storage request that should be approved.
+     * Storage request file that should be deleted.
      *
-     * @var StorageRequest
+     * @var StorageRequestFile
      */
-    public $storageRequest;
+    public $file;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -21,9 +21,9 @@ class DestroyStorageRequestFile extends FormRequest
      */
     public function authorize()
     {
-        $this->storageRequest = StorageRequest::findOrFail($this->route('id'));
+        $this->file = StorageRequestFile::with('request')->findOrFail($this->route('id'));
 
-        return $this->user()->can('destroy', $this->storageRequest);
+        return $this->user()->can('destroy', $this->file->request);
     }
 
     /**
@@ -34,7 +34,7 @@ class DestroyStorageRequestFile extends FormRequest
     public function rules()
     {
         return [
-            'files' => 'required|array|min:1',
+            //
         ];
     }
 
@@ -47,13 +47,7 @@ class DestroyStorageRequestFile extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $files = $this->input('files', []);
-            $union = array_unique(array_merge($this->storageRequest->files, $files));
-            $filesCount = count($this->storageRequest->files);
-
-            if (count($union) > $filesCount) {
-                $validator->errors()->add('files', 'Some specified files do not belong to the storage request.');
-            } elseif (count($files) === $filesCount) {
+            if ($this->file->request->files()->count() === 1) {
                 $validator->errors()->add('files', 'You cannot delete all files of the storage request this way. Delete the whole request instead.');
             }
         });

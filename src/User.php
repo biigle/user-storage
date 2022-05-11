@@ -3,6 +3,7 @@
 namespace Biigle\Modules\UserStorage;
 
 use Biigle\User as BaseModel;
+use Cache;
 
 class User extends BaseModel
 {
@@ -49,19 +50,13 @@ class User extends BaseModel
      */
     public function getStorageQuotaUsedAttribute()
     {
-        return $this->getJsonAttr('storage_quota_used', 0);
-    }
+        $key = "user-{$this->id}-storage-quota-used";
 
-    /**
-     * Set the allowed user storage quota.
-     *
-     * @@param int|null $value
-     */
-    public function setStorageQuotaUsedAttribute($value)
-    {
-        $value = $value === 0 ? null : $value;
-
-        $this->setJsonAttr('storage_quota_used', max(0, $value));
+        return Cache::store('array')->remember($key, null, function () {
+            return (int) StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
+                ->where('storage_requests.user_id', $this->id)
+                ->sum('storage_request_files.size');
+        });
     }
 
     /**

@@ -5,6 +5,7 @@ namespace Biigle\Modules\UserStorage\Http\Requests;
 use Biigle\Image;
 use Biigle\Modules\UserStorage\Rules\FilePrefix;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
 use Biigle\Video;
 use Illuminate\Foundation\Http\FormRequest;
@@ -100,24 +101,25 @@ class StoreStorageRequestFile extends FormRequest
             }
 
             $path = $this->getFilePath();
-            $existingFiles = StorageRequest::where('id', '!=', $this->storageRequest->id)
-                ->where('user_id', $this->storageRequest->user_id)
-                // Limit to requests that seem to contain the file. We can't be sure here
-                // because the files are stored as single string in the DB. Executing the
-                // query will run the model accessor that converts the files to an actual
-                // array.
-                ->where('files', 'ilike', "%{$path}%")
-                ->pluck('files')
-                ->flatten();
 
-            // Deny uploading of files that already exist in another request. This could
-            // lead to the following issue:
+            if (strlen($path) > 512) {
+                $validator->errors()->add('file', 'The filename and prefix combined must not exceed 512 characters.');
+            }
+
+            $existsInOtherRequest = StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
+                ->where('storage_requests.id', '!=', $this->storageRequest->id)
+                ->where('storage_requests.user_id', $this->storageRequest->user_id)
+                ->where('storage_request_files.path', $path)
+                ->exists();
+
+            // Deny uploading of files that already exist in another request of the same
+            // user. This could lead to the following issue:
             // The file exists in request A and B. Its size was added twice during each
             // upload to the used quota of the user. But ultimately the file exists only
             // once in storage. If requests A and B are deleted with all files, the size
             // of the duplicate file will remain in the used quota because it could be
             // deleted only once.
-            if ($existingFiles->contains($path)) {
+            if ($existsInOtherRequest) {
                 $validator->errors()->add('file', 'The file already exists in the user storage.');
             }
         });
