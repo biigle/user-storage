@@ -4,6 +4,7 @@ namespace Biigle\Tests\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Illuminate\Support\Facades\Bus;
 use ModelTestCase;
 
@@ -27,18 +28,10 @@ class StorageRequestTest extends ModelTestCase
     {
         Bus::fake();
         // The delete files job is only dispatched if the request has files.
-        $this->model->update(['files' => ['a.jpg']]);
+        $this->model->files()->save(StorageRequestFile::factory()->make());
         $this->model->user->delete();
         $this->assertNull($this->model->fresh());
         Bus::assertDispatched(DeleteStorageRequestFiles::class);
-    }
-
-    public function testGetSetFiles()
-    {
-        $files = ['a.jpg', 'b.jpg'];
-        $this->model->files = $files;
-        $this->model->save();
-        $this->assertSame($files, $this->model->fresh()->files);
     }
 
     public function testGetPendingPath()
@@ -70,7 +63,7 @@ class StorageRequestTest extends ModelTestCase
     public function testGetFilesCount()
     {
         $this->assertSame(0, $this->model->files_count);
-        $this->model->files = ['a.jpg'];
+        $this->model->files()->save(StorageRequestFile::factory()->make());
         $this->assertSame(1, $this->model->files_count);
     }
 }

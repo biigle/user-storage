@@ -31,7 +31,6 @@ class StorageRequest extends Model
         'user_id',
         'expires_at',
         'submitted_at',
-        'files',
     ];
 
     /**
@@ -53,7 +52,7 @@ class StorageRequest extends Model
     protected static function booted()
     {
         static::deleting(function ($request) {
-            if (!empty($request->files)) {
+            if ($request->files()->exists()) {
                 DeleteStorageRequestFiles::dispatch($request);
             }
         });
@@ -70,21 +69,13 @@ class StorageRequest extends Model
     }
 
     /**
-     * Set the files attribute.
+     * The files belonging to this storage request.
      *
-     * @param array $value
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function setFilesAttribute(array $value)
+    public function files()
     {
-        $this->attributes['files'] = implode(',', $value);
-    }
-
-    /**
-     * Get the files attribute.
-     */
-    public function getFilesAttribute()
-    {
-        return array_filter(explode(',', $this->attributes['files'] ?? ''));
+        return $this->hasMany(StorageRequestFile::class);
     }
 
     /**
@@ -108,7 +99,7 @@ class StorageRequest extends Model
      */
     public function getFilesCountAttribute()
     {
-        return count($this->files);
+        return $this->files()->count();
     }
 
     /**
