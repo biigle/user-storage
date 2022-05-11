@@ -2,6 +2,7 @@
 
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
+use Biigle\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -62,6 +63,13 @@ return new class extends Migration
         Schema::table('storage_requests', function (Blueprint $table) {
             $table->dropColumn('files');
         });
+
+        User::whereNotNull('attrs->storage_quota_used')->eachById(function ($user) {
+            $attrs = $user->attrs;
+            unset($attrs['storage_quota_used']);
+            $user->attrs = $attrs;
+            $user->save();
+        });
     }
 
     /**
@@ -82,6 +90,19 @@ return new class extends Migration
             ->each(function ($files, $requestId) {
                 $files = $files->pluck('path')->join(',');
                 StorageRequest::where('id', $requestId)->update(['files' => $files]);
+            });
+
+        $sizes = DB::table('storage_request_files')
+            ->join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
+            ->select('storage_requests.user_id', DB::raw('sum(storage_request_files.size) as size'))
+            ->groupBy('user_id')
+            ->get()
+            ->each(function ($item) {
+                $user = User::find($item->user_id);
+                $attrs = $user->attrs;
+                $attrs['storage_quota_used'] = intval($item->size);
+                $user->attrs = $attrs;
+                $user->save();
             });
 
         Schema::drop('storage_request_files');
