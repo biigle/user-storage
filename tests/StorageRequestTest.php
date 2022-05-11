@@ -2,7 +2,7 @@
 
 namespace Biigle\Tests\Modules\UserStorage;
 
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
 use Illuminate\Support\Facades\Bus;
@@ -31,7 +31,7 @@ class StorageRequestTest extends ModelTestCase
         $this->model->files()->save(StorageRequestFile::factory()->make());
         $this->model->user->delete();
         $this->assertNull($this->model->fresh());
-        Bus::assertDispatched(DeleteStorageRequestFiles::class);
+        Bus::assertDispatched(DeleteStorageRequestDirectory::class);
     }
 
     public function testGetPendingPath()
