@@ -29,7 +29,6 @@ return new class extends Migration
             $table->unsignedBigInteger('size');
             $table->json('received_chunks')->nullable();
             $table->unsignedInteger('total_chunks')->nullable();
-            $table->boolean('mime_type_valid')->default(false);
 
             $table->index('storage_request_id');
             $table->unique(['path', 'storage_request_id']);
@@ -53,7 +52,6 @@ return new class extends Migration
                 return [
                     'path' => $path,
                     'size' => $disk->fileSize("{$prefix}/{$path}"),
-                    'mime_type_valid' => true,
                 ];
             }, $files);
 

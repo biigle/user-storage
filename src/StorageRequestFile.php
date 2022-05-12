@@ -26,7 +26,6 @@ class StorageRequestFile extends Model
         'size' => 'int',
         'received_chunks' => 'array',
         'total_chunks' => 'int',
-        'mime_type_valid' => 'bool',
     ];
 
     /**
@@ -39,7 +38,6 @@ class StorageRequestFile extends Model
         'size',
         'received_chunks',
         'total_chunks',
-        'mime_type_valid',
     ];
 
     /**

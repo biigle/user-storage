@@ -28,7 +28,6 @@ class StorageRequestFileFactory extends Factory
             'size' => 123,
             'received_chunks' => null,
             'total_chunks' => null,
-            'mime_type_valid' => true,
         ];
     }
 }

@@ -62,7 +62,6 @@ class StorageRequestFileController extends Controller
                 $sr->files()->create([
                     'path' => $filePath,
                     'size' => $file->getSize(),
-                    'mime_type_valid' => true,
                 ]);
             }
 

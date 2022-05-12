@@ -17,7 +17,6 @@ class StorageRequestFileTest extends ModelTestCase
         $this->assertNotNull($this->model->path);
         $this->assertNotNull($this->model->request);
         $this->assertNotNull($this->model->size);
-        $this->assertNotNull($this->model->mime_type_valid);
     }
 
     public function testRequestDeletedCascade()

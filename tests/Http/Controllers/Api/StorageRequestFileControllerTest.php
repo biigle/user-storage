@@ -48,7 +48,6 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertNotNull($file);
         $this->assertSame('test.jpg', $file->path);
         $this->assertSame(44074, $file->size);
-        $this->assertTrue($file->mime_type_valid);
         $this->assertNull($file->total_chunks);
         $this->assertNull($file->received_chunks);
     }
