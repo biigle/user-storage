@@ -48,7 +48,7 @@ class ApproveStorageRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if (empty($this->storageRequest->files)) {
+            if (!$this->storageRequest->files()->exists()) {
                 $validator->errors()->add('id', "The storage request has no files.");
             }
         });

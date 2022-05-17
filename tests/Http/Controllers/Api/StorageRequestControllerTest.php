@@ -4,7 +4,7 @@ namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
 use Biigle\Modules\UserStorage\Jobs\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
@@ -20,9 +20,11 @@ class StorageRequestControllerTest extends ApiTestCase
 {
     public function testShow()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
         ]);
+        $request->load('files');
         $id = $request->id;
 
         $this->doTestApiRoute('GET', "/api/v1/storage-requests/{$id}");
@@ -51,7 +53,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->assertNotNull($request);
         $this->assertSame($this->guest()->id, $request->user_id);
         $this->assertNull($request->expires_at);
-        $this->assertSame([], $request->files);
+        $this->assertFalse($request->files()->exists());
     }
 
     public function testStoreLimitOpenRequests()
@@ -78,8 +80,9 @@ class StorageRequestControllerTest extends ApiTestCase
     public function testUpdate()
     {
         Notification::fake();
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -200,8 +203,8 @@ class StorageRequestControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
-        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "a.jpg" && $job->user->id === $request->user_id;
+        Bus::assertDispatched(function (DeleteStorageRequestDirectory $job) use ($request) {
+            return $job->path === $request->getPendingPath();
         });
         $this->assertNull($request->fresh());
         Notification::assertSentTo([$request->user], StorageRequestRejected::class);

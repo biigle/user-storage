@@ -51,14 +51,22 @@ class UserTest extends TestCase
     public function testGetStorageQuotaRemaining()
     {
         config(['user_storage.user_quota' => 500]);
-        $user = User::convert(BaseUser::factory()->make());
+        $user = User::convert(BaseUser::factory()->create());
 
         $this->assertSame(500, $user->storage_quota_remaining);
+        Cache::clear();
 
         $user->storage_quota_available = 300;
         $this->assertSame(300, $user->storage_quota_remaining);
+        Cache::clear();
 
-        $user->storage_quota_used = 100;
+        StorageRequestFile::factory()->create([
+            'size' => 100,
+            'storage_request_id' => StorageRequest::factory()->create([
+                'user_id' => $user->id,
+            ])->id,
+        ]);
+
         $this->assertSame(200, $user->storage_quota_remaining);
     }
 }
