@@ -41,6 +41,16 @@ class StorageRequestFile extends Model
     ];
 
     /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'received_chunks',
+        'total_chunks',
+    ];
+
+    /**
      * The request to which this file belongs.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo

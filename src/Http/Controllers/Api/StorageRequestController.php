@@ -51,7 +51,7 @@ class StorageRequestController extends Controller
      */
     public function show($id)
     {
-        $request = StorageRequest::findOrFail($id);
+        $request = StorageRequest::with('files')->findOrFail($id);
         $this->authorize('access', $request);
 
         return $request;

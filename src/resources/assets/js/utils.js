@@ -17,9 +17,9 @@ export let buildDirectoryTree = function (request) {
     };
 
     if (request.files) {
-        request.files.forEach(function (path) {
-            let breadcrumbs = path.split('/');
-            let file = breadcrumbs.pop();
+        request.files.forEach(function (file) {
+            let breadcrumbs = file.path.split('/');
+            let filename = breadcrumbs.pop();
             let currentDir = root;
             breadcrumbs.forEach(function (name) {
                 if (!currentDir.directories.hasOwnProperty(name)) {
@@ -33,7 +33,10 @@ export let buildDirectoryTree = function (request) {
                 currentDir = currentDir.directories[name];
             });
 
-            currentDir.files.push({name: file});
+            currentDir.files.push({
+                id: file.id,
+                name: filename,
+            });
         });
     }
 

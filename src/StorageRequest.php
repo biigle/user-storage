@@ -42,6 +42,7 @@ class StorageRequest extends Model
         'created_at_for_humans',
         'expires_at_for_humans',
         'files_count',
+        'size',
     ];
 
     /**
@@ -80,6 +81,8 @@ class StorageRequest extends Model
 
     /**
      * Get the created_at_for_humans attribute
+     *
+     * @return string
      */
     public function getCreatedAtForHumansAttribute()
     {
@@ -88,6 +91,8 @@ class StorageRequest extends Model
 
     /**
      * Get the expires_at_for_humans attribute
+     *
+     * @return string
      */
     public function getExpiresAtForHumansAttribute()
     {
@@ -96,10 +101,22 @@ class StorageRequest extends Model
 
     /**
      * Get the files_count attribute
+     *
+     * @return int
      */
     public function getFilesCountAttribute()
     {
         return $this->files()->count();
+    }
+
+    /**
+     * Get the size attribute
+     *
+     * @return int
+     */
+    public function getSizeAttribute()
+    {
+        return (int) $this->files()->sum('size');
     }
 
     /**

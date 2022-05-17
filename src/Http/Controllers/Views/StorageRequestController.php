@@ -26,10 +26,7 @@ class StorageRequestController extends Controller
         $requests = StorageRequest::where('user_id', $user->id)
             ->whereNotNull('submitted_at')
             ->orderBy('submitted_at', 'desc')
-            ->get()
-            ->each(function ($request) {
-                $request->setHidden(['files']);
-            });
+            ->get();
 
         $expireDate = now()->addWeeks(config('user_storage.about_to_expire_weeks'));
 
@@ -78,7 +75,9 @@ class StorageRequestController extends Controller
      */
     public function review($id)
     {
-        $request = StorageRequest::whereNull('expires_at')->findOrFail($id);
+        $request = StorageRequest::whereNull('expires_at')
+            ->with('files')
+            ->findOrFail($id);
         $this->authorize('approve', $request);
 
         return view('user-storage::review', [

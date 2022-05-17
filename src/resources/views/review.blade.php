@@ -20,6 +20,9 @@
             Review storage request<br>
             <small>by <a href="{{route('admin-users-show', $request->user->id)}}">{{$request->user->firstname}} {{$request->user->lastname}} ({{$request->user->affiliation ?: 'no affiliation'}})</a></small>
         </h2>
+        <p class="text-muted">
+            {{$request->files_count}} files · {{size_for_humans($request->size)}}
+        </p>
         <file-browser
             v-cloak
             v-bind:root-directory="requestRoot"

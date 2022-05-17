@@ -66,4 +66,11 @@ class StorageRequestTest extends ModelTestCase
         $this->model->files()->save(StorageRequestFile::factory()->make());
         $this->assertSame(1, $this->model->files_count);
     }
+
+    public function testGetSize()
+    {
+        $this->assertSame(0, $this->model->size);
+        $this->model->files()->save(StorageRequestFile::factory()->make(['size' => 123]));
+        $this->assertSame(123, $this->model->size);
+    }
 }
