@@ -66,4 +66,24 @@ class DeleteStorageRequestFileTest extends TestCase
 
         $this->assertFalse($disk->exists("request-{$file->storage_request_id}/a.jpg"));
     }
+
+    public function testHandleChunks()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
+            'received_chunks' => [0, 2],
+            'total_chunks' => 3,
+        ]);
+
+        $disk->put("request-{$file->storage_request_id}/a.jpg.0", 'abc');
+        $disk->put("request-{$file->storage_request_id}/a.jpg.2", 'abc');
+
+        $job = new DeleteStorageRequestFile($file);
+        $job->handle();
+
+        $this->assertFalse($disk->exists("request-{$file->storage_request_id}/a.jpg.0"));
+        $this->assertFalse($disk->exists("request-{$file->storage_request_id}/a.jpg.2"));
+    }
 }

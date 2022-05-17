@@ -35,6 +35,13 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
     public $prefix;
 
     /**
+     * Chunks of an uploaded file that was not assembled yet.
+     *
+     * @var array
+     */
+    public $chunks;
+
+    /**
      * Create a new job instance.
      *
      * @param StorageRequestFile $file
@@ -44,7 +51,14 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
         $this->path = $file->path;
         $request = $file->request;
         $this->pending = is_null($request->expires_at);
-        $this->prefix = $this->pending ? $request->getPendingPath() : $request->getStoragePath();
+        if ($this->pending) {
+            $this->prefix = $request->getPendingPath();
+            if ($file->received_chunks) {
+                $this->chunks = $file->received_chunks;
+            }
+        } else {
+            $this->prefix = $request->getStoragePath();
+        }
     }
 
     /**
@@ -58,7 +72,17 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             $disk = Storage::disk(config('user_storage.storage_disk'));
         }
 
-        $success = $disk->delete("{$this->prefix}/{$this->path}");
+        $path = "{$this->prefix}/{$this->path}";
+
+        if ($this->chunks) {
+            $paths = array_map(function ($chunk) use ($path) {
+                return "{$path}.{$chunk}";
+            }, $this->chunks);
+
+            $success = $disk->delete($paths);
+        } else {
+            $success = $disk->delete($path);
+        }
 
         if (!$success) {
             throw new Exception("Could not delete file '{$this->path}' for storage request with prefix '{$this->prefix}'.");
