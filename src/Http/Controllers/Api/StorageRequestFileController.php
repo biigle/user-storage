@@ -52,17 +52,40 @@ class StorageRequestFileController extends Controller
             $sr = $request->storageRequest;
 
             $file = $request->file('file');
-            $filePath = $request->getFilePath();
             $disk = config('user_storage.pending_disk');
-
+            $filePath = $request->getFilePath();
             $fileModel = $sr->files()->where('path', $filePath)->first();
-            if ($fileModel) {
-                $fileModel->update(['size' => $file->getSize()]);
+
+            if ($request->has('chunk_index')) {
+                $chunkIndex = $request->input('chunk_index');
+
+                if ($fileModel) {
+                    $fileModel->update([
+                        'size' => $fileModel->size + $file->getSize(),
+                        'received_chunks' => array_merge($fileModel->received_chunks, [$chunkIndex]),
+                    ]);
+                } elseif ($chunkIndex === 0) {
+                    $sr->files()->create([
+                        'path' => $filePath,
+                        'size' => $file->getSize(),
+                        'received_chunks' => [0],
+                        'total_chunks' => $request->input('chunk_total'),
+                    ]);
+                } else {
+                    // throw error
+                }
+
+                $filePath .= '.'.$chunkIndex;
+
             } else {
-                $sr->files()->create([
-                    'path' => $filePath,
-                    'size' => $file->getSize(),
-                ]);
+                if ($fileModel) {
+                    $fileModel->update(['size' => $file->getSize()]);
+                } else {
+                    $sr->files()->create([
+                        'path' => $filePath,
+                        'size' => $file->getSize(),
+                    ]);
+                }
             }
 
             // Retry the upload a few times, as we observed storage backends that threw

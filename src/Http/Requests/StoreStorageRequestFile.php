@@ -3,6 +3,7 @@
 namespace Biigle\Modules\UserStorage\Http\Requests;
 
 use Biigle\Image;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\Rules\FilePrefix;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
@@ -19,6 +20,13 @@ class StoreStorageRequestFile extends FormRequest
      * @var StorageRequest
      */
     public $storageRequest;
+
+    /**
+     * The file that belongs to a chunked upload (if any).
+     *
+     * @var StorageRequestFile
+     */
+    public $storageRequestFile;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -44,8 +52,10 @@ class StoreStorageRequestFile extends FormRequest
         $maxQuota = $user->storage_quota_remaining;
         $maxFile = config('user_storage.max_file_size');
 
+        $maxChunk = config('user_storage.upload_chunk_size');
+
         // The "max" rule expects kilobyte but the quota is in byte.
-        $maxKb = intval(round(min($maxQuota, $maxFile) / 1000));
+        $maxKb = intval(round(min($maxQuota, $maxFile, $maxChunk) / 1000));
 
         $mimes = implode(',', array_merge(Image::MIMES, Video::MIMES));
 
@@ -123,6 +133,20 @@ class StoreStorageRequestFile extends FormRequest
             // deleted only once.
             if ($existsInOtherRequest) {
                 $validator->errors()->add('file', 'The file already exists in the user storage.');
+            }
+
+            // Validate chunked upload.
+            if ($this->has('chunk_index')) {
+                $this->storageRequestFile = $this->storageRequest->files()
+                    ->where('path', $path)
+                    ->first();
+                $failedRules = $validator->failed();
+                if ($this->storageRequestFile && array_key_exists('file', $failedRules) && array_key_exists('Max', $failedRules['file'])) {
+                    // Delete chunks of an uploaded file if size validation of a single
+                    // chunk failed.
+                    DeleteStorageRequestFile::dispatch($this->storageRequestFile);
+                    $this->storageRequestFile->delete();
+                }
             }
         });
     }

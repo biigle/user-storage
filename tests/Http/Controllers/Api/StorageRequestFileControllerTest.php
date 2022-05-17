@@ -110,12 +110,12 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(200);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
-        $file = $request->files()->first();
-        $this->assertNotNull($file);
-        $this->assertSame('test.jpg', $file->path);
-        $this->assertSame(44074, $file->size);
-        $this->assertSame(2, $file->total_chunks);
-        $this->assertSame([0], $file->received_chunks);
+        $f = $request->files()->first();
+        $this->assertNotNull($f);
+        $this->assertSame('test.jpg', $f->path);
+        $this->assertSame(44074, $f->size);
+        $this->assertSame(2, $f->total_chunks);
+        $this->assertSame([0], $f->received_chunks);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
@@ -125,15 +125,33 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(200);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg.1"));
-        $file->refresh();
-        $this->assertSame(88148, $file->size);
-        $this->assertSame(2, $file->total_chunks);
-        $this->assertSame([0, 1], $file->received_chunks);
+        $f->refresh();
+        $this->assertSame(88148, $f->size);
+        $this->assertSame(2, $f->total_chunks);
+        $this->assertSame([0, 1], $f->received_chunks);
     }
 
     public function testStoreDenyTooLargeNotChunked()
     {
-        $this->markTestIncomplete('deny any files that exceed the chunk size');
+        config(['user_storage.upload_chunk_size' => 40000]);
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+            ])
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
     }
 
     public function testStoreTwo()
@@ -297,9 +315,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
     public function testStoreTooLargeQuota()
     {
-        config(['user_storage.pending_disk' => 'test']);
         config(['user_storage.user_quota' => 10000]);
-        $disk = Storage::fake('test');
 
         $request = StorageRequest::factory()->create();
         $id = $request->id;
@@ -312,14 +328,48 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
     public function testStoreChunkTooLargeQuota()
     {
-        $this->markTestIncomplete();
+        Bus::fake();
+        config(['user_storage.pending_disk' => 'test']);
+        config(['user_storage.user_quota' => 50000]);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+
+        Cache::clear();
+        $f = $request->files()->first();
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
+
+        $this->assertModelMissing($f);
+
+        Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
+            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame([0], $job->chunks);
+
+            return true;
+        });
     }
 
     public function testStoreTooLargeFile()
     {
-        config(['user_storage.pending_disk' => 'test']);
         config(['user_storage.max_file_size' => 10000]);
-        $disk = Storage::fake('test');
 
         $request = StorageRequest::factory()->create();
         $id = $request->id;
@@ -356,7 +406,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
     public function testStoreChunkMimeType()
     {
-        $this->markTestIncomplete();
+        $this->markTestIncomplete('check only first chunk for mime type');
     }
 
     public function testStoreChunkChunkTotalMismatch()
@@ -367,6 +417,11 @@ class StorageRequestFileControllerTest extends ApiTestCase
     public function testStoreChunkChunkIndexExists()
     {
         $this->markTestIncomplete('deny file if chunk at index already has been uploaded.');
+    }
+
+    public function testStoreChunkFirstChunkFirst()
+    {
+        $this->markTestIncomplete('require the first chunk of a new file to be uploaded first');
     }
 
     public function testStoreRequestSubmitted()
