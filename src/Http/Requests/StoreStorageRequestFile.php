@@ -52,6 +52,8 @@ class StoreStorageRequestFile extends FormRequest
         return [
             'file' => "required|file|max:{$maxKb}|mimetypes:{$mimes}",
             'prefix' => ['filled', new FilePrefix],
+            'chunk_index' => 'filled|integer|required_with:chunk_total|min:0|lt:chunk_total',
+            'chunk_total' => 'filled|integer|required_with:chunk_index|min:2',
         ];
     }
 
