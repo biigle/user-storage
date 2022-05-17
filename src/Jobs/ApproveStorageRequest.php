@@ -44,7 +44,7 @@ class ApproveStorageRequest extends Job implements ShouldQueue
      */
     public function handle()
     {
-        if (empty($this->request->files)) {
+        if (!$this->request->files()->exists()) {
             return;
         }
 
@@ -56,25 +56,31 @@ class ApproveStorageRequest extends Job implements ShouldQueue
             $useCopy = true;
         }
 
-        foreach ($this->request->files as $file) {
+        $paths = $this->request->files()->pluck('path');
+        foreach ($paths as $path) {
             if ($useCopy) {
                 $success = $storageDisk->copy(
-                    $this->request->getPendingPath($file),
-                    $this->request->getStoragePath($file)
+                    $this->request->getPendingPath($path),
+                    $this->request->getStoragePath($path)
                 );
             } else {
-                $stream = $pendingDisk->readStream($this->request->getPendingPath($file));
-                $success = $storageDisk->writeStream($this->request->getStoragePath($file), $stream);
+                $stream = $pendingDisk->readStream($this->request->getPendingPath($path));
+                $success = $storageDisk->writeStream($this->request->getStoragePath($path), $stream);
             }
 
             if (!$success) {
-                throw new Exception("Could not copy file '{$file}' of storage request {$this->request->id}");
+                throw new Exception("Could not copy file '{$path}' of storage request {$this->request->id}");
             }
         }
+
+        // Notify user before deleting old directory because they can already use the
+        // files. If deleting goes wrong below, it's only of concern for the instance
+        // admins.
+        $this->request->user->notify(new StorageRequestApproved($this->request));
+
         $success = $pendingDisk->deleteDirectory($this->request->getPendingPath());
         if (!$success) {
             throw new Exception("Could not delete pending files of storage request {$this->request->id}");
         }
-        $this->request->user->notify(new StorageRequestApproved($this->request));
     }
 }
