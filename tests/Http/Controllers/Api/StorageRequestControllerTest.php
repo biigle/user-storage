@@ -5,12 +5,14 @@ namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
+use Biigle\Modules\UserStorage\Jobs\AssembleChunkedFile;
 use Biigle\Modules\UserStorage\Jobs\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
@@ -79,6 +81,7 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testUpdate()
     {
+        Bus::fake();
         Notification::fake();
         $request = StorageRequest::factory()->create();
         StorageRequestFile::factory()->create([
@@ -96,6 +99,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->assertNotNull($request->fresh()->submitted_at);
 
         Notification::assertSentTo(new AnonymousNotifiable, StorageRequestSubmitted::class);
+        Bus::assertNothingDispatched();
     }
 
     public function testUpdateEmpty()
@@ -126,6 +130,27 @@ class StorageRequestControllerTest extends ApiTestCase
 
         $this->be($request->user);
         $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
+    }
+
+    public function testUpdateWithChunkedFiles() {
+        Bus::fake();
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
+            'total_chunks' => 2,
+        ]);
+
+        Bus::assertDispatched(AssembleChunkedFile::class, function ($job) use ($file) {
+            $this->assertSame($file->id, $job->file->id);
+
+            return true;
+        });
+
+        Bus::assertBatched(function (PendingBatch $batch) {
+            return $batch->jobs->count() === 1;
+        });
     }
 
     public function testApprove()

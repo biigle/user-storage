@@ -11,7 +11,6 @@ class StorageRequestControllerTest extends TestCase
 {
     public function testCreate()
     {
-        $this->markTestIncomplete('Update view.');
         $this->get('storage-requests/create')->assertRedirect('login');
         $user = UserTest::create([
             'role_id' => Role::guestId(),
@@ -27,11 +26,12 @@ class StorageRequestControllerTest extends TestCase
         $this->actingAs($user)
             ->get('storage-requests/create')
             ->assertViewIs('user-storage::create');
+
+        $this->markTestIncomplete('Implement chunked upload.');
     }
 
     public function testCreateMaintenanceMode()
     {
-        $this->markTestIncomplete('Update view.');
         config(['user_storage.maintenance_mode' => true]);
         $user = UserTest::create([
             'role_id' => Role::editorId(),
@@ -43,7 +43,6 @@ class StorageRequestControllerTest extends TestCase
 
     public function testIndex()
     {
-        $this->markTestIncomplete('Update view.');
         $this->get('storage-requests')->assertRedirect('login');
         $user = UserTest::create([
             'role_id' => Role::guestId(),
@@ -56,7 +55,6 @@ class StorageRequestControllerTest extends TestCase
 
     public function testReview()
     {
-        $this->markTestIncomplete('Update view.');
         $request = StorageRequest::factory()->create();
         $id = $request->id;
 
