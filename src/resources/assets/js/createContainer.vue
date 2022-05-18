@@ -29,7 +29,6 @@ export default {
             },
             selectedDirectory: null,
             storageRequest: null,
-            usedQuotaBytes: 0,
             availableQuotaBytes: 0,
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
@@ -71,14 +70,8 @@ export default {
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
         },
-        usedQuota() {
-            return sizeForHumans(this.usedQuotaBytes);
-        },
         availableQuota() {
             return sizeForHumans(this.availableQuotaBytes);
-        },
-        usedQuotaPercent() {
-            return Math.round(this.usedQuotaBytes / this.availableQuotaBytes * 100);
         },
         maxFilesize() {
             return sizeForHumans(this.maxFilesizeBytes);
@@ -383,7 +376,6 @@ export default {
         },
     },
     created() {
-        this.usedQuotaBytes = biigle.$require('user-storage.usedQuota');
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         // This remains null if no previous request exists.

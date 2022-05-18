@@ -6,7 +6,6 @@
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
     <script type="text/javascript">
         biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
-        biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
     </script>
@@ -21,9 +20,7 @@
    <div class="col-sm-8 col-sm-offset-2 col-lg-6 col-lg-offset-3">
       <h2>
         New storage request<br>
-        <small v-cloak>
-            <span v-text="usedQuota"></span> of <span v-text="availableQuota"></span> used (<span v-text="usedQuotaPercent"></span>%)
-        </small>
+        <small>{{size_for_humans($usedQuota)}} of {{size_for_humans($availableQuota)}} used ({{round($usedQuota / $availableQuota * 100)}}%)</small>
       </h2>
       <p>
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
