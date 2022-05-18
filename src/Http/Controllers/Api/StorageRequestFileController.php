@@ -54,9 +54,9 @@ class StorageRequestFileController extends Controller
             $file = $request->file('file');
             $disk = config('user_storage.pending_disk');
             $filePath = $request->getFilePath();
-            $fileModel = $sr->files()->where('path', $filePath)->first();
+            $fileModel = $request->storageRequestFile;
 
-            if ($request->has('chunk_index')) {
+            if ($request->isChunked()) {
                 $chunkIndex = $request->input('chunk_index');
 
                 if ($fileModel) {
@@ -72,7 +72,8 @@ class StorageRequestFileController extends Controller
                         'total_chunks' => $request->input('chunk_total'),
                     ]);
                 } else {
-                    // throw error
+                    // This should never be allowed by the validation.
+                    throw new Exception('The first chunk must be uploaded first.');
                 }
 
                 $filePath .= '.'.$chunkIndex;

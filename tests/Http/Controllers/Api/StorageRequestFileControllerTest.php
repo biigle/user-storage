@@ -382,7 +382,43 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
     public function testStoreChunkTooLargeFile()
     {
-        $this->markTestIncomplete();
+        Bus::fake();
+        config(['user_storage.pending_disk' => 'test']);
+        config(['user_storage.max_file_size' => 50000]);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+
+        Cache::clear();
+        $f = $request->files()->first();
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
+
+        $this->assertModelMissing($f);
+
+        Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
+            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame([0], $job->chunks);
+
+            return true;
+        });
     }
 
     public function testStoreMimeType()
@@ -406,22 +442,105 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
     public function testStoreChunkMimeType()
     {
-        $this->markTestIncomplete('check only first chunk for mime type');
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'text/plain', null, true);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
     }
 
     public function testStoreChunkChunkTotalMismatch()
     {
-        $this->markTestIncomplete('deny file if the chunk total suddenly changes for a file');
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 3,
+            ])
+            ->assertStatus(422);
     }
 
     public function testStoreChunkChunkIndexExists()
     {
-        $this->markTestIncomplete('deny file if chunk at index already has been uploaded.');
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
     }
 
     public function testStoreChunkFirstChunkFirst()
     {
-        $this->markTestIncomplete('require the first chunk of a new file to be uploaded first');
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
     }
 
     public function testStoreRequestSubmitted()
