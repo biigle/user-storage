@@ -52,8 +52,10 @@ class StorageRequestController extends Controller
         $usedQuota = $user->storage_quota_used;
         $availableQuota = $user->storage_quota_available;
         $maxFilesize = config('user_storage.max_file_size');
+        $chunkSize = config('user_storage.upload_chunk_size');
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
+            ->with('files')
             ->where('user_id', $user->id)
             ->first();
 
@@ -63,6 +65,7 @@ class StorageRequestController extends Controller
             'usedQuota' => $usedQuota,
             'availableQuota' => $availableQuota,
             'maxFilesize' => $maxFilesize,
+            'chunkSize' => $chunkSize,
         ]);
     }
 

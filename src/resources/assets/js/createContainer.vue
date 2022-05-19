@@ -32,6 +32,7 @@ export default {
             availableQuotaBytes: 0,
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
+            chunkSize: 0,
         };
     },
     computed: {
@@ -222,8 +223,7 @@ export default {
             // deleted.
             let promise;
             if (file.saved) {
-                let payload = [`${path}/${file.name}`];
-                promise = FilesApi.delete({id: this.storageRequest.id}, {files: payload});
+                promise = FilesApi.delete({id: file.id});
             } else {
                 promise = Vue.Promise.resolve();
             }
@@ -291,32 +291,84 @@ export default {
 
             return loadNextFile();
         },
-        uploadFile(file, retryCount) {
-            retryCount = retryCount || 1;
-            let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
-            let data = new FormData();
-            data.append('file', file.file);
-            data.append('prefix', file.prefix);
-
+        uploadFile(file) {
             this.currentUploadedSize = 0;
+
+            if (file.file.size > this.chunkSize) {
+                let start = 0;
+                let chunkIndex = 0;
+                let totalChunks = Math.ceil(file.file.size / this.chunkSize);
+                let uploadNextChunk = (loop) => {
+                    if (start === file.file.size) {
+                        return Vue.Promise.resolve();
+                    }
+
+                    let end = Math.min(start + this.chunkSize, file.file.size);
+                    let chunk = new File([file.file.slice(start, end)], file.file.name, {
+                        type: file.file.type,
+                        lastModified: file.file.lastModified,
+                    });
+                    let promise = this.uploadChunk(chunk, file.prefix, chunkIndex, totalChunks);
+                    start = end;
+                    chunkIndex += 1;
+
+                    if (loop) {
+                        return promise.then(uploadNextChunk);
+                    }
+
+                    return promise;
+                }
+
+                return uploadNextChunk()
+                    .then(function (response) {
+                        // Set saved to handle these files and directories differently
+                        // when they should be deleted. This is done once the first chunk
+                        // was uploaded successfully.
+                        file.file.saved = true;
+                        file.directory.saved = true;
+                        file.file.id = response.body.id;
+                    })
+                    .then(() => uploadNextChunk(true));
+            }
+
+            return this.uploadChunk(file.file, file.prefix)
+                .then(function (response) {
+                    // Set saved to handle these files and directories differently when
+                    // they should be deleted.
+                    file.file.saved = true;
+                    file.directory.saved = true;
+                    file.file.id = response.body.id;
+                });
+        },
+        uploadChunk(blob, prefix, chunkIndex, totalChunks, retryCount) {
+            retryCount = retryCount || 1;
+
+            let data = new FormData();
+            data.append('file', blob);
+            data.append('prefix', prefix);
+
+            if (chunkIndex !== undefined && totalChunks !== undefined) {
+                data.append('chunk_index', chunkIndex);
+                data.append('chunk_total', totalChunks);
+            }
+
+            let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
 
             // Don't use the API resource object because it does not allow tracking of
             // the upload progress.
             return this.$http.post(url, data, {
                     uploadProgress: this.updateCurrentUploadedSize
                 })
-                .then(() => {
+                .then((response) => {
                     this.currentUploadedSize = 0;
-                    this.finishedUploadedSize += file.file.size;
-                    // Set saved to handle these files and directories differently when
-                    // they should be deleted.
-                    file.file.saved = true;
-                    file.directory.saved = true;
+                    this.finishedUploadedSize += blob.size;
+
+                    return response;
                 }, (e) => {
                     // Try uploading again on server error until number of retries is
                     // reached.
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
-                        return this.uploadFile(file, retryCount + 1);
+                        return this.uploadChunk(blob, prefix, chunkIndex, totalChunks, retryCount + 1);
                     }
 
                     throw e;
@@ -329,13 +381,14 @@ export default {
         },
         finishSubmission() {
             return StorageRequestApi.update({id: this.storageRequest.id}, {})
-                .then(() => this.finished = true);
+                .then(() => this.finished = true, handleErrorResponse);
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
             this.syncFiles();
         },
-        addExistingFile(path) {
+        addExistingFile(file) {
+            let path = file.path;
             let breadcrumbs = path.split('/');
             let filename = breadcrumbs.pop();
             let currentDirectory = this.rootDirectory;
@@ -351,6 +404,7 @@ export default {
                 saved: true,
                 name: filename,
                 size: 0,
+                id: file.id,
             });
         },
         sanitizePath(path) {
@@ -378,6 +432,7 @@ export default {
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
+        this.chunkSize = biigle.$require('user-storage.chunkSize');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {

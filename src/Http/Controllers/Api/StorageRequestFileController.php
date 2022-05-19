@@ -41,6 +41,8 @@ class StorageRequestFileController extends Controller
      * @apiParam (Required arguments) {File} file The file to add to the storage request.
      *
      * @apiParam (Optional arguments) {string} prefix Optional prefix to prepend to the filename. Use slashes to create directories.
+     * @apiParam (Optional arguments) {int} chunk_index Index of the uploaded chunk in case the file is uploaded in chunks. The first chunk must be uploaded first.
+     * @apiParam (Optional arguments) {int} chunk_total Total number of chunks for this file in case the file is uploaded in chunks.
      *
      * @param StoreStorageRequestFile $request
      *
@@ -48,7 +50,7 @@ class StorageRequestFileController extends Controller
      */
     public function store(StoreStorageRequestFile $request)
     {
-        DB::transaction(function () use ($request) {
+        return DB::transaction(function () use ($request) {
             $sr = $request->storageRequest;
 
             $file = $request->file('file');
@@ -57,7 +59,7 @@ class StorageRequestFileController extends Controller
             $fileModel = $request->storageRequestFile;
 
             if ($request->isChunked()) {
-                $chunkIndex = $request->input('chunk_index');
+                $chunkIndex = (int) $request->input('chunk_index');
 
                 if ($fileModel) {
                     $fileModel->update([
@@ -65,7 +67,7 @@ class StorageRequestFileController extends Controller
                         'received_chunks' => array_merge($fileModel->received_chunks, [$chunkIndex]),
                     ]);
                 } elseif ($chunkIndex === 0) {
-                    $sr->files()->create([
+                    $fileModel = $sr->files()->create([
                         'path' => $filePath,
                         'size' => $file->getSize(),
                         'received_chunks' => [0],
@@ -82,7 +84,7 @@ class StorageRequestFileController extends Controller
                 if ($fileModel) {
                     $fileModel->update(['size' => $file->getSize()]);
                 } else {
-                    $sr->files()->create([
+                    $fileModel = $sr->files()->create([
                         'path' => $filePath,
                         'size' => $file->getSize(),
                     ]);
@@ -109,6 +111,8 @@ class StorageRequestFileController extends Controller
             if ($success === false) {
                 throw new Exception("Unable to save file.");
             }
+
+            return $fileModel;
         });
     }
 

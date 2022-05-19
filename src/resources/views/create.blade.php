@@ -8,6 +8,7 @@
         biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
+        biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
     </script>
 @endpush
 

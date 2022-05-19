@@ -106,16 +106,16 @@ class StoreStorageRequestFile extends FormRequest
 
             $maxFileSize = config('user_storage.max_file_size');
             if ($file->getSize() > $maxFileSize) {
-                $validator->errors()->add('file', 'The file size exceeds the maximum allowed file size of {$maxFileSize} bytes.');
+                $validator->errors()->add('file', "The file size exceeds the maximum allowed file size of {$maxFileSize} bytes.");
                 $tooBig = true;
             }
 
             $chunkSize = config('user_storage.upload_chunk_size');
             if ($file->getSize() > $chunkSize) {
                 if ($this->isChunked()) {
-                    $validator->errors()->add('file', 'The file size of this chunk exceeds the configured chunk size of {$chunkSize} bytes.');
+                    $validator->errors()->add('file', "The file size of this chunk exceeds the configured chunk size of {$chunkSize} bytes.");
                 } else {
-                    $validator->errors()->add('file', 'The file is too large and must be uploaded in chunks of a maximum of {$chunkSize} bytes each.');
+                    $validator->errors()->add('file', "The file is too large and must be uploaded in chunks of a maximum of {$chunkSize} bytes each.");
                 }
                 $tooBig = true;
             }
@@ -129,7 +129,7 @@ class StoreStorageRequestFile extends FormRequest
                 if ($this->storageRequestFile) {
                     $combinedSize = $this->storageRequestFile->size + $file->getSize();
                     if ($combinedSize > $maxFileSize) {
-                        $validator->errors()->add('file', 'The file size exceeds the maximum allowed file size of {$maxFileSize} bytes.');
+                        $validator->errors()->add('file', "The file size exceeds the maximum allowed file size of {$maxFileSize} bytes.");
                         $tooBig = true;
                     }
 
@@ -140,7 +140,7 @@ class StoreStorageRequestFile extends FormRequest
                         $this->storageRequestFile->delete();
                     }
 
-                    if ($this->storageRequestFile->total_chunks !== $this->input('chunk_total')) {
+                    if ($this->storageRequestFile->total_chunks !== (int) $this->input('chunk_total')) {
                         $validator->errors()->add('chunk_total', 'The specified number of chunks does not match the previously specified number for this file.');
                     }
 
