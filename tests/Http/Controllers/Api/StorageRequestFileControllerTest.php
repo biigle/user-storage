@@ -41,7 +41,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg"));
         $file = $request->files()->first();
@@ -107,7 +107,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
         $f = $request->files()->first();
@@ -166,11 +166,11 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $request->refresh();
         $files = $request->files()->orderBy('id')->pluck('path')->toArray();
@@ -191,7 +191,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc/def',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
         $this->assertSame('abc/def/test.jpg', $request->files()->first()->path);
@@ -225,7 +225,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc/def/',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
         $this->assertSame('abc/def/test.jpg', $request->files()->first()->path);
@@ -245,7 +245,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc//def',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
         $this->assertSame('abc/def/test.jpg', $request->files()->first()->path);
@@ -265,7 +265,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc/d北f1',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/d北f1/test.jpg"));
         $this->assertSame('abc/d北f1/test.jpg', $request->files()->first()->path);
@@ -345,7 +345,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         Cache::clear();
         $f = $request->files()->first();
@@ -399,7 +399,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         Cache::clear();
         $f = $request->files()->first();
@@ -457,7 +457,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'text/plain', null, true);
 
@@ -486,7 +486,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
@@ -513,7 +513,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
@@ -617,7 +617,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
         Cache::clear();
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
@@ -643,10 +643,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
     }
 
     public function testStoreMaintenanceMode()
