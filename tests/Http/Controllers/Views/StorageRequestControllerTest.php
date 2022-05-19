@@ -26,8 +26,6 @@ class StorageRequestControllerTest extends TestCase
         $this->actingAs($user)
             ->get('storage-requests/create')
             ->assertViewIs('user-storage::create');
-
-        $this->markTestIncomplete('Implement chunked upload.');
     }
 
     public function testCreateMaintenanceMode()
