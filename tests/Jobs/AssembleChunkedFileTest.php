@@ -43,6 +43,10 @@ class AssembleChunkedFileTest extends TestCase
         $this->assertFalse($disk->exists($request->getPendingPath('a.jpg.1')));
         $this->assertSame('abcdef', $disk->get($request->getPendingPath('a.jpg')));
         $this->assertEmpty(File::allFiles(config('user_storage.tmp_dir')));
+
+        $file->refresh();
+        $this->assertNull($file->received_chunks);
+        $this->assertNull($file->total_chunks);
     }
 
     public function testHandleNotChunked()

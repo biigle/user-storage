@@ -82,6 +82,11 @@ class AssembleChunkedFile extends Job implements ShouldQueue
             if (!$success) {
                 throw new Exception("Could not delete chunks of file '{$path}'.");
             }
+
+            $this->file->update([
+                'received_chunks' => null,
+                'total_chunks' => null,
+            ]);
         } finally {
             unlink($filename);
         }
