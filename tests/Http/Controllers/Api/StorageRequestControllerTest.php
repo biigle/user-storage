@@ -132,25 +132,45 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
     }
 
-    public function testUpdateWithChunkedFiles() {
+    public function testUpdateWithChunkedFiles()
+    {
         Bus::fake();
         $request = StorageRequest::factory()->create();
         $id = $request->id;
 
         $file = StorageRequestFile::factory()->create([
             'storage_request_id' => $request->id,
-            'total_chunks' => 2,
+            'received_chunks' => [0, 2, 1],
+            'total_chunks' => 3,
         ]);
 
-        Bus::assertDispatched(AssembleChunkedFile::class, function ($job) use ($file) {
-            $this->assertSame($file->id, $job->file->id);
+        $this->be($request->user);
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
+
+        Bus::assertBatched(function (PendingBatch $batch) use ($file) {
+            $this->assertCount(1, $batch->jobs);
+            $this->assertInstanceOf(AssembleChunkedFile::class, $batch->jobs[0]);
+            $this->assertSame($file->id, $batch->jobs[0]->file->id);
 
             return true;
         });
+    }
 
-        Bus::assertBatched(function (PendingBatch $batch) {
-            return $batch->jobs->count() === 1;
-        });
+    public function testUpdateWithUnfinishedChunkedFiles()
+    {
+        Bus::fake();
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
+            'received_chunks' => [0],
+            'total_chunks' => 2,
+        ]);
+
+        $this->be($request->user);
+        // Chunked file did not receive all chunks yet.
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(422);
     }
 
     public function testApprove()

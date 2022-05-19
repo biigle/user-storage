@@ -15,6 +15,13 @@ class UpdateStorageRequest extends FormRequest
     public $storageRequest;
 
     /**
+     * Chunked files of a stroage request.
+     *
+     * @var \Illumenate\Support\Collection
+     */
+    public $chunkedFiles;
+
+    /**
      * Determine if the user is authorized to make this request.
      *
      * @return bool
@@ -50,6 +57,21 @@ class UpdateStorageRequest extends FormRequest
         $validator->after(function ($validator) {
             if (!$this->storageRequest->files()->exists()) {
                 $validator->errors()->add('id', "The storage request has no files.");
+            }
+
+            $this->chunkedFiles = $this->storageRequest->files()
+                ->whereNotNull('total_chunks')
+                ->get();
+
+            $unfinished = $this->chunkedFiles->reduce(function ($carry, $file) {
+                $received = $file->received_chunks;
+                sort($received);
+
+                return $carry || $received !== range(0, $file->total_chunks - 1);
+            }, false);
+
+            if ($unfinished) {
+                $validator->errors()->add('id', 'Some file chunks were not uploaded yet.');
             }
         });
     }

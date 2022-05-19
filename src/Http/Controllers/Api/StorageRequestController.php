@@ -9,10 +9,12 @@ use Biigle\Modules\UserStorage\Http\Requests\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequest;
 use Biigle\Modules\UserStorage\Http\Requests\UpdateStorageRequest;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest as ApproveStorageRequestJob;
+use Biigle\Modules\UserStorage\Jobs\AssembleChunkedFile;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Bus;
 use Notification;
 
 class StorageRequestController extends Controller
@@ -74,8 +76,18 @@ class StorageRequestController extends Controller
     {
         $storageRequest = $request->storageRequest;
         $storageRequest->update(['submitted_at' => now()]);
-        Notification::route('mail', config('biigle.admin_email'))
-            ->notify(new StorageRequestSubmitted($storageRequest));
+
+        if ($request->chunkedFiles->isNotEmpty()) {
+            Bus::batch($request->chunkedFiles->map(function ($file) {
+                return new AssembleChunkedFile($file);
+            }))->then(function () use ($storageRequest) {
+                Notification::route('mail', config('biigle.admin_email'))
+                    ->notify(new StorageRequestSubmitted($storageRequest));
+            })->dispatch();
+        } else {
+            Notification::route('mail', config('biigle.admin_email'))
+                ->notify(new StorageRequestSubmitted($storageRequest));
+        }
     }
 
     /**
