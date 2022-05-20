@@ -59,7 +59,7 @@
         <div v-if="!finished" class="create-storage-request-buttons clearfix">
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
-                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeForHumans"></span>
+                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
                 (<span v-text="uploadedPercent"></span>%). <span v-if="uploadedPercent === 100">Processing...</span>
             </div>
             <div v-else>

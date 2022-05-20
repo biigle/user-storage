@@ -50,6 +50,18 @@ export default {
                 return carry + file.size;
             }, 0);
         },
+        totalSizeToUpload() {
+            return this.files.reduce(function (carry, file) {
+                if (file.saved) {
+                    return carry;
+                }
+
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUpload);
+        },
         totalSizeForHumans() {
             return sizeForHumans(this.totalSize);
         },
@@ -57,7 +69,7 @@ export default {
             return this.currentUploadedSize + this.finishedUploadedSize;
         },
         uploadedPercent() {
-            return Math.round(this.uploadedSize / this.totalSize * 100);
+            return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
         },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
@@ -187,10 +199,13 @@ export default {
                 directories = directories[name].directories;
             });
 
+            let promise;
             // Handle case where the directory was previously uploaded and should
             // actually be deleted.
-            let promise;
-            if (directories[directory.name].saved) {
+            let hasSavedFiles = directories[directory.name].files.reduce(function (c, f) {
+                return c || f.saved === true;
+            }, false);
+            if (hasSavedFiles) {
                 promise = DirectoriesApi.delete({id: this.storageRequest.id}, {directories: [path]});
             } else {
                 promise = Vue.Promise.resolve();
@@ -293,24 +308,60 @@ export default {
         },
         uploadFile(file) {
             this.currentUploadedSize = 0;
+            let prefix = file.prefix;
+            file = file.file;
 
-            if (file.file.size > this.chunkSize) {
+            let setFileSaved = function (response) {
+                // Set saved to handle these files and directories differently when
+                // they should be deleted.
+                file.saved = true;
+                file.id = response.body.id;
+            };
+
+            let updateFinishedSize = function (response) {
+                this.currentUploadedSize = 0;
+                this.finishedUploadedSize += file.size;
+
+                return response;
+            };
+
+            if (file.size > this.chunkSize) {
                 let start = 0;
                 let chunkIndex = 0;
-                let totalChunks = Math.ceil(file.file.size / this.chunkSize);
+                let totalChunks = Math.ceil(file.size / this.chunkSize);
                 let uploadNextChunk = (loop) => {
-                    if (start === file.file.size) {
+                    if (start === file.size) {
                         return Vue.Promise.resolve();
                     }
 
-                    let end = Math.min(start + this.chunkSize, file.file.size);
-                    let chunk = new File([file.file.slice(start, end)], file.file.name, {
-                        type: file.file.type,
-                        lastModified: file.file.lastModified,
+                    let end = Math.min(start + this.chunkSize, file.size);
+                    let chunk = new File([file.slice(start, end)], file.name, {
+                        type: file.type,
+                        lastModified: file.lastModified,
                     });
-                    let promise = this.uploadChunk(chunk, file.prefix, chunkIndex, totalChunks);
+                    let promise = this.uploadChunk(chunk, prefix, chunkIndex, totalChunks);
                     start = end;
                     chunkIndex += 1;
+
+                    promise.catch(function (e) {
+                        // Delete the whole file if any chunk upload fails. The file is
+                        // retried again next time. There is no easy way to resume a
+                        // chunked file that partly failed during upload.
+                        if (file.id !== undefined) {
+                            if (this.files.filter(f => f.file.saved).length > 1) {
+                                FilesApi.delete({id: file.id})
+                            } else {
+                                // If this is the only saved file, we must delete the
+                                // whole storage request.
+                                StorageRequestApi.delete({id: this.storageRequest.id});
+                                this.storageRequest = null;
+                            }
+                            delete file.id;
+                            file.saved = false;
+                        }
+
+                        throw e;
+                    });
 
                     if (loop) {
                         return promise.then(uploadNextChunk);
@@ -320,25 +371,14 @@ export default {
                 }
 
                 return uploadNextChunk()
-                    .then(function (response) {
-                        // Set saved to handle these files and directories differently
-                        // when they should be deleted. This is done once the first chunk
-                        // was uploaded successfully.
-                        file.file.saved = true;
-                        file.directory.saved = true;
-                        file.file.id = response.body.id;
-                    })
-                    .then(() => uploadNextChunk(true));
+                    .then(setFileSaved)
+                    .then(() => uploadNextChunk(true))
+                    .then(updateFinishedSize);
             }
 
-            return this.uploadChunk(file.file, file.prefix)
-                .then(function (response) {
-                    // Set saved to handle these files and directories differently when
-                    // they should be deleted.
-                    file.file.saved = true;
-                    file.directory.saved = true;
-                    file.file.id = response.body.id;
-                });
+            return this.uploadChunk(file, prefix)
+                .then(setFileSaved)
+                .then(updateFinishedSize);
         },
         uploadChunk(blob, prefix, chunkIndex, totalChunks, retryCount) {
             retryCount = retryCount || 1;
@@ -359,12 +399,7 @@ export default {
             return this.$http.post(url, data, {
                     uploadProgress: this.updateCurrentUploadedSize
                 })
-                .then((response) => {
-                    this.currentUploadedSize = 0;
-                    this.finishedUploadedSize += blob.size;
-
-                    return response;
-                }, (e) => {
+                .catch((e) => {
                     // Try uploading again on server error until number of retries is
                     // reached.
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
@@ -397,13 +432,12 @@ export default {
                     Vue.set(currentDirectory.directories, dirname, this.getNewDirectory(dirname));
                 }
                 currentDirectory = currentDirectory.directories[dirname];
-                currentDirectory.saved = true;
             });
 
             currentDirectory.files.push({
                 saved: true,
                 name: filename,
-                size: 0,
+                size: file.size,
                 id: file.id,
             });
         },

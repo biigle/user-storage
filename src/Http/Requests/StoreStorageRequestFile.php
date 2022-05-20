@@ -89,6 +89,8 @@ class StoreStorageRequestFile extends FormRequest
         $validator->after(function ($validator) {
             if (!is_null($this->storageRequest->submitted_at)) {
                 $validator->errors()->add('file', 'The storage request was already submitted and no new files can be uploaded.');
+
+                return;
             }
 
             if (!$this->hasFile('file')) {
