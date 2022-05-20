@@ -9,7 +9,7 @@ export let sizeForHumans = function (size) {
     return `${size.toFixed(2)} ${unit}`;
 };
 
-export let buildDirectoryTree = function (request) {
+export let buildDirectoryTree = function (request, url) {
     let root = {
         name: '',
         directories: {},
@@ -33,10 +33,16 @@ export let buildDirectoryTree = function (request) {
                 currentDir = currentDir.directories[name];
             });
 
-            currentDir.files.push({
+            let fileObject = {
                 id: file.id,
                 name: filename,
-            });
+            };
+
+            if (url) {
+                fileObject.url = `${url}/${file.id}`;
+            }
+
+            currentDir.files.push(fileObject);
         });
     }
 

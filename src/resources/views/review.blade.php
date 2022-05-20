@@ -6,6 +6,7 @@
     <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
     <script type="text/javascript">
       biigle.$declare('user-storage.request', {!! $request !!});
+      biigle.$declare('user-storage.fileUrl', '{!! url("api/v1/storage-request-files") !!}');
    </script>
 @endpush
 
@@ -26,7 +27,6 @@
         <file-browser
             v-cloak
             v-bind:root-directory="requestRoot"
-            download-url="{{url("api/v1/storage-requests/{$request->id}/files")}}"
             ></file-browser>
 
         <div v-cloak v-if="finished">

@@ -19,7 +19,9 @@ export default {
     },
     computed: {
         requestRoot() {
-            return buildDirectoryTree(this.request);
+            let url = biigle.$require('user-storage.fileUrl');
+
+            return buildDirectoryTree(this.request, url);
         },
         cannotReject() {
             return this.loading || !this.rejectReason;
