@@ -7,7 +7,6 @@
     <script type="text/javascript">
       biigle.$declare('user-storage.requests', {!! $requests !!});
       biigle.$declare('user-storage.expireDate', '{!! $expireDate->toJson() !!}');
-      biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
       biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
    </script>
 @endpush
@@ -34,13 +33,10 @@
                 </button>
             @endcan
             Your storage requests<br>
-            <small v-cloak>
-                <span v-text="usedQuota"></span> of <span v-text="availableQuota"></span> used (<span v-text="usedQuotaPercent"></span>%)
+            <small>
+                <span v-text="usedQuota">{{size_for_humans($usedQuota)}}</span> of {{size_for_humans($availableQuota)}} used (<span v-text="usedQuotaPercent">{{round($usedQuota / $availableQuota * 100)}}</span>%)
             </small>
         </h2>
-        <p v-cloak v-if="itemDeleted" class="text-info">
-            Refresh the page after a few seconds to view your updated storage quota.
-        </p>
         <request-list
             v-cloak
             v-bind:requests="requests"

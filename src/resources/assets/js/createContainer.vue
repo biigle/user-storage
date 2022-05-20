@@ -19,6 +19,7 @@ export default {
             files: [],
             finished: false,
             finishedUploadedSize: 0,
+            finishedChunksSize: 0,
             loadedUnfinishedRequest: false,
             maxSize: -1,
             rootDirectory: {
@@ -29,10 +30,10 @@ export default {
             },
             selectedDirectory: null,
             storageRequest: null,
-            usedQuotaBytes: 0,
             availableQuotaBytes: 0,
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
+            chunkSize: 0,
         };
     },
     computed: {
@@ -50,14 +51,26 @@ export default {
                 return carry + file.size;
             }, 0);
         },
+        totalSizeToUpload() {
+            return this.files.reduce(function (carry, file) {
+                if (file.saved) {
+                    return carry;
+                }
+
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUpload);
+        },
         totalSizeForHumans() {
             return sizeForHumans(this.totalSize);
         },
         uploadedSize() {
-            return this.currentUploadedSize + this.finishedUploadedSize;
+            return this.currentUploadedSize + this.finishedUploadedSize + this.finishedChunksSize;
         },
         uploadedPercent() {
-            return Math.round(this.uploadedSize / this.totalSize * 100);
+            return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
         },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
@@ -71,14 +84,8 @@ export default {
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
         },
-        usedQuota() {
-            return sizeForHumans(this.usedQuotaBytes);
-        },
         availableQuota() {
             return sizeForHumans(this.availableQuotaBytes);
-        },
-        usedQuotaPercent() {
-            return Math.round(this.usedQuotaBytes / this.availableQuotaBytes * 100);
         },
         maxFilesize() {
             return sizeForHumans(this.maxFilesizeBytes);
@@ -193,10 +200,13 @@ export default {
                 directories = directories[name].directories;
             });
 
+            let promise;
             // Handle case where the directory was previously uploaded and should
             // actually be deleted.
-            let promise;
-            if (directories[directory.name].saved) {
+            let hasSavedFiles = directories[directory.name].files.reduce(function (c, f) {
+                return c || f.saved === true;
+            }, false);
+            if (hasSavedFiles) {
                 promise = DirectoriesApi.delete({id: this.storageRequest.id}, {directories: [path]});
             } else {
                 promise = Vue.Promise.resolve();
@@ -229,8 +239,7 @@ export default {
             // deleted.
             let promise;
             if (file.saved) {
-                let payload = [`${path}/${file.name}`];
-                promise = FilesApi.delete({id: this.storageRequest.id}, {files: payload});
+                promise = FilesApi.delete({id: file.id});
             } else {
                 promise = Vue.Promise.resolve();
             }
@@ -298,32 +307,115 @@ export default {
 
             return loadNextFile();
         },
-        uploadFile(file, retryCount) {
-            retryCount = retryCount || 1;
-            let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
-            let data = new FormData();
-            data.append('file', file.file);
-            data.append('prefix', file.prefix);
-
+        uploadFile(file) {
             this.currentUploadedSize = 0;
+
+            let updateFinishedSize = function (response) {
+                this.currentUploadedSize = 0;
+                this.finishedChunksSize = 0;
+                this.finishedUploadedSize += file.file.size;
+
+                return response;
+            };
+
+            if (file.file.size > this.chunkSize) {
+                return this.uploadChunkedFile(file).then(updateFinishedSize);
+            }
+
+            return this.uploadBlob(file.file, file.prefix)
+                .then(function (response) {
+                    // Set saved to handle these files and directories differently when
+                    // they should be deleted.
+                    file.file.saved = true;
+                    file.file.id = response.body.id;
+                })
+                .then(updateFinishedSize);
+        },
+        uploadChunkedFile(file) {
+            this.finishedChunksSize = 0;
+            let prefix = file.prefix;
+            file = file.file;
+
+            let start = 0;
+            let chunkIndex = 0;
+            let totalChunks = Math.ceil(file.size / this.chunkSize);
+            let uploadNextChunk = (loop) => {
+                if (start === file.size) {
+                    return Vue.Promise.resolve();
+                }
+
+                let end = Math.min(start + this.chunkSize, file.size);
+                let chunk = new File([file.slice(start, end)], file.name, {
+                    type: file.type,
+                    lastModified: file.lastModified,
+                });
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks);
+                start = end;
+                chunkIndex += 1;
+
+                promise.then(function () {
+                    this.finishedChunksSize += chunk.size;
+                },
+                function (e) {
+                    // Delete the whole file if any chunk upload fails. The file is
+                    // retried again next time. There is no easy way to resume a
+                    // chunked file that partly failed during upload.
+                    if (file.id !== undefined) {
+                        if (this.files.filter(f => f.file.saved).length > 1) {
+                            FilesApi.delete({id: file.id})
+                        } else {
+                            // If this is the only saved file, we must delete the
+                            // whole storage request.
+                            StorageRequestApi.delete({id: this.storageRequest.id});
+                            this.storageRequest = null;
+                        }
+                        delete file.id;
+                        file.saved = false;
+                    }
+
+                    throw e;
+                });
+
+                if (loop) {
+                    return promise.then(uploadNextChunk);
+                }
+
+                return promise;
+            }
+
+            return uploadNextChunk()
+                .then(function (response) {
+                    // Set saved to handle these files and directories differently when
+                    // they should be deleted.
+                    file.saved = true;
+                    file.id = response.body.id;
+                })
+                .then(() => uploadNextChunk(true));
+        },
+        uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount) {
+            retryCount = retryCount || 1;
+
+            let data = new FormData();
+            data.append('file', blob);
+            data.append('prefix', prefix);
+
+            if (chunkIndex !== undefined && totalChunks !== undefined) {
+                data.append('chunk_index', chunkIndex);
+                data.append('chunk_total', totalChunks);
+            }
+
+            let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
 
             // Don't use the API resource object because it does not allow tracking of
             // the upload progress.
             return this.$http.post(url, data, {
                     uploadProgress: this.updateCurrentUploadedSize
                 })
-                .then(() => {
-                    this.currentUploadedSize = 0;
-                    this.finishedUploadedSize += file.file.size;
-                    // Set saved to handle these files and directories differently when
-                    // they should be deleted.
-                    file.file.saved = true;
-                    file.directory.saved = true;
-                }, (e) => {
+                .catch((e) => {
                     // Try uploading again on server error until number of retries is
                     // reached.
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
-                        return this.uploadFile(file, retryCount + 1);
+                        return this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1);
                     }
 
                     throw e;
@@ -336,13 +428,14 @@ export default {
         },
         finishSubmission() {
             return StorageRequestApi.update({id: this.storageRequest.id}, {})
-                .then(() => this.finished = true);
+                .then(() => this.finished = true, handleErrorResponse);
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
             this.syncFiles();
         },
-        addExistingFile(path) {
+        addExistingFile(file) {
+            let path = file.path;
             let breadcrumbs = path.split('/');
             let filename = breadcrumbs.pop();
             let currentDirectory = this.rootDirectory;
@@ -351,13 +444,13 @@ export default {
                     Vue.set(currentDirectory.directories, dirname, this.getNewDirectory(dirname));
                 }
                 currentDirectory = currentDirectory.directories[dirname];
-                currentDirectory.saved = true;
             });
 
             currentDirectory.files.push({
                 saved: true,
                 name: filename,
-                size: 0,
+                size: file.size,
+                id: file.id,
             });
         },
         sanitizePath(path) {
@@ -383,9 +476,9 @@ export default {
         },
     },
     created() {
-        this.usedQuotaBytes = biigle.$require('user-storage.usedQuota');
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
+        this.chunkSize = biigle.$require('user-storage.chunkSize');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {

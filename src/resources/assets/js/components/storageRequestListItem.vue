@@ -5,7 +5,7 @@
     :class="classObject"
     @click.prevent="handleSelect"
     >
-    #<span v-text="request.id"></span> created <span v-text="request.created_at_for_humans"></span> with <span v-text="request.files_count"></span> file(s).
+    #<span v-text="request.id"></span> created <span v-text="request.created_at_for_humans"></span> with <span v-text="request.files_count"></span> files (<span v-text="sizeForHumans"></span>).
     <span v-if="pending">
         <span class="label label-default" title="Waiting for review">pending</span>
     </span>
@@ -51,6 +51,8 @@
 </template>
 
 <script>
+import {sizeForHumans} from './../utils';
+
 export default {
     props: {
         request: {
@@ -95,6 +97,9 @@ export default {
             return {
                 active: this.selected,
             };
+        },
+        sizeForHumans() {
+            return sizeForHumans(this.request.size);
         },
     },
     methods: {

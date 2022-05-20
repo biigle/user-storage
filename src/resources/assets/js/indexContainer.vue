@@ -16,21 +16,24 @@ export default {
         return {
             requests: [],
             expireDate: 0,
-            usedQuotaBytes: 0,
             availableQuotaBytes: 0,
             selectedRequest: null,
-            itemDeleted: false,
         };
     },
     computed: {
+        totalRequestSize() {
+            return this.requests.reduce(function (acc, request) {
+                return acc + request.size;
+            }, 0);
+        },
         usedQuota() {
-            return sizeForHumans(this.usedQuotaBytes);
+            return sizeForHumans(this.totalRequestSize);
         },
         availableQuota() {
             return sizeForHumans(this.availableQuotaBytes);
         },
         usedQuotaPercent() {
-            return Math.round(this.usedQuotaBytes / this.availableQuotaBytes * 100);
+            return Math.round(this.totalRequestSize / this.availableQuotaBytes * 100);
         },
         hasSelectedRequest() {
             return this.selectedRequest !== null;
@@ -85,7 +88,6 @@ export default {
             if (this.selectedRequest && this.selectedRequest.id === request.id) {
                 this.selectedRequest = null;
             }
-            this.itemDeleted = true;
         },
         handleExtendRequest(request) {
             if (this.loading) {
@@ -119,13 +121,13 @@ export default {
                 .finally(this.finishLoading);
         },
         directoryRemoved(prefix) {
-            this.selectedRequest.files = this.selectedRequest.files.filter(function (p) {
-                return !p.startsWith(prefix + '/');
+            let request = this.selectedRequest;
+            request.files = request.files.filter(function (file) {
+                return !file.path.startsWith(prefix + '/');
             });
-            this.selectedRequest.files_count = this.selectedRequest.files.length;
-            this.itemDeleted = true;
+            this.refreshRequestFileCountAndSize(request);
         },
-        removeFile(file, path) {
+        removeFile(file) {
             if (this.loading) {
                 return;
             }
@@ -135,25 +137,28 @@ export default {
             }
 
             this.startLoading();
-            // Remove the leading slash from the path.
-            path = `${path.slice(1)}/${file.name}`;
-            FilesApi.delete({id: this.selectedRequest.id}, {files: [path]})
-                .then(() => this.fileRemoved(path), handleErrorResponse)
+            FilesApi.delete({id: file.id})
+                .then(() => this.fileRemoved(file), handleErrorResponse)
                 .finally(this.finishLoading);
         },
-        fileRemoved(path) {
-            let index = this.selectedRequest.files.indexOf(path);
-            if (index !== -1) {
-                this.selectedRequest.files.splice(index, 1);
-                this.selectedRequest.files_count -= 1;
-            }
-            this.itemDeleted = true;
+        fileRemoved(file) {
+            let request = this.selectedRequest;
+            request.files = request.files.filter(function (f) {
+                return f.id !== file.id;
+            });
+
+            this.refreshRequestFileCountAndSize(request);
+        },
+        refreshRequestFileCountAndSize(request) {
+            request.files_count = request.files.length;
+            request.size = request.files.reduce(function (acc, file) {
+                return acc + file.size;
+            }, 0);
         },
     },
     created() {
         this.requests = biigle.$require('user-storage.requests');
         this.expireDate = new Date(biigle.$require('user-storage.expireDate'));
-        this.usedQuotaBytes = biigle.$require('user-storage.usedQuota');
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
     },
 };

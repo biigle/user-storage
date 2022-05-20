@@ -26,10 +26,7 @@ class StorageRequestController extends Controller
         $requests = StorageRequest::where('user_id', $user->id)
             ->whereNotNull('submitted_at')
             ->orderBy('submitted_at', 'desc')
-            ->get()
-            ->each(function ($request) {
-                $request->setHidden(['files']);
-            });
+            ->get();
 
         $expireDate = now()->addWeeks(config('user_storage.about_to_expire_weeks'));
 
@@ -55,8 +52,10 @@ class StorageRequestController extends Controller
         $usedQuota = $user->storage_quota_used;
         $availableQuota = $user->storage_quota_available;
         $maxFilesize = config('user_storage.max_file_size');
+        $chunkSize = config('user_storage.upload_chunk_size');
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
+            ->with('files')
             ->where('user_id', $user->id)
             ->first();
 
@@ -66,6 +65,7 @@ class StorageRequestController extends Controller
             'usedQuota' => $usedQuota,
             'availableQuota' => $availableQuota,
             'maxFilesize' => $maxFilesize,
+            'chunkSize' => $chunkSize,
         ]);
     }
 
@@ -78,7 +78,9 @@ class StorageRequestController extends Controller
      */
     public function review($id)
     {
-        $request = StorageRequest::whereNull('expires_at')->findOrFail($id);
+        $request = StorageRequest::whereNull('expires_at')
+            ->with('files')
+            ->findOrFail($id);
         $this->authorize('approve', $request);
 
         return view('user-storage::review', [

@@ -55,6 +55,20 @@ return [
      */
     'maintenance_mode' => env('USER_STORAGE_MAINTENANCE_MODE', false),
 
+    /*
+    | Split files that are larger than this threshold (in bytes) into smaller chunks.
+    | Each chunk will have the size of this threshold (except maybe the last). Larger
+    | single file uploads are rejected.
+    |
+    | Default: 100 MB.
+    */
+    'upload_chunk_size' => env('USER_STORAGE_UPLOAD_CHUNK_SIZE', 1E+8),
+
+    /*
+    | Directory where the temporary files to assemble chunked files are stored.
+    */
+    'tmp_dir' => env('USER_STORAGE_TMP_DIR', storage_path('user-storage-tmp')),
+
     'notifications' => [
         /*
         | Set the way notifications for storage requests are sent by default.

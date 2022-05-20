@@ -59,9 +59,11 @@ class DestroyStorageRequestDirectory extends FormRequest
                 return strpos($item, '/', -1) === false ? "{$item}/" : $item;
             }, $this->input('directories', []));
 
-            $this->files = array_filter($this->storageRequest->files, function ($file) use ($directories) {
+            $files = $this->storageRequest->files;
+            $allFilesCount = $files->count();
+            $this->files = $files->filter(function ($file) use ($directories) {
                 return array_reduce($directories, function ($carry, $item) use ($file) {
-                    return $carry || strpos($file, $item) === 0;
+                    return $carry || strpos($file->path, $item) === 0;
                 }, false);
             });
 
@@ -69,7 +71,7 @@ class DestroyStorageRequestDirectory extends FormRequest
 
             if ($filesCount === 0) {
                 $validator->errors()->add('directories', 'No files were found for the specified directories.');
-            } elseif ($filesCount === count($this->storageRequest->files)) {
+            } elseif ($filesCount === $allFilesCount) {
                 $validator->errors()->add('directories', 'You cannot delete all files of the storage request this way. Delete the whole request instead.');
             }
         });

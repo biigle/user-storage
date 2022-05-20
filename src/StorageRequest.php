@@ -3,7 +3,7 @@
 namespace Biigle\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Database\Factories\StorageRequestFactory;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
 use Biigle\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,7 +31,6 @@ class StorageRequest extends Model
         'user_id',
         'expires_at',
         'submitted_at',
-        'files',
     ];
 
     /**
@@ -43,6 +42,7 @@ class StorageRequest extends Model
         'created_at_for_humans',
         'expires_at_for_humans',
         'files_count',
+        'size',
     ];
 
     /**
@@ -53,8 +53,8 @@ class StorageRequest extends Model
     protected static function booted()
     {
         static::deleting(function ($request) {
-            if (!empty($request->files)) {
-                DeleteStorageRequestFiles::dispatch($request);
+            if ($request->files()->exists()) {
+                DeleteStorageRequestDirectory::dispatch($request);
             }
         });
     }
@@ -70,25 +70,19 @@ class StorageRequest extends Model
     }
 
     /**
-     * Set the files attribute.
+     * The files belonging to this storage request.
      *
-     * @param array $value
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function setFilesAttribute(array $value)
+    public function files()
     {
-        $this->attributes['files'] = implode(',', $value);
-    }
-
-    /**
-     * Get the files attribute.
-     */
-    public function getFilesAttribute()
-    {
-        return array_filter(explode(',', $this->attributes['files'] ?? ''));
+        return $this->hasMany(StorageRequestFile::class);
     }
 
     /**
      * Get the created_at_for_humans attribute
+     *
+     * @return string
      */
     public function getCreatedAtForHumansAttribute()
     {
@@ -97,6 +91,8 @@ class StorageRequest extends Model
 
     /**
      * Get the expires_at_for_humans attribute
+     *
+     * @return string
      */
     public function getExpiresAtForHumansAttribute()
     {
@@ -105,10 +101,22 @@ class StorageRequest extends Model
 
     /**
      * Get the files_count attribute
+     *
+     * @return int
      */
     public function getFilesCountAttribute()
     {
-        return count($this->files);
+        return $this->files()->count();
+    }
+
+    /**
+     * Get the size attribute
+     *
+     * @return int
+     */
+    public function getSizeAttribute()
+    {
+        return (int) $this->files()->sum('size');
     }
 
     /**

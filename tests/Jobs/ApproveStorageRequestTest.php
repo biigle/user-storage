@@ -5,6 +5,7 @@ namespace Biigle\Tests\Modules\UserStorage\Jobs;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestApproved;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Illuminate\Support\Facades\Notification;
 use Storage;
 use TestCase;
@@ -19,8 +20,10 @@ class ApproveStorageRequestTest extends TestCase
         $storageDisk = Storage::fake('storage');
         $pendingDisk = Storage::fake('pending');
 
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
+            'storage_request_id' => $request->id,
         ]);
 
         $pendingDisk->put($request->getPendingPath('a.jpg'), 'abc');
@@ -40,8 +43,10 @@ class ApproveStorageRequestTest extends TestCase
         config(['user_storage.pending_disk' => 'storage']);
         $storageDisk = Storage::fake('storage');
 
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
+            'storage_request_id' => $request->id,
         ]);
 
         $storageDisk->put($request->getPendingPath('a.jpg'), 'abc');

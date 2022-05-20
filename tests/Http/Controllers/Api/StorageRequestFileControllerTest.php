@@ -3,9 +3,11 @@
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
+use Cache;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
@@ -39,13 +41,117 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg"));
-        $request->refresh();
-        $this->assertSame(['test.jpg'], $request->files);
-        $user = User::convert($request->user);
-        $this->assertSame(44074, $user->storage_quota_used);
+        $file = $request->files()->first();
+        $this->assertNotNull($file);
+        $this->assertSame('test.jpg', $file->path);
+        $this->assertSame(44074, $file->size);
+        $this->assertNull($file->total_chunks);
+        $this->assertNull($file->received_chunks);
+    }
+
+    public function testStoreChunks()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+            ])
+            // Chunk total must be given with index.
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_total' => 2,
+            ])
+            // Chunk index must be given with total.
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => -1,
+                'chunk_total' => 2,
+            ])
+            // Chunk index must not be negative.
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 1,
+            ])
+            // Chunk total must be larger than 1.
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 2,
+                'chunk_total' => 2,
+            ])
+            // Chunk index must be lower than chunk total.
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(201);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
+        $f = $request->files()->first();
+        $this->assertNotNull($f);
+        $this->assertSame('test.jpg', $f->path);
+        $this->assertSame(44074, $f->size);
+        $this->assertSame(2, $f->total_chunks);
+        $this->assertSame([0], $f->received_chunks);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg.1"));
+        $f->refresh();
+        $this->assertSame(88148, $f->size);
+        $this->assertSame(2, $f->total_chunks);
+        $this->assertSame([0, 1], $f->received_chunks);
+    }
+
+    public function testStoreDenyTooLargeNotChunked()
+    {
+        config(['user_storage.upload_chunk_size' => 40000]);
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+            ])
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
     }
 
     public function testStoreTwo()
@@ -60,14 +166,15 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $request->refresh();
-        $this->assertSame(['test.jpg', 'test2.jpg'], $request->files);
+        $files = $request->files()->orderBy('id')->pluck('path')->toArray();
+        $this->assertSame(['test.jpg', 'test2.jpg'], $files);
     }
 
     public function testStorePrefix()
@@ -84,10 +191,24 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc/def',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
-        $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
+        $this->assertSame('abc/def/test.jpg', $request->files()->first()->path);
+    }
+
+    public function testStoreFilenameAndPrefixLength()
+    {
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'prefix' => 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/',
+                'file' => $file,
+            ])
+            ->assertStatus(422);
     }
 
     public function testStorePrefixTrailingSlash()
@@ -104,10 +225,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc/def/',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
-        $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
+        $this->assertSame('abc/def/test.jpg', $request->files()->first()->path);
     }
 
     public function testStorePrefixDoubleSlash()
@@ -124,10 +245,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc//def',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/def/test.jpg"));
-        $this->assertSame(['abc/def/test.jpg'], $request->fresh()->files);
+        $this->assertSame('abc/def/test.jpg', $request->files()->first()->path);
     }
 
     public function testStorePrefixUnicode()
@@ -144,10 +265,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'prefix' => 'abc/d北f1',
                 'file' => $file,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/abc/d北f1/test.jpg"));
-        $this->assertSame(['abc/d北f1/test.jpg'], $request->fresh()->files);
+        $this->assertSame('abc/d北f1/test.jpg', $request->files()->first()->path);
     }
 
     public function testStorePrefixInvalidCharactersStart()
@@ -194,9 +315,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
     public function testStoreTooLargeQuota()
     {
-        config(['user_storage.pending_disk' => 'test']);
         config(['user_storage.user_quota' => 10000]);
-        $disk = Storage::fake('test');
 
         $request = StorageRequest::factory()->create();
         $id = $request->id;
@@ -207,11 +326,50 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422);
     }
 
+    public function testStoreChunkTooLargeQuota()
+    {
+        Bus::fake();
+        config(['user_storage.pending_disk' => 'test']);
+        config(['user_storage.user_quota' => 50000]);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(201);
+
+        Cache::clear();
+        $f = $request->files()->first();
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
+
+        $this->assertModelMissing($f);
+
+        Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
+            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame([0], $job->chunks);
+
+            return true;
+        });
+    }
+
     public function testStoreTooLargeFile()
     {
-        config(['user_storage.pending_disk' => 'test']);
         config(['user_storage.max_file_size' => 10000]);
-        $disk = Storage::fake('test');
 
         $request = StorageRequest::factory()->create();
         $id = $request->id;
@@ -220,6 +378,47 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(422);
+    }
+
+    public function testStoreChunkTooLargeFile()
+    {
+        Bus::fake();
+        config(['user_storage.pending_disk' => 'test']);
+        config(['user_storage.max_file_size' => 50000]);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(201);
+
+        Cache::clear();
+        $f = $request->files()->first();
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
+
+        $this->assertModelMissing($f);
+
+        Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
+            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame([0], $job->chunks);
+
+            return true;
+        });
     }
 
     public function testStoreMimeType()
@@ -238,6 +437,109 @@ class StorageRequestFileControllerTest extends ApiTestCase
         // Attempt to spoof MIME type.
         $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(422);
+    }
+
+    public function testStoreChunkMimeType()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(201);
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'text/plain', null, true);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(200);
+    }
+
+    public function testStoreChunkChunkTotalMismatch()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(201);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 3,
+            ])
+            ->assertStatus(422);
+    }
+
+    public function testStoreChunkChunkIndexExists()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(201);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+            ])
+            ->assertStatus(422);
+    }
+
+    public function testStoreChunkFirstChunkFirst()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 1,
+                'chunk_total' => 2,
+            ])
             ->assertStatus(422);
     }
 
@@ -263,6 +565,11 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $disk = Storage::fake('test');
 
         $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
+            'size' => 123,
+        ]);
         $id = $request->id;
 
         $disk->put("request-{$id}/test.jpg", 'abc');
@@ -273,19 +580,19 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(200);
 
         $this->assertNotSame('abc', $disk->get("request-{$id}/test.jpg"));
+        $this->assertSame(1, $request->files()->count());
+        $this->assertSame(44074, $request->files()->first()->size);
     }
 
     public function testStoreExistsInOtherRequest()
     {
         $request = StorageRequest::factory()->create();
 
-        StorageRequest::factory()->create([
-            'user_id' => $request->user_id,
-            'files' => ['test.jpg'],
-        ]);
-        StorageRequest::factory()->create([
-            'user_id' => $request->user_id,
-            'files' => ['test2.jpg', 'test3.jpg'],
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => StorageRequest::factory()->create([
+                'user_id' => $request->user_id,
+            ])->id,
         ]);
 
         $id = $request->id;
@@ -310,7 +617,8 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
+        Cache::clear();
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(422);
@@ -335,10 +643,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test2.jpg', 'image/jpeg', null, true);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
-            ->assertStatus(200);
+            ->assertStatus(201);
     }
 
     public function testStoreMaintenanceMode()
@@ -371,8 +679,14 @@ class StorageRequestFileControllerTest extends ApiTestCase
     }
 
     public function testShow() {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg', 'b.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
+            'storage_request_id' => $request->id,
+        ]);
+        $file2 = StorageRequestFile::factory()->create([
+            'path' => 'b.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -383,28 +697,28 @@ class StorageRequestFileControllerTest extends ApiTestCase
             throw new RuntimeException;
         });
         $disk->put("request-{$id}/a.jpg", 'abc');
-        $disk->put("request-{$id}/c.jpg", 'abc');
 
-        $this->doTestApiRoute('GET', "/api/v1/storage-requests/{$id}/files?path=a.jpg");
+        $this->doTestApiRoute('GET', "/api/v1/storage-request-files/{$file->id}");
 
         $this->beUser();
-        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(404);
+        $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(404);
 
         $this->be($request->user);
-        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(404);
+        $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(404);
 
         $this->beGlobalAdmin();
-        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(200);
-        $this->get("/api/v1/storage-requests/{$id}/files?path=b.jpg")->assertStatus(404);
-        $this->get("/api/v1/storage-requests/{$id}/files?path=c.jpg")->assertStatus(404);
+        $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(200);
+        $this->get("/api/v1/storage-request-files/{$file2->id}")->assertStatus(404);
     }
 
     public function testShowApproved() {
         $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
             'expires_at' => '2022-03-28 14:03:00',
         ]);
-        $id = $request->id;
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
+            'storage_request_id' => $request->id,
+        ]);
 
         config(['user_storage.storage_disk' => 'test']);
         $disk = Storage::fake('test');
@@ -415,7 +729,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $disk->put("user-{$request->user_id}/a.jpg", 'abc');
 
         $this->beGlobalAdmin();
-        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")->assertStatus(200);
+        $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(200);
     }
 
     public function testShowPublic() {
@@ -423,96 +737,53 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $mock->shouldReceive('temporaryUrl')->once()->andReturn('myurl');
         Storage::shouldReceive('disk')->andReturn($mock);
 
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
         ]);
-        $id = $request->id;
 
         $this->beGlobalAdmin();
-        $this->get("/api/v1/storage-requests/{$id}/files?path=a.jpg")
+        $this->get("/api/v1/storage-request-files/{$file->id}")
             ->assertRedirect('myurl');
-    }
-
-    public function testShowUrlEncode() {
-        $request = StorageRequest::factory()->create([
-            'files' => ['my dir/a.jpg'],
-        ]);
-        $id = $request->id;
-
-        config(['user_storage.pending_disk' => 'test']);
-        $disk = Storage::fake('test');
-        $disk->buildTemporaryUrlsUsing(function () {
-            // Act as if the storage disk driver does not support temporary URLs.
-            throw new RuntimeException;
-        });
-        $disk->put("request-{$id}/my dir/a.jpg", 'abc');
-
-        $this->beGlobalAdmin();
-        $this->get("/api/v1/storage-requests/{$id}/files?path=my%20dir%2Fa.jpg")
-            ->assertStatus(200);
     }
 
     public function testDestory()
     {
         Bus::fake();
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg', 'b.jpg'],
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
         ]);
-        $id = $request->id;
+        $file2 = StorageRequestFile::factory()->create([
+            'path' => 'b.jpg',
+            'storage_request_id' => $file->storage_request_id,
+        ]);
 
-        $this->doTestApiRoute('DELETE', "/api/v1/storage-requests/{$id}/files");
+        $this->doTestApiRoute('DELETE', "/api/v1/storage-request-files/{$file->id}");
 
         $this->beUser();
-        $this->deleteJson("/api/v1/storage-requests/{$id}/files", [
-                'files' => ['a.jpg'],
-            ])
+        $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(403);
 
-        $this->be($request->user);
-        $this->deleteJson("/api/v1/storage-requests/{$id}/files")
-            // Files must be specified.
-            ->assertStatus(422);
-
-        $this->deleteJson("/api/v1/storage-requests/{$id}/files", [
-                'files' => ['a.jpg'],
-            ])
+        $this->be($file->request->user);
+        $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(200);
 
-        $this->assertSame(['b.jpg'], $request->fresh()->files);
+        $this->assertNull($file->fresh());
 
-        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
-            $this->assertCount(1, $job->files);
-            $this->assertSame('a.jpg', $job->files[0]);
+        Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
+            $this->assertSame('a.jpg', $job->path);
 
             return true;
         });
     }
 
-    public function testDestoryNotExists()
+    public function testDestoryLastFile()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'a.jpg',
         ]);
-        $id = $request->id;
 
-        $this->be($request->user);
-        $this->deleteJson("/api/v1/storage-requests/{$id}/files", [
-                'files' => ['b.jpg'],
-            ])
-            ->assertStatus(422);
-    }
-
-    public function testDestoryAllFiles()
-    {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg', 'b.jpg'],
-        ]);
-        $id = $request->id;
-
-        $this->be($request->user);
-        $this->deleteJson("/api/v1/storage-requests/{$id}/files", [
-                'files' => ['a.jpg', 'b.jpg'],
-            ])
+        $this->be($file->request->user);
+        $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(422);
     }
 

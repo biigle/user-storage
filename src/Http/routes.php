@@ -17,9 +17,9 @@ $router->group([
         'parameters' => ['storage-requests' => 'id'],
     ]);
 
-    $router->get('storage-requests/{id}/files', 'StorageRequestFileController@show');
+    $router->get('storage-request-files/{id}', 'StorageRequestFileController@show');
 
-    $router->delete('storage-requests/{id}/files', 'StorageRequestFileController@destroy');
+    $router->delete('storage-request-files/{id}', 'StorageRequestFileController@destroy');
     $router->delete('storage-requests/{id}/directories', 'StorageRequestDirectoryController@destroy');
 
     $router->group([

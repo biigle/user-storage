@@ -4,12 +4,15 @@ namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
 use Biigle\Modules\UserStorage\Jobs\ApproveStorageRequest;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFiles;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
+use Biigle\Modules\UserStorage\Jobs\AssembleChunkedFile;
 use Biigle\Modules\UserStorage\Jobs\RejectStorageRequest;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestRejected;
 use Biigle\Modules\UserStorage\Notifications\StorageRequestSubmitted;
 use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;
@@ -19,9 +22,11 @@ class StorageRequestControllerTest extends ApiTestCase
 {
     public function testShow()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
         ]);
+        $request->load('files');
         $id = $request->id;
 
         $this->doTestApiRoute('GET', "/api/v1/storage-requests/{$id}");
@@ -50,7 +55,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->assertNotNull($request);
         $this->assertSame($this->guest()->id, $request->user_id);
         $this->assertNull($request->expires_at);
-        $this->assertSame([], $request->files);
+        $this->assertFalse($request->files()->exists());
     }
 
     public function testStoreLimitOpenRequests()
@@ -76,9 +81,11 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testUpdate()
     {
+        Bus::fake();
         Notification::fake();
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -92,6 +99,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->assertNotNull($request->fresh()->submitted_at);
 
         Notification::assertSentTo(new AnonymousNotifiable, StorageRequestSubmitted::class);
+        Bus::assertNothingDispatched();
     }
 
     public function testUpdateEmpty()
@@ -106,7 +114,6 @@ class StorageRequestControllerTest extends ApiTestCase
     public function testUpdateAlreadyUpdated()
     {
         $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
             'submitted_at' => '2022-03-11 16:03:00',
         ]);
         $id = $request->id;
@@ -118,21 +125,62 @@ class StorageRequestControllerTest extends ApiTestCase
     public function testUpdateMaintenanceMode()
     {
         config(['user_storage.maintenance_mode' => true]);
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
-        ]);
+        $request = StorageRequest::factory()->create();
         $id = $request->id;
 
         $this->be($request->user);
         $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(403);
     }
 
+    public function testUpdateWithChunkedFiles()
+    {
+        Bus::fake();
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
+            'received_chunks' => [0, 2, 1],
+            'total_chunks' => 3,
+        ]);
+
+        $this->be($request->user);
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
+
+        Bus::assertBatched(function (PendingBatch $batch) use ($file) {
+            $this->assertCount(1, $batch->jobs);
+            $this->assertInstanceOf(AssembleChunkedFile::class, $batch->jobs[0]);
+            $this->assertSame($file->id, $batch->jobs[0]->file->id);
+
+            return true;
+        });
+    }
+
+    public function testUpdateWithUnfinishedChunkedFiles()
+    {
+        Bus::fake();
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = StorageRequestFile::factory()->create([
+            'storage_request_id' => $request->id,
+            'received_chunks' => [0],
+            'total_chunks' => 2,
+        ]);
+
+        $this->be($request->user);
+        // Chunked file did not receive all chunks yet.
+        $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(422);
+    }
+
     public function testApprove()
     {
         Bus::fake();
 
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -162,8 +210,11 @@ class StorageRequestControllerTest extends ApiTestCase
     public function testApproveAlreadyApproved()
     {
         $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
             'expires_at' => '2022-03-11 11:22:00',
+        ]);
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -176,8 +227,10 @@ class StorageRequestControllerTest extends ApiTestCase
         Bus::fake();
         Notification::fake();
 
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -195,8 +248,8 @@ class StorageRequestControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
-        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "a.jpg" && $job->user->id === $request->user_id;
+        Bus::assertDispatched(function (DeleteStorageRequestDirectory $job) use ($request) {
+            return $job->path === $request->getPendingPath();
         });
         $this->assertNull($request->fresh());
         Notification::assertSentTo([$request->user], StorageRequestRejected::class);
@@ -205,8 +258,11 @@ class StorageRequestControllerTest extends ApiTestCase
     public function testRejectAlreadyApproved()
     {
         $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
             'expires_at' => '2022-03-11 11:22:00',
+        ]);
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -218,8 +274,11 @@ class StorageRequestControllerTest extends ApiTestCase
     {
         $expires = now()->addWeeks(3);
         $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
             'expires_at' => $expires,
+        ]);
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -240,8 +299,11 @@ class StorageRequestControllerTest extends ApiTestCase
     public function testExtendNotAboutToExpire()
     {
         $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
             'expires_at' => now()->addWeeks(5),
+        ]);
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -251,8 +313,10 @@ class StorageRequestControllerTest extends ApiTestCase
 
     public function testExtendNotApproved()
     {
-        $request = StorageRequest::factory()->create([
-            'files' => ['a.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -265,8 +329,11 @@ class StorageRequestControllerTest extends ApiTestCase
         Bus::fake();
 
         $request = StorageRequest::factory()->create([
-            'files' => ['dir/test.jpg'],
             'expires_at' => '2022-03-10 15:28:00',
+        ]);
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
@@ -278,9 +345,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
 
-        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id === $request->user_id;
-        });
+        Bus::assertDispatched(DeleteStorageRequestDirectory::class);
         $this->assertNull($request->fresh());
     }
 
@@ -288,17 +353,17 @@ class StorageRequestControllerTest extends ApiTestCase
     {
         Bus::fake();
 
-        $request = StorageRequest::factory()->create([
-            'files' => ['dir/test.jpg'],
+        $request = StorageRequest::factory()->create();
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'test.jpg',
+            'storage_request_id' => $request->id,
         ]);
         $id = $request->id;
 
         $this->be($request->user);
         $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
 
-        Bus::assertDispatched(function (DeleteStorageRequestFiles $job) use ($request) {
-            return count($job->files) === 1 && $job->files[0] === "dir/test.jpg" && $job->user->id === $request->user_id;
-        });
+        Bus::assertDispatched(DeleteStorageRequestDirectory::class);
         $this->assertNull($request->fresh());
     }
 

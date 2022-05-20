@@ -3,17 +3,17 @@
 namespace Biigle\Modules\UserStorage\Database\Factories;
 
 use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\User;
+use Biigle\Modules\UserStorage\StorageRequestFile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class StorageRequestFactory extends Factory
+class StorageRequestFileFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = StorageRequest::class;
+    protected $model = StorageRequestFile::class;
 
     /**
      * Define the model's default state.
@@ -23,9 +23,11 @@ class StorageRequestFactory extends Factory
     public function definition()
     {
         return [
-            'user_id' => User::factory(),
-            'expires_at' => null,
-            'submitted_at' => null,
+            'path' => 'my/file.jpg',
+            'storage_request_id' => StorageRequest::factory(),
+            'size' => 123,
+            'received_chunks' => null,
+            'total_chunks' => null,
         ];
     }
 }
