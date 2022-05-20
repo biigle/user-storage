@@ -19,6 +19,7 @@ export default {
             files: [],
             finished: false,
             finishedUploadedSize: 0,
+            finishedChunksSize: 0,
             loadedUnfinishedRequest: false,
             maxSize: -1,
             rootDirectory: {
@@ -66,7 +67,7 @@ export default {
             return sizeForHumans(this.totalSize);
         },
         uploadedSize() {
-            return this.currentUploadedSize + this.finishedUploadedSize;
+            return this.currentUploadedSize + this.finishedUploadedSize + this.finishedChunksSize;
         },
         uploadedPercent() {
             return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
@@ -308,79 +309,90 @@ export default {
         },
         uploadFile(file) {
             this.currentUploadedSize = 0;
-            let prefix = file.prefix;
-            file = file.file;
-
-            let setFileSaved = function (response) {
-                // Set saved to handle these files and directories differently when
-                // they should be deleted.
-                file.saved = true;
-                file.id = response.body.id;
-            };
 
             let updateFinishedSize = function (response) {
                 this.currentUploadedSize = 0;
-                this.finishedUploadedSize += file.size;
+                this.finishedChunksSize = 0;
+                this.finishedUploadedSize += file.file.size;
 
                 return response;
             };
 
-            if (file.size > this.chunkSize) {
-                let start = 0;
-                let chunkIndex = 0;
-                let totalChunks = Math.ceil(file.size / this.chunkSize);
-                let uploadNextChunk = (loop) => {
-                    if (start === file.size) {
-                        return Vue.Promise.resolve();
-                    }
-
-                    let end = Math.min(start + this.chunkSize, file.size);
-                    let chunk = new File([file.slice(start, end)], file.name, {
-                        type: file.type,
-                        lastModified: file.lastModified,
-                    });
-                    let promise = this.uploadChunk(chunk, prefix, chunkIndex, totalChunks);
-                    start = end;
-                    chunkIndex += 1;
-
-                    promise.catch(function (e) {
-                        // Delete the whole file if any chunk upload fails. The file is
-                        // retried again next time. There is no easy way to resume a
-                        // chunked file that partly failed during upload.
-                        if (file.id !== undefined) {
-                            if (this.files.filter(f => f.file.saved).length > 1) {
-                                FilesApi.delete({id: file.id})
-                            } else {
-                                // If this is the only saved file, we must delete the
-                                // whole storage request.
-                                StorageRequestApi.delete({id: this.storageRequest.id});
-                                this.storageRequest = null;
-                            }
-                            delete file.id;
-                            file.saved = false;
-                        }
-
-                        throw e;
-                    });
-
-                    if (loop) {
-                        return promise.then(uploadNextChunk);
-                    }
-
-                    return promise;
-                }
-
-                return uploadNextChunk()
-                    .then(setFileSaved)
-                    .then(() => uploadNextChunk(true))
-                    .then(updateFinishedSize);
+            if (file.file.size > this.chunkSize) {
+                return this.uploadChunkedFile(file).then(updateFinishedSize);
             }
 
-            return this.uploadChunk(file, prefix)
-                .then(setFileSaved)
+            return this.uploadBlob(file.file, file.prefix)
+                .then(function (response) {
+                    // Set saved to handle these files and directories differently when
+                    // they should be deleted.
+                    file.file.saved = true;
+                    file.file.id = response.body.id;
+                })
                 .then(updateFinishedSize);
         },
-        uploadChunk(blob, prefix, chunkIndex, totalChunks, retryCount) {
+        uploadChunkedFile(file) {
+            this.finishedChunksSize = 0;
+            let prefix = file.prefix;
+            file = file.file;
+
+            let start = 0;
+            let chunkIndex = 0;
+            let totalChunks = Math.ceil(file.size / this.chunkSize);
+            let uploadNextChunk = (loop) => {
+                if (start === file.size) {
+                    return Vue.Promise.resolve();
+                }
+
+                let end = Math.min(start + this.chunkSize, file.size);
+                let chunk = new File([file.slice(start, end)], file.name, {
+                    type: file.type,
+                    lastModified: file.lastModified,
+                });
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks);
+                start = end;
+                chunkIndex += 1;
+
+                promise.then(function () {
+                    this.finishedChunksSize += chunk.size;
+                },
+                function (e) {
+                    // Delete the whole file if any chunk upload fails. The file is
+                    // retried again next time. There is no easy way to resume a
+                    // chunked file that partly failed during upload.
+                    if (file.id !== undefined) {
+                        if (this.files.filter(f => f.file.saved).length > 1) {
+                            FilesApi.delete({id: file.id})
+                        } else {
+                            // If this is the only saved file, we must delete the
+                            // whole storage request.
+                            StorageRequestApi.delete({id: this.storageRequest.id});
+                            this.storageRequest = null;
+                        }
+                        delete file.id;
+                        file.saved = false;
+                    }
+
+                    throw e;
+                });
+
+                if (loop) {
+                    return promise.then(uploadNextChunk);
+                }
+
+                return promise;
+            }
+
+            return uploadNextChunk()
+                .then(function (response) {
+                    // Set saved to handle these files and directories differently when
+                    // they should be deleted.
+                    file.saved = true;
+                    file.id = response.body.id;
+                })
+                .then(() => uploadNextChunk(true));
+        },
+        uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount) {
             retryCount = retryCount || 1;
 
             let data = new FormData();
@@ -403,7 +415,7 @@ export default {
                     // Try uploading again on server error until number of retries is
                     // reached.
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
-                        return this.uploadChunk(blob, prefix, chunkIndex, totalChunks, retryCount + 1);
+                        return this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1);
                     }
 
                     throw e;

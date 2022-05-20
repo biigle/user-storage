@@ -60,7 +60,7 @@
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
                 Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
-                (<span v-text="uploadedPercent"></span>%). <span v-if="uploadedPercent === 100">Processing...</span>
+                (<span v-text="uploadedPercent"></span>%).
             </div>
             <div v-else>
 
