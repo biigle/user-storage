@@ -99,17 +99,17 @@ class StoreStorageRequestFile extends FormRequest
 
             $file = $this->file('file');
             $user = User::convert($this->storageRequest->user);
-            $tooBig = false;
+            $shouldDeletePreviousChunks = false;
 
             if ($file->getSize() > $user->storage_quota_remaining) {
                 $validator->errors()->add('file', 'The file size exceeds the available storage quota.');
-                $tooBig = true;
+                $shouldDeletePreviousChunks = true;
             }
 
             $maxFileSize = config('user_storage.max_file_size');
             if ($file->getSize() > $maxFileSize) {
                 $validator->errors()->add('file', "The file size exceeds the maximum allowed file size of {$maxFileSize} bytes.");
-                $tooBig = true;
+                $shouldDeletePreviousChunks = true;
             }
 
             $chunkSize = config('user_storage.upload_chunk_size');
@@ -119,7 +119,7 @@ class StoreStorageRequestFile extends FormRequest
                 } else {
                     $validator->errors()->add('file', "The file is too large and must be uploaded in chunks of a maximum of {$chunkSize} bytes each.");
                 }
-                $tooBig = true;
+                $shouldDeletePreviousChunks = true;
             }
 
             $path = $this->getFilePath();
@@ -132,12 +132,12 @@ class StoreStorageRequestFile extends FormRequest
                     $combinedSize = $this->storageRequestFile->size + $file->getSize();
                     if ($combinedSize > $maxFileSize) {
                         $validator->errors()->add('file', "The file size exceeds the maximum allowed file size of {$maxFileSize} bytes.");
-                        $tooBig = true;
+                        $shouldDeletePreviousChunks = true;
                     }
 
                     // Delete chunks of an uploaded file if size validation of a single
                     // chunk failed.
-                    if ($tooBig) {
+                    if ($shouldDeletePreviousChunks) {
                         DeleteStorageRequestFile::dispatch($this->storageRequestFile);
                         $this->storageRequestFile->delete();
                     }
