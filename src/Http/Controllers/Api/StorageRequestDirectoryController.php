@@ -30,7 +30,7 @@ class StorageRequestDirectoryController extends Controller
         $request->files->load('request');
         Queue::bulk($request->files->map(function ($file) {
             return new DeleteStorageRequestFile($file);
-        }));
+        })->toArray());
 
         StorageRequestFile::whereIn('id', $request->files->pluck('id'))->delete();
     }
