@@ -463,7 +463,7 @@ export default {
             // (except "/"" directory separators that are removed later).
             // \p{Letter} is a unicode property escape, see:
             // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions/Unicode_Property_Escapes
-            path = path.replace(/[^\p{L}\p{N}\- /.()[\]]/ug, '');
+            path = path.replace(/[^\p{L}\p{N}\-_ /.()[\]]/ug, '');
 
             // Trim unwanted characters
             path = path.replace(/^[^\p{L}\p{N}]/ug, '');

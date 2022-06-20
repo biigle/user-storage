@@ -17,7 +17,7 @@ class FilePrefix implements Rule
     {
         // Scnchronize this with resources/assets/js/createContainer.vue.
 
-        if (preg_match('/[^\p{L}\p{N}\- \/\.\(\)\[\]]/u', $value) === 1) {
+        if (preg_match('/[^\p{L}\p{N}\-_ \/\.\(\)\[\]]/u', $value) === 1) {
             return false;
         }
 
