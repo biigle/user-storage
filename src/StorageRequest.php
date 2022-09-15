@@ -4,9 +4,11 @@ namespace Biigle\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Database\Factories\StorageRequestFactory;
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Bus;
 
 class StorageRequest extends Model
 {
@@ -53,8 +55,12 @@ class StorageRequest extends Model
     protected static function booted()
     {
         static::deleting(function ($request) {
-            if ($request->files()->exists()) {
+            if (is_null($request->expires_at)) {
                 DeleteStorageRequestDirectory::dispatch($request);
+            } else {
+                Bus::batch($request->files->map(function ($file) {
+                    return new DeleteStorageRequestFile($file);
+                }))->dispatch();
             }
         });
     }

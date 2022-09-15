@@ -3,8 +3,10 @@
 namespace Biigle\Tests\Modules\UserStorage;
 
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Support\Facades\Bus;
 use ModelTestCase;
 
@@ -26,12 +28,31 @@ class StorageRequestTest extends ModelTestCase
 
     public function testUserDeletedCascade()
     {
+        $this->model->user->delete();
+        $this->assertNull($this->model->fresh());
+    }
+
+    public function testDeletePendingDirectory()
+    {
         Bus::fake();
         // The delete files job is only dispatched if the request has files.
         $this->model->files()->save(StorageRequestFile::factory()->make());
-        $this->model->user->delete();
-        $this->assertNull($this->model->fresh());
+        $this->model->delete();
         Bus::assertDispatched(DeleteStorageRequestDirectory::class);
+    }
+
+    public function testDeleteApprovedFiles()
+    {
+        $this->model->expires_at = '2022-09-15 08:44:00';
+        Bus::fake();
+        $file = StorageRequestFile::factory()->make();
+        $this->model->files()->save($file);
+        $this->model->delete();
+        Bus::assertBatched(function (PendingBatch $batch) use ($file) {
+            $this->assertEquals(1, $batch->jobs->count());
+            $this->assertEquals($file->path, $batch->jobs->first()->path);
+            return true;
+        });
     }
 
     public function testGetPendingPath()

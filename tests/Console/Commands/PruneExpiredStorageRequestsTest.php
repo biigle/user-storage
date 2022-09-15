@@ -2,9 +2,10 @@
 
 namespace Biigle\Tests\Modules\UserStorage\Console\Commands;
 
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestDirectory;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
+use Illuminate\Bus\PendingBatch;
 use Illuminate\Support\Facades\Bus;
 use TestCase;
 
@@ -38,15 +39,12 @@ class PruneExpiredStorageRequestsTest extends TestCase
 
         $this->artisan('user-storage:prune-expired')->assertExitCode(0);
 
-        Bus::assertDispatched(function (DeleteStorageRequestDirectory $job) use ($request1) {
-            return $job->path === $request1->getStoragePath();
+        Bus::assertBatched(function (PendingBatch $batch) use ($file1) {
+            $this->assertEquals(1, $batch->jobs->count());
+            $this->assertEquals($file1->path, $batch->jobs->first()->path);
+            return true;
         });
-        Bus::assertNotDispatched(function (DeleteStorageRequestDirectory $job) use ($request2) {
-            return $job->path === $request2->getStoragePath();
-        });
-        Bus::assertNotDispatched(function (DeleteStorageRequestDirectory $job) use ($request3)  {
-            return $job->path === $request3->getStoragePath();
-        });
+
         $this->assertModelMissing($request1);
         $this->assertModelMissing($file1);
         $this->assertModelExists($request2);

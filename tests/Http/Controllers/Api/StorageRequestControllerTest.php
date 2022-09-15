@@ -345,7 +345,11 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
 
-        Bus::assertDispatched(DeleteStorageRequestDirectory::class);
+        Bus::assertBatched(function (PendingBatch $batch) use ($file) {
+            $this->assertEquals(1, $batch->jobs->count());
+            $this->assertEquals($file->path, $batch->jobs->first()->path);
+            return true;
+        });
         $this->assertNull($request->fresh());
     }
 
@@ -366,19 +370,4 @@ class StorageRequestControllerTest extends ApiTestCase
         Bus::assertDispatched(DeleteStorageRequestDirectory::class);
         $this->assertNull($request->fresh());
     }
-
-    public function testDestroyEmpty()
-    {
-        Bus::fake();
-
-        $request = StorageRequest::factory()->create();
-        $id = $request->id;
-
-        $this->be($request->user);
-        $this->deleteJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
-
-        Bus::assertNothingDispatched();
-        $this->assertNull($request->fresh());
-    }
-
 }

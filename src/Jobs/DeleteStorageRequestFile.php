@@ -5,13 +5,14 @@ namespace Biigle\Modules\UserStorage\Jobs;
 use Biigle\Jobs\Job;
 use Biigle\Modules\UserStorage\StorageRequestFile;
 use Exception;
+use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Storage;
 
 class DeleteStorageRequestFile extends Job implements ShouldQueue
 {
-    use InteractsWithQueue;
+    use InteractsWithQueue, Batchable;
 
     /**
      * File path to be deleted.
