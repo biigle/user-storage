@@ -93,8 +93,10 @@ class UserStorageServiceProvider extends ServiceProvider
         if (array_key_exists('use-disk', $abilities)) {
             $useDiskAbility = $abilities['use-disk'];
             Gate::define('use-disk', function (User $user, $disk) use ($useDiskAbility) {
-                if ($disk === "user-{$user->id}") {
-                    return true;
+                if (preg_match('/^user-[0-9]+$/', $disk)) {
+                    if ($disk === "user-{$user->id}" || $user->can('sudo')) {
+                        return true;
+                    }
                 }
 
                 return $useDiskAbility($user, $disk);
