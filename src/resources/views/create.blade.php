@@ -28,7 +28,7 @@
       </p>
       <div class="create-storage-request">
           @if ($previousRequest && $previousRequest->files_count > 0)
-            <div class="panel panel-info">
+            <div v-if="!finished" class="panel panel-info">
                 <div class="panel-body text-info">
                     Some files were initialized from an incomplete upload.
                     <form class="form-inline pull-right" action="{{url("api/v1/storage-requests/{$previousRequest->id}")}}" method="POST">
