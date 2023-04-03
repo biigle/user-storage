@@ -98,7 +98,12 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->putJson("/api/v1/storage-requests/{$id}")->assertStatus(200);
         $this->assertNotNull($request->fresh()->submitted_at);
 
-        Notification::assertSentTo(new AnonymousNotifiable, StorageRequestSubmitted::class);
+        Notification::assertSentTo(new AnonymousNotifiable, StorageRequestSubmitted::class, function ($notification) use ($request) {
+            $this->assertEquals($request->id, $notification->request->id);
+            $this->assertEquals($request->user->email, $notification->toMail(null)->replyTo[0][0]);
+
+            return true;
+        });
         Bus::assertNothingDispatched();
     }
 

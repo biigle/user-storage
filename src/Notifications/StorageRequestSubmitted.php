@@ -18,7 +18,7 @@ class StorageRequestSubmitted extends Notification implements ShouldQueue
      *
      * @var StorageRequest
      */
-    protected $request;
+    public $request;
 
     /**
      * Ignore this job if the image does not exist any more.
@@ -66,6 +66,7 @@ class StorageRequestSubmitted extends Notification implements ShouldQueue
 
         $message = (new MailMessage)
             ->subject('New storage request')
+            ->replyTo($this->request->user->email, $name)
             ->line("A new storage request with {$fileCount} files ($sizeForHumans) was created by {$name} ($affiliation).")
             ->action('Review', route('review-storage-request', $this->request->id));
 
