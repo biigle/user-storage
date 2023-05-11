@@ -45,6 +45,7 @@ class UserStorageServiceProvider extends ServiceProvider
                 'dashboardButtons',
                 'manualTutorial',
                 'navbarMenuItem',
+                'storageMenu',
             ],
             'controllerMixins' => [
                 //
