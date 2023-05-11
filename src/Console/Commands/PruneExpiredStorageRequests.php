@@ -2,7 +2,6 @@
 
 namespace Biigle\Modules\UserStorage\Console\Commands;
 
-use Biigle\Modules\UserStorage\Notifications\StorageRequestExpiresSoon;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Illuminate\Console\Command;
 
@@ -33,6 +32,7 @@ class PruneExpiredStorageRequests extends Command
 
         StorageRequest::where('expires_at', '<', $pruneDate)
             ->eachById(function ($request) {
+                // Do this manually because it dispatches the delete files job.
                 $request->delete();
             });
     }

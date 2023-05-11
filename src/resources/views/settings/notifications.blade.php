@@ -1,6 +1,6 @@
 <h4>Storage request notifications</h4>
 <p class="text-muted">
-    Notifications about storage requests.
+    Notifications about the expiration of storage requests.
 </p>
 <form id="user-storage-notification-settings">
     <div class="form-group">
