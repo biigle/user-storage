@@ -43,7 +43,7 @@ class UserStorageServiceProvider extends ServiceProvider
                 'adminIndex',
                 'adminShowUser',
                 'dashboardButtons',
-                'manualTutorial',
+                'filesManual',
                 'navbarMenuItem',
                 'storageMenu',
             ],

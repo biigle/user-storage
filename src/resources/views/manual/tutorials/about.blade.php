@@ -1,15 +1,15 @@
 @extends('manual.base')
 
-@section('manual-title', 'User storage')
+@section('manual-title', 'Storage requests')
 
 @section('manual-content')
     <div class="row">
         <p class="lead">
-            Learn how you can upload and manage files to be used in volumes.
+            With storage requests you can upload volume files directly to BIIGLE.
         </p>
 
         <p>
-            As a web application, BIIGLE can only work with files that are stored on a server. With <a href="{{route('manual-tutorials', ['volumes', 'remote-volumes'])}}">remote volumes</a>, you set up the server to host the files yourself. As an alternative, BIIGLE allows you to upload files directly from your computer. These files are stored on the BIIGLE server.
+            As a web application, BIIGLE can only work with files that are stored on a server. BIIGLE allows you to upload files directly from your computer. These files are stored on the BIIGLE server.
         </p>
 
         <p>
