@@ -35,6 +35,9 @@
             <span v-text="usedQuota">{{size_for_humans($usedQuota)}}</span> of {{size_for_humans($availableQuota)}} used (<span v-text="usedQuotaPercent">{{round($usedQuota / $availableQuota * 100)}}</span>%)
         </small>
     </h2>
+    <p>
+        Upload files for new volumes.
+    </p>
     <request-list
         v-cloak
         v-bind:requests="requests"
