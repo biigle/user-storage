@@ -1,15 +1,15 @@
 @extends('manual.base')
 
-@section('manual-title', 'User storage')
+@section('manual-title', 'Storage requests')
 
 @section('manual-content')
     <div class="row">
         <p class="lead">
-            Learn how you can upload and manage files to be used in volumes.
+            With storage requests you can upload volume files directly to BIIGLE.
         </p>
 
         <p>
-            As a web application, BIIGLE can only work with files that are stored on a server. With <a href="{{route('manual-tutorials', ['volumes', 'remote-volumes'])}}">remote volumes</a>, you set up the server to host the files yourself. As an alternative, BIIGLE allows you to upload files directly from your computer. These files are stored on the BIIGLE server.
+            As a web application, BIIGLE can only work with files that are stored on a server. BIIGLE allows you to upload files directly from your computer. These files are stored on the BIIGLE server.
         </p>
 
         <p>
@@ -21,7 +21,7 @@
         </p>
 
         <p>
-            To manage your storage requests, click on "Uploaded files" in the dropdown menu of the navbar at the top. This opens a list of all your storage requests. The list indicates the status of each storage request, which can be <span class="label label-default">pending</span>, <span class="label label-success">approved</span> or <span class="label label-danger">expired</span>. If a storage request is about to expire, the status is shown as <span class="label label-warning">expires in x days</span>. To extend a storage request that is about to expire, click the <button class="btn btn-default btn-xs"><i class="fa fa-redo"></i></button> button. To view the files of a storage request, click on the storage request in the list. You can delete files, directories or the whole storage request including all its files with a click on the <button class="btn btn-default btn-xs"><i class="fa fa-trash"></i></button> buttons for the respective items. Deleting a storage request will not delete the volumes (and their annotations) that use files from the storage request. However, the annotation tools will no longer be able to load and display the files.
+            To manage your storage requests, click on "Storage" in the dropdown menu of the navbar at the top. This opens a list of all your storage requests. The list indicates the status of each storage request, which can be <span class="label label-default">pending</span>, <span class="label label-success">approved</span> or <span class="label label-danger">expired</span>. If a storage request is about to expire, the status is shown as <span class="label label-warning">expires in x days</span>. To extend a storage request that is about to expire, click the <button class="btn btn-default btn-xs"><i class="fa fa-redo"></i></button> button. To view the files of a storage request, click on the storage request in the list. You can delete files, directories or the whole storage request including all its files with a click on the <button class="btn btn-default btn-xs"><i class="fa fa-trash"></i></button> buttons for the respective items. Deleting a storage request will not delete the volumes (and their annotations) that use files from the storage request. However, the annotation tools will no longer be able to load and display the files.
         </p>
 
         <p>

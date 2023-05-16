@@ -43,8 +43,9 @@ class UserStorageServiceProvider extends ServiceProvider
                 'adminIndex',
                 'adminShowUser',
                 'dashboardButtons',
-                'manualTutorial',
+                'filesManual',
                 'navbarMenuItem',
+                'storageMenu',
             ],
             'controllerMixins' => [
                 //
@@ -104,6 +105,27 @@ class UserStorageServiceProvider extends ServiceProvider
         }
 
         User::observe(new UserObserver);
+
+        // This is used to resolve dynamic "user-xxx" storage disks.
+        Storage::addConfigResolver(function ($name) {
+            if (preg_match('/^user-[0-9]+$/', $name) === 1) {
+                $diskName = config('user_storage.storage_disk');
+                $config = $this->app['config']["filesystems.disks.{$diskName}"] ?: [];
+                if (array_key_exists('root', $config)) {
+                    $config['root'] .= '/'.$name;
+                } else {
+                    $config['root'] = $name;
+                }
+
+                if (array_key_exists('url', $config)) {
+                    $config['url'] .= '/'.$name;
+                }
+
+                return $config;
+            }
+
+            return null;
+        });
     }
 
     /**
@@ -114,7 +136,5 @@ class UserStorageServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__.'/config/user_storage.php', 'user_storage');
-        // This is used to resolve dynamic "user-xxx" storage disks.
-        Storage::swap(new FilesystemManager($this->app));
     }
 }

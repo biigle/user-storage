@@ -21,7 +21,7 @@ class StorageRequestExpiresSoon extends Notification implements ShouldQueue
     protected $request;
 
     /**
-     * Ignore this job if the image does not exist any more.
+     * Ignore this job if the request does not exist any more.
      *
      * @var bool
      */
