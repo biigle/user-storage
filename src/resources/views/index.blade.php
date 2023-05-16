@@ -16,50 +16,52 @@
 @endpush
 
 @section('storage-content')
-    <h2 class="user-storage-title">
-        <loader
-            v-cloak
-            v-bind:active="loading"
-            ></loader>
-        @can('create', \Biigle\Modules\UserStorage\StorageRequest::class)
-            <a class="btn btn-default pull-right" href="{{route('create-storage-requests')}}" title="Create a new storage request to upload files">
-                <i class="fa fa-upload"></i> New request
-            </a>
-        @else
-            <button class="btn btn-default pull-right" title="You cannot create new storage requests right now" disabled>
-                <i class="fa fa-upload"></i> New request
-            </button>
-        @endcan
-        Your storage requests<br>
-        <small>
-            <span v-text="usedQuota">{{size_for_humans($usedQuota)}}</span> of {{size_for_humans($availableQuota)}} used (<span v-text="usedQuotaPercent">{{round($usedQuota / $availableQuota * 100)}}</span>%)
-        </small>
-    </h2>
-    <p>
-        Upload files for new volumes.
-    </p>
-    <request-list
-        v-cloak
-        v-bind:requests="requests"
-        v-bind:expire-date="expireDate"
-        v-bind:selected-request="selectedRequest"
-        v-on:select="handleSelectRequest"
-        v-on:delete="handleDeleteRequest"
-        v-on:extend="handleExtendRequest"
-        ></request-list>
-
-    <file-browser
-        v-cloak
-        v-if="hasSelectedRequest"
-        v-bind:root-directory="selectedRequestRoot"
-        v-bind:editable="true"
-        v-on:remove-directory="removeDirectory"
-        v-on:remove-file="removeFile"
-        ></file-browser>
-
-    @if (count($requests) > 0)
-        <p class="text-muted">
-            Need more storage space? <a href="mailto:{{config('biigle.admin_email')}}">Get in touch</a>.
+    <div id="index-storage-request-container">
+        <h2 class="user-storage-title">
+            <loader
+                v-cloak
+                v-bind:active="loading"
+                ></loader>
+            @can('create', \Biigle\Modules\UserStorage\StorageRequest::class)
+                <a class="btn btn-default pull-right" href="{{route('create-storage-requests')}}" title="Create a new storage request to upload files">
+                    <i class="fa fa-upload"></i> New request
+                </a>
+            @else
+                <button class="btn btn-default pull-right" title="You cannot create new storage requests right now" disabled>
+                    <i class="fa fa-upload"></i> New request
+                </button>
+            @endcan
+            Your storage requests<br>
+            <small>
+                <span v-text="usedQuota">{{size_for_humans($usedQuota)}}</span> of {{size_for_humans($availableQuota)}} used (<span v-text="usedQuotaPercent">{{round($usedQuota / $availableQuota * 100)}}</span>%)
+            </small>
+        </h2>
+        <p>
+            Upload files for new volumes.
         </p>
-    @endif
+        <request-list
+            v-cloak
+            v-bind:requests="requests"
+            v-bind:expire-date="expireDate"
+            v-bind:selected-request="selectedRequest"
+            v-on:select="handleSelectRequest"
+            v-on:delete="handleDeleteRequest"
+            v-on:extend="handleExtendRequest"
+            ></request-list>
+
+        <file-browser
+            v-cloak
+            v-if="hasSelectedRequest"
+            v-bind:root-directory="selectedRequestRoot"
+            v-bind:editable="true"
+            v-on:remove-directory="removeDirectory"
+            v-on:remove-file="removeFile"
+            ></file-browser>
+
+        @if (count($requests) > 0)
+            <p class="text-muted">
+                Need more storage space? <a href="mailto:{{config('biigle.admin_email')}}">Get in touch</a>.
+            </p>
+        @endif
+    </div>
 @endsection
