@@ -74,7 +74,7 @@ class StorageRequestPolicy extends CachedPolicy
     }
 
     /**
-     * Determine if the given user can update the expiration date of the storage request.
+     * Determine if the given user can approve the storage request.
      *
      * @param User $user
      * @param StorageRequest $request
@@ -83,8 +83,21 @@ class StorageRequestPolicy extends CachedPolicy
      */
     public function approve(User $user, StorageRequest $request)
     {
-        // Only global admins can do this.
-        return false;
+        // Only global admins and reviewers can do this.
+        return $user->canReview;
+    }
+
+    /**
+     * Determine if the given user can reject the storage request.
+     *
+     * @param User $user
+     * @param StorageRequest $request
+     *
+     * @return bool
+     */
+    public function reject(User $user, StorageRequest $request)
+    {
+        return $this->approve($user, $request);
     }
 
     /**

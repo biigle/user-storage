@@ -194,7 +194,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(403);
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(200);
 
         $this->assertNotNull($request->fresh()->expires_at);
@@ -208,7 +208,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $request = StorageRequest::factory()->create();
         $id = $request->id;
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(422);
     }
 
@@ -223,7 +223,7 @@ class StorageRequestControllerTest extends ApiTestCase
         ]);
         $id = $request->id;
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->postJson("/api/v1/storage-requests/{$id}/approve")->assertStatus(404);
     }
 
@@ -244,7 +244,7 @@ class StorageRequestControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(403);
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         // Needs a reason
         $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(422);
 
@@ -271,7 +271,7 @@ class StorageRequestControllerTest extends ApiTestCase
         ]);
         $id = $request->id;
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->postJson("/api/v1/storage-requests/{$id}/reject")->assertStatus(404);
     }
 

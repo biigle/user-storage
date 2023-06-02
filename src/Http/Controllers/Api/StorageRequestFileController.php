@@ -133,7 +133,7 @@ class StorageRequestFileController extends Controller
      */
     public function show(Request $request, $id)
     {
-        if (!$request->user()->can('sudo')) {
+        if (!$request->user()->can('review')) {
             abort(Response::HTTP_NOT_FOUND);
         }
 

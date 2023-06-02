@@ -24,7 +24,7 @@ class RejectStorageRequest extends FormRequest
         $this->storageRequest = StorageRequest::whereNull('expires_at')
             ->findOrFail($this->route('id'));
 
-        return $this->user()->can('destroy', $this->storageRequest);
+        return $this->user()->can('reject', $this->storageRequest);
     }
 
     /**

@@ -706,7 +706,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(404);
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(200);
         $this->get("/api/v1/storage-request-files/{$file2->id}")->assertStatus(404);
     }
@@ -728,7 +728,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         });
         $disk->put("user-{$request->user_id}/a.jpg", 'abc');
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->get("/api/v1/storage-request-files/{$file->id}")->assertStatus(200);
     }
 
@@ -741,7 +741,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             'path' => 'a.jpg',
         ]);
 
-        $this->beGlobalAdmin();
+        $this->beGlobalReviewer();
         $this->get("/api/v1/storage-request-files/{$file->id}")
             ->assertRedirect('myurl');
     }
