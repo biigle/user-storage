@@ -23,7 +23,7 @@ $router->group([
     $router->delete('storage-requests/{id}/directories', 'StorageRequestDirectoryController@destroy');
 
     $router->group([
-        'middleware' => ['can:sudo'],
+        'middleware' => ['can:review'],
     ], function ($router) {
         $router->post('storage-requests/{id}/approve', 'StorageRequestController@approve');
         $router->post('storage-requests/{id}/reject', 'StorageRequestController@reject');

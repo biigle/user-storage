@@ -22,6 +22,7 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertTrue($this->editor()->can('create', StorageRequest::class));
         $this->assertTrue($this->expert()->can('create', StorageRequest::class));
         $this->assertTrue($this->admin()->can('create', StorageRequest::class));
+        $this->assertTrue($this->globalReviewer()->can('create', StorageRequest::class));
         $this->assertTrue($this->globalAdmin()->can('create', StorageRequest::class));
     }
 
@@ -34,6 +35,7 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertFalse($this->editor()->can('create', StorageRequest::class));
         $this->assertFalse($this->expert()->can('create', StorageRequest::class));
         $this->assertFalse($this->admin()->can('create', StorageRequest::class));
+        $this->assertFalse($this->globalReviewer()->can('create', StorageRequest::class));
         $this->assertTrue($this->globalAdmin()->can('create', StorageRequest::class));
     }
 
@@ -45,6 +47,7 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertTrue($this->editor()->can('access', $this->request));
         $this->assertFalse($this->expert()->can('access', $this->request));
         $this->assertFalse($this->admin()->can('access', $this->request));
+        $this->assertFalse($this->globalReviewer()->can('access', $this->request));
         $this->assertTrue($this->globalAdmin()->can('access', $this->request));
     }
 
@@ -56,6 +59,7 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertTrue($this->editor()->can('update', $this->request));
         $this->assertFalse($this->expert()->can('update', $this->request));
         $this->assertFalse($this->admin()->can('update', $this->request));
+        $this->assertFalse($this->globalReviewer()->can('update', $this->request));
         $this->assertFalse($this->globalAdmin()->can('update', $this->request));
     }
 
@@ -68,6 +72,7 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertFalse($this->editor()->can('update', $this->request));
         $this->assertFalse($this->expert()->can('update', $this->request));
         $this->assertFalse($this->admin()->can('update', $this->request));
+        $this->assertFalse($this->globalReviewer()->can('update', $this->request));
         $this->assertFalse($this->globalAdmin()->can('update', $this->request));
     }
 
@@ -86,7 +91,20 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertFalse($this->editor()->can('approve', $this->request));
         $this->assertFalse($this->expert()->can('approve', $this->request));
         $this->assertFalse($this->admin()->can('approve', $this->request));
+        $this->assertTrue($this->globalReviewer()->can('approve', $this->request));
         $this->assertTrue($this->globalAdmin()->can('approve', $this->request));
+    }
+
+    public function testReject()
+    {
+        $this->assertFalse($this->globalGuest()->can('reject', $this->request));
+        $this->assertFalse($this->user()->can('reject', $this->request));
+        $this->assertFalse($this->guest()->can('reject', $this->request));
+        $this->assertFalse($this->editor()->can('reject', $this->request));
+        $this->assertFalse($this->expert()->can('reject', $this->request));
+        $this->assertFalse($this->admin()->can('reject', $this->request));
+        $this->assertTrue($this->globalReviewer()->can('reject', $this->request));
+        $this->assertTrue($this->globalAdmin()->can('reject', $this->request));
     }
 
     public function testDestroy()
@@ -97,6 +115,7 @@ class StorageRequestPolicyTest extends ApiTestCase
         $this->assertTrue($this->editor()->can('destroy', $this->request));
         $this->assertFalse($this->expert()->can('destroy', $this->request));
         $this->assertFalse($this->admin()->can('destroy', $this->request));
+        $this->assertFalse($this->globalReviewer()->can('destroy', $this->request));
         $this->assertTrue($this->globalAdmin()->can('destroy', $this->request));
     }
 }
