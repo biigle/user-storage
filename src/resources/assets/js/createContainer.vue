@@ -34,7 +34,7 @@ export default {
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
             chunkSize: 0,
-            filenameContainsSpaces: false,
+            pathContainsSpaces: false,
         };
     },
     computed: {
@@ -131,7 +131,7 @@ export default {
                 // See https://github.com/biigle/user-storage/issues/16.
                 let file = newFiles[i];
                 if (file.name.includes(' ')) {
-                    this.filenameContainsSpaces = true;
+                    this.pathContainsSpaces = true;
                     let newName = newFiles[i].name.replace(/ /g, '_');
                     file = new File([newFiles[i]], newName, { type: newFiles[i].type });
                 }
@@ -177,6 +177,10 @@ export default {
         addDirectory(root) {
             let name = prompt('Please enter the new directory name');
             if (name) {
+                if (name.includes(' ')) {
+                    this.pathContainsSpaces = true;
+                    name = name.replace(/ /g, '_');
+                }
                 this.handleNewDirectory(name, root === true);
             }
         },
