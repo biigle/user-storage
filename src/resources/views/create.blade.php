@@ -145,6 +145,10 @@
             Selected files with a total size of <span v-text="totalSizeForHumans"></span>.
         </p>
 
+        <p v-cloak v-if="filenameContainsSpaces" class="text-warning">
+            Replaced spaces by underscores in file names.
+        </p>
+
         <file-browser
             v-cloak
             v-bind:root-directory="rootDirectory"

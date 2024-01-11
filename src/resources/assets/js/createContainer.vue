@@ -2,7 +2,7 @@
 import DirectoriesApi from './api/storageRequestDirectories';
 import FilesApi from './api/storageRequestFiles';
 import StorageRequestApi from './api/storageRequests';
-import {LoaderMixin, handleErrorResponse, FileBrowserComponent, warning} from './import';
+import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
@@ -34,6 +34,7 @@ export default {
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
             chunkSize: 0,
+            filenameContainsSpaces: false,
         };
     },
     computed: {
@@ -125,21 +126,16 @@ export default {
                 }
             }
 
-            let shouldWarn = false;
             for (i = 0; i < newFiles.length; i++) {
                 // Replace spaces by underscores in file name due to error when uploading files >5GB.
                 // See https://github.com/biigle/user-storage/issues/16.
                 let file = newFiles[i];
                 if (file.name.includes(' ')) {
-                    shouldWarn = true;
+                    this.filenameContainsSpaces = true;
                     let newName = newFiles[i].name.replace(/ /g, '_');
                     file = new File([newFiles[i]], newName, { type: newFiles[i].type });
                 }
                 files.push(file);
-            }
-
-            if (shouldWarn) {
-                warning('Spaces are replaced by underscores in file names');
             }
 
             this.syncFiles();
