@@ -132,7 +132,7 @@ export default {
                 let file = newFiles[i];
                 if (file.name.includes(' ')) {
                     shouldWarn = true;
-                    let newName = newFiles[i].name.replace(' ', '_');
+                    let newName = newFiles[i].name.replace(/ /g, '_');
                     file = new File([newFiles[i]], newName, { type: newFiles[i].type });
                 }
                 files.push(file);
