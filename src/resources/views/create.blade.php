@@ -146,7 +146,7 @@
         </p>
 
         <p v-cloak v-if="pathContainsSpaces" class="text-warning">
-            Replaced spaces by underscores.
+            Spaces in the file and directory names were replaced by underscores.
         </p>
 
         <file-browser
