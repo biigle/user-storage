@@ -35,5 +35,13 @@ class StorageRequestUserControllerTest extends ApiTestCase
             ->assertStatus(200);
 
         $this->assertEquals(200, $user->fresh()->storage_quota_available);
+
+        $this
+        ->postJson("/api/v1/users/{$user->id}/storage-request-quota", [
+            'quota' => "1E+11",
+        ])
+        ->assertStatus(200);
+
+        $this->assertEquals(1E+11, $user->fresh()->storage_quota_available);
     }
 }
