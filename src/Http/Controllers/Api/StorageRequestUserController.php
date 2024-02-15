@@ -23,7 +23,7 @@ class StorageRequestUserController extends Controller
     public function store(Request $request, $id)
     {
         $request->validate([
-            'quota' => 'required|integer|min:0',
+            'quota' => 'required|numeric|min:0',
         ]);
 
         $user = User::findOrFail($id);
