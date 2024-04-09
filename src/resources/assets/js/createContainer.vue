@@ -6,7 +6,7 @@ import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
-const RETRY_UPLOAD = 2;
+const RETRY_UPLOAD = 3;
 
 export default {
     mixins: [LoaderMixin],
