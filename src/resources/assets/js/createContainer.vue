@@ -428,9 +428,13 @@ export default {
                     // Try uploading again on server error until number of retries is
                     // reached.
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
-                        return this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1);
+                        // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
+                        // short moments of unavailability.
+                        setTimeout(
+                            () => {return this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)},
+                            5000);
                     }
-
+                    
                     throw e;
                 });
         },
