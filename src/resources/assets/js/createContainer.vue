@@ -6,7 +6,7 @@ import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
-const RETRY_UPLOAD = 2;
+const RETRY_UPLOAD = 3;
 
 export default {
     mixins: [LoaderMixin],
@@ -428,9 +428,12 @@ export default {
                     // Try uploading again on server error until number of retries is
                     // reached.
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
-                        return this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1);
+                        // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
+                        // short moments of unavailability.
+                        return new Vue.Promise((resolve) => {
+                            setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)), 5000);
+                        });
                     }
-
                     throw e;
                 });
         },
