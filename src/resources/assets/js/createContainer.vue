@@ -430,9 +430,9 @@ export default {
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
                         // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
                         // short moments of unavailability.
-                        setTimeout(
-                            () => {return this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)},
-                            5000);
+                        return new Vue.Promise((resolve) => {
+                            setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)), 5000);
+                        });
                     }
                     
                     throw e;
