@@ -434,7 +434,6 @@ export default {
                             setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)), 5000);
                         });
                     }
-                    
                     throw e;
                 });
         },
