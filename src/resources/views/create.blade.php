@@ -28,7 +28,7 @@
       </p>
       <div class="create-storage-request">
           @if ($previousRequest && $previousRequest->files_count > 0)
-            <div v-if="!finished" class="panel panel-info">
+            <div v-if="!finished && !finishIncomplete" class="panel panel-info">
                 <div class="panel-body text-info">
                     Some files were initialized from an incomplete upload.
                     <form class="form-inline pull-right" action="{{url("api/v1/storage-requests/{$previousRequest->id}")}}" method="POST">
@@ -56,7 +56,7 @@
             v-on:input="handleFilesChosen"
             >
 
-        <div v-if="!finished" class="create-storage-request-buttons clearfix">
+        <div v-if="!finished && !finishIncomplete" class="create-storage-request-buttons clearfix">
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
                 Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
@@ -113,7 +113,7 @@
                         v-if="hasFiles"
                         title="Submit the storage request and upload the files"
                         class="btn btn-success"
-                        v-on:click="handleSubmit"
+                        v-on:click="handleSubmit(false)"
                         v-bind:disabled="exceedsMaxSize"
                         >
                         <i class="fa fa-upload"></i> Submit
@@ -127,6 +127,22 @@
                         <i class="fa fa-upload"></i> Submit
                     </button>
                 </span>
+            </div>
+        </div>
+
+
+        <div class="panel panel-warning" v-cloak v-if="finishIncomplete">
+            <div class="panel-body text-warning">
+                <p>
+                Some file uploads failed.
+                <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
+                    <i class="fa fa-upload"></i> Retry failed files
+                </button>
+                <a class="btn btn-default btn" title="Skip failed uploads" v-bind:disabled="loading"
+                    href={{ URL::previous() }}>
+                    <i class="fa fa-arrow-left"></i> Skip failed files
+                </a>
+                </p>
             </div>
         </div>
 
@@ -150,7 +166,6 @@
         </p>
 
         <file-browser
-            v-cloak
             v-bind:root-directory="rootDirectory"
             v-bind:editable="editable"
             v-bind:selectable="true"
@@ -159,7 +174,7 @@
             v-on:remove-directory="removeDirectory"
             v-on:remove-file="removeFile"
             ></file-browser>
-
+            
       </div>
     </div>
 </div>

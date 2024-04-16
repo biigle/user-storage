@@ -1,4 +1,5 @@
 <script>
+import { get } from '@biigle/ol/proj';
 import DirectoriesApi from './api/storageRequestDirectories';
 import FilesApi from './api/storageRequestFiles';
 import StorageRequestApi from './api/storageRequests';
@@ -35,6 +36,8 @@ export default {
             exceedsMaxFilesize: false,
             chunkSize: 0,
             pathContainsSpaces: false,
+            failedFiles: [],
+            finishIncomplete: false,
         };
     },
     computed: {
@@ -286,30 +289,37 @@ export default {
         syncFiles() {
             this.files = this.extractFiles(this.rootDirectory);
         },
-        handleSubmit() {
+        handleSubmit(reupload) {
             if (!this.canSubmit) {
                 return;
             }
 
             this.startLoading();
             // Reuse already created storage request in case something went wrong.
-            let promise = this.storageRequest
-                ? Promise.resolve({body: this.storageRequest})
+            let promise = this.storageRequest && !reupload
+                ? Promise.resolve({ body: this.storageRequest })
                 : StorageRequestApi.save();
 
-            promise.then(this.proceedWithUpload)
-                .then(this.finishSubmission)
+            let files = reupload ? this.getFailedFiles() : this.files;
+            
+
+            promise.then((res) => this.proceedWithUpload(res, files))
+                .then(() => { this.finishIncomplete = this.getFailedFiles().length > 0 })
+                .then(() => this.maybeFinishSubmission(files.length))
                 .catch(handleErrorResponse)
                 .finally(this.finishLoading);
         },
-        proceedWithUpload(response) {
+        getFailedFiles(){
+            return this.files.filter(f => f.failed);
+        },
+        proceedWithUpload(response, files) {
             this.storageRequest = response.body;
 
-            return this.uploadAllFiles();
+            return this.uploadAllFiles(files);
         },
-        uploadAllFiles() {
+        uploadAllFiles(files) {
             // Exclude files initialized from an unfinished request.
-            let queue = this.files.filter(f => f.file.saved !== true);
+            let queue = files.filter(f => f.file.saved !== true);
             let loadNextFile = () => {
                 if (queue.length === 0) {
                     return;
@@ -331,8 +341,18 @@ export default {
                 return response;
             };
 
+            let saveFailedFiles = () => { file.failed = true };
+
             if (file.file.size > this.chunkSize) {
-                return this.uploadChunkedFile(file).then(updateFinishedSize);
+                return this.uploadChunkedFile(file)
+                .then(() => {
+                    if(file.failed){
+                        delete file.failed;
+
+                    }
+                }, saveFailedFiles)
+                .then(updateFinishedSize);
+                
             }
 
             return this.uploadBlob(file.file, file.prefix)
@@ -341,7 +361,10 @@ export default {
                     // they should be deleted.
                     file.file.saved = true;
                     file.file.id = response.body.id;
-                })
+                    if(file.failed){
+                        delete file.failed;
+                    }
+                }, saveFailedFiles)
                 .then(updateFinishedSize);
         },
         uploadChunkedFile(file) {
@@ -442,9 +465,13 @@ export default {
                 this.currentUploadedSize = event.loaded;
             }
         },
-        finishSubmission() {
+        maybeFinishSubmission(failedFileCount) {
+            // Nothing could be submitted so there is nothing to finish
+            if (failedFileCount === this.getFailedFiles().length) {
+                return;
+            }
             return StorageRequestApi.update({id: this.storageRequest.id}, {})
-                .then(() => this.finished = true, handleErrorResponse);
+                .then(() => this.finished = !this.finishIncomplete, handleErrorResponse);
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
