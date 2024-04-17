@@ -352,7 +352,6 @@ export default {
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);
-                
             }
 
             return this.uploadBlob(file.file, file.prefix)
@@ -409,7 +408,6 @@ export default {
                         file.saved = false;
                     }
 
-                    throw e;
                 });
 
                 if (loop) {
