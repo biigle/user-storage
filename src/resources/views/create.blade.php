@@ -132,13 +132,19 @@
 
 
         <div class="panel panel-warning" v-cloak v-if="finishIncomplete">
-            <div class="panel-body text-warning">
+            <div v-cloak v-if="loading" class="text-info">
+                <loader v-bind:active="true"></loader>
+                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
+                (<span v-text="uploadedPercent"></span>%).
+            </div>
+
+            <div v-cloak v-else class="panel-body text-warning">
                 <p>
                 Some file uploads failed.
                 <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
                     <i class="fa fa-upload"></i> Retry failed files
                 </button>
-                <a class="btn btn-default btn" title="Skip failed uploads" v-bind:disabled="loading"
+                <a class="btn btn-default btn" title="Skip failed uploads"
                     href={{ URL::previous() }}>
                     <i class="fa fa-arrow-left"></i> Skip failed files
                 </a>

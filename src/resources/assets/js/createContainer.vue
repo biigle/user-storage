@@ -51,12 +51,14 @@ export default {
             return this.files.length > 0;
         },
         totalSize() {
-            return this.files.reduce(function (carry, file) {
+            let files = this.finishIncomplete ? this.getFailedFiles() : this.files;
+            return files.reduce(function (carry, file) {
                 return carry + file.size;
             }, 0);
         },
         totalSizeToUpload() {
-            return this.files.reduce(function (carry, file) {
+            let files = this.finishIncomplete ? this.getFailedFiles() : this.files;
+            return files.reduce(function (carry, file) {
                 if (file.saved) {
                     return carry;
                 }
