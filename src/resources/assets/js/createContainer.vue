@@ -309,7 +309,9 @@ export default {
                 .then(() => { this.finishIncomplete = this.getFailedFiles().length > 0 })
                 .then(() => this.maybeFinishSubmission(files.length))
                 .catch(handleErrorResponse)
-                .finally(this.finishLoading);
+                .finally(() => {
+                    this.finishLoading();
+                    this.resetSizes()});
         },
         getFailedFiles(){
             return this.files.filter(f => f.failed);
@@ -331,6 +333,11 @@ export default {
             };
 
             return loadNextFile();
+        },
+        resetSizes(){
+            this.currentUploadedSize = 0;
+            this.finishedChunksSize = 0;
+            this.finishedUploadedSize = 0;
         },
         uploadFile(file) {
             this.currentUploadedSize = 0;
