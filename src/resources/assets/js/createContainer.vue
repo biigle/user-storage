@@ -356,7 +356,7 @@ export default {
 
             let saveFailedFiles = () => { 
                 file.failed = true;
-                this.selectedDirectory.warningFiles[file.file.name] = "failed";
+                file.directory.warningFiles[file.file.name] = "failed";
                 };
 
             if (file.file.size > this.chunkSize) {
@@ -364,7 +364,7 @@ export default {
                 .then(() => {
                     if(file.failed){
                         delete file.failed;
-                        delete this.selectedDirectory.warningFiles[file.file.name];
+                        delete file.directory.warningFiles[file.file.name];
 
                     }
                 }, saveFailedFiles)
@@ -379,7 +379,7 @@ export default {
                     file.file.id = response.body.id;
                     if(file.failed){
                         delete file.failed;
-                        delete this.selectedDirectory.warningFiles[file.file.name];
+                        delete file.directory.warningFiles[file.file.name];
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);

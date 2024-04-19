@@ -140,7 +140,10 @@
 
             <div v-cloak v-else class="panel-body text-warning">
                 <p>
+                <i class="fa fa-exclamation-triangle"></i>
                 Some file uploads failed.
+                </p>
+                <p>
                 <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
                     <i class="fa fa-upload"></i> Retry failed files
                 </button>
