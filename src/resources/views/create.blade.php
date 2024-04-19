@@ -59,7 +59,7 @@
         <div v-if="!finished && !finishIncomplete" class="create-storage-request-buttons clearfix">
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
-                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
+                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans()"></span>
                 (<span v-text="uploadedPercent"></span>%).
             </div>
             <div v-else>
@@ -113,7 +113,7 @@
                         v-if="hasFiles"
                         title="Submit the storage request and upload the files"
                         class="btn btn-success"
-                        v-on:click="handleSubmit(false)"
+                        v-on:click="handleSubmit()"
                         v-bind:disabled="exceedsMaxSize"
                         >
                         <i class="fa fa-upload"></i> Submit
@@ -134,7 +134,7 @@
         <div class="panel panel-warning" v-cloak v-if="finishIncomplete">
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
-                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
+                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans()"></span>
                 (<span v-text="uploadedPercent"></span>%).
             </div>
 
@@ -160,11 +160,13 @@
             Files larger than the maximum allowed size of <span v-text="maxFilesize"></span> have been ignored.
         </p>
 
-        <p v-cloak v-if="finished" class="text-success">
+        <p v-cloak v-if="finished && !finishIncomplete" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">
-            Selected files with a total size of <span v-text="totalSizeForHumans"></span>.
+            <span v-if="finishIncomplete">Failed </span> 
+            <span v-else>Selected </span>
+            <span>files with a total size of <span v-text="totalSizeForHumans()"></span>.</span>
         </p>
 
         <p v-cloak v-if="pathContainsSpaces" class="text-warning">

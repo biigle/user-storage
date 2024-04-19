@@ -50,33 +50,11 @@ export default {
         hasFiles() {
             return this.files.length > 0;
         },
-        totalSize() {
-            let files = this.finishIncomplete ? this.getFailedFiles() : this.files;
-            return files.reduce(function (carry, file) {
-                return carry + file.size;
-            }, 0);
-        },
-        totalSizeToUpload() {
-            let files = this.finishIncomplete ? this.getFailedFiles() : this.files;
-            return files.reduce(function (carry, file) {
-                if (file.saved) {
-                    return carry;
-                }
-
-                return carry + file.size;
-            }, 0);
-        },
-        totalSizeToUploadForHumans() {
-            return sizeForHumans(this.totalSizeToUpload);
-        },
-        totalSizeForHumans() {
-            return sizeForHumans(this.totalSize);
-        },
         uploadedSize() {
             return this.currentUploadedSize + this.finishedUploadedSize + this.finishedChunksSize;
         },
         uploadedPercent() {
-            return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
+            return Math.round(this.uploadedSize / this.totalSizeToUpload() * 100);
         },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
@@ -85,7 +63,7 @@ export default {
             return !this.loading && !this.finished;
         },
         exceedsMaxSize() {
-            return this.availableQuotaBytes !== -1  && this.totalSize > this.availableQuotaBytes;
+            return this.availableQuotaBytes !== -1  && this.totalSize() > this.availableQuotaBytes;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
@@ -98,6 +76,28 @@ export default {
         },
     },
     methods: {
+        totalSize() {
+            let files = this.finishIncomplete ? this.failedFiles : this.files;
+            return files.reduce(function (carry, file) {
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeToUpload() {
+            let files = this.finishIncomplete ? this.failedFiles : this.files;
+            return files.reduce(function (carry, file) {
+                if (file.saved) {
+                    return carry;
+                }
+
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUpload());
+        },
+        totalSizeForHumans() {
+            return sizeForHumans(this.totalSize());
+        },
         handleFilesChosen(event) {
             // Force users to create new directories for their files. Otherwise they
             // could upload all their files in the same directory in multiple storage
@@ -291,7 +291,7 @@ export default {
         syncFiles() {
             this.files = this.extractFiles(this.rootDirectory);
         },
-        handleSubmit(reupload) {
+        handleSubmit(reupload = false) {
             if (!this.canSubmit) {
                 return;
             }
@@ -302,16 +302,19 @@ export default {
                 ? Promise.resolve({ body: this.storageRequest })
                 : StorageRequestApi.save();
 
-            let files = reupload ? this.getFailedFiles() : this.files;
+            let files = reupload ? this.failedFiles : this.files;
             
 
             promise.then((res) => this.proceedWithUpload(res, files))
-                .then(() => { this.finishIncomplete = this.getFailedFiles().length > 0 })
-                .then(() => this.maybeFinishSubmission(files.length))
+                .then(() => {this.maybeFinishSubmission(files.length)})
                 .catch(handleErrorResponse)
                 .finally(() => {
                     this.finishLoading();
-                    this.resetSizes()});
+                    this.resetSizes();
+                    // Must be set here, otherwise array is read and written simulteneously
+                    this.failedFiles = this.getFailedFiles();
+                    this.finishIncomplete = this.failedFiles.length > 0;
+                });
         },
         getFailedFiles(){
             return this.files.filter(f => f.failed);
