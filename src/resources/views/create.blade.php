@@ -28,7 +28,7 @@
       </p>
       <div class="create-storage-request">
           @if ($previousRequest && $previousRequest->files_count > 0)
-            <div v-if="!finished && !finishIncomplete" class="panel panel-info">
+            <div v-if="!finished" class="panel panel-info">
                 <div class="panel-body text-info">
                     Some files were initialized from an incomplete upload.
                     <form class="form-inline pull-right" action="{{url("api/v1/storage-requests/{$previousRequest->id}")}}" method="POST">
@@ -160,7 +160,7 @@
             Files larger than the maximum allowed size of <span v-text="maxFilesize"></span> have been ignored.
         </p>
 
-        <p v-cloak v-if="finished && !finishIncomplete" class="text-success">
+        <p v-cloak v-if="finished" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">

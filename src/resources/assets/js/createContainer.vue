@@ -315,6 +315,7 @@ export default {
                     // Must be set here, otherwise array is read and written simulteneously
                     this.failedFiles = this.getFailedFiles();
                     this.finishIncomplete = this.failedFiles.length > 0;
+                    this.finished = this.finishIncomplete ? false : this.finished;
                 });
         },
         getFailedFiles(){
