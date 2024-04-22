@@ -151,7 +151,7 @@ export default {
                 directories: {},
                 files: [],
                 selected: false,
-                warningFiles: {},
+                warningFiles: new Set(),
             };
         },
         handleNewDirectory(path, root) {
@@ -354,18 +354,17 @@ export default {
                 return response;
             };
 
-            let saveFailedFiles = () => { 
+            let saveFailedFiles = () => {
                 file.failed = true;
-                file.directory.warningFiles[file.file.name] = "failed";
-                };
+                file.directory.warningFiles.add(file.file.name);
+            };
 
             if (file.file.size > this.chunkSize) {
                 return this.uploadChunkedFile(file)
                 .then(() => {
                     if(file.failed){
                         delete file.failed;
-                        delete file.directory.warningFiles[file.file.name];
-
+                        file.directory.warningFiles.delete(file.file.name);
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);
@@ -377,9 +376,10 @@ export default {
                     // they should be deleted.
                     file.file.saved = true;
                     file.file.id = response.body.id;
+                    
                     if(file.failed){
                         delete file.failed;
-                        delete file.directory.warningFiles[file.file.name];
+                        file.directory.warningFiles.delete(file.file.name);
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);
