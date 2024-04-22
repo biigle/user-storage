@@ -130,8 +130,7 @@
             </div>
         </div>
 
-
-        <div class="panel panel-warning" v-cloak v-if="finishIncomplete">
+        <div class="panel panel-warning text-center" v-cloak v-if="finishIncomplete">
             <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
                 Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans()"></span>
@@ -142,14 +141,12 @@
                 <p>
                 <i class="fa fa-exclamation-triangle"></i>
                 Some file uploads failed.
-                </p>
-                <p>
                 <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
-                    <i class="fa fa-upload"></i> Retry failed files
+                    <i class="fa fa-redo"></i> Retry
                 </button>
                 <a class="btn btn-default btn" title="Skip failed uploads"
                     href={{ URL::previous() }}>
-                    <i class="fa fa-arrow-left"></i> Skip failed files
+                    <i class="fa fa-arrow-left"></i> Skip
                 </a>
                 </p>
             </div>
