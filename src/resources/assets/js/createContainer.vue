@@ -403,14 +403,14 @@ export default {
                     type: file.type,
                     lastModified: file.lastModified,
                 });
-                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks);
-                start = end;
-                chunkIndex += 1;
-
-                promise.then(function () {
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks)
+                .then(function (res) {
+                    start = end;
                     this.finishedChunksSize += chunk.size;
-                },
-                function (e) {
+                    return res;
+                })
+                .catch((e) => {
+                    console.log(e);
                     // Delete the whole file if any chunk upload fails. The file is
                     // retried again next time. There is no easy way to resume a
                     // chunked file that partly failed during upload.
@@ -427,6 +427,13 @@ export default {
                         file.saved = false;
                     }
 
+                    throw e;
+
+                })
+                .finally((res) => {
+                    start = end;
+                    chunkIndex += 1;
+                    return res;
                 });
 
                 if (loop) {
