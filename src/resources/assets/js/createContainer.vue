@@ -299,7 +299,7 @@ export default {
 
             this.startLoading();
             // Reuse already created storage request in case something went wrong.
-            let promise = this.storageRequest && !reupload
+            let promise = this.storageRequest
                 ? Promise.resolve({ body: this.storageRequest })
                 : StorageRequestApi.save();
 
@@ -307,7 +307,7 @@ export default {
             
 
             promise.then((res) => this.proceedWithUpload(res, files))
-                .then(() => {this.maybeFinishSubmission(files.length)})
+                .then(this.maybeFinishSubmission)
                 .catch(handleErrorResponse)
                 .finally(() => {
                     this.finishLoading();
@@ -334,6 +334,11 @@ export default {
                     return;
                 }
 
+                if(this.storageRequest === null){
+                    return StorageRequestApi.save()
+                    .then((res) => {this.storageRequest = res.body})
+                    .then(() => this.uploadFile(queue.shift()).then(loadNextFile))
+                }
                 return this.uploadFile(queue.shift()).then(loadNextFile);
             };
 
@@ -357,6 +362,7 @@ export default {
 
             let saveFailedFiles = () => {
                 file.failed = true;
+                file.file.saved = false;
                 file.directory.warningFiles.add(file.file.name);
             };
 
@@ -410,7 +416,6 @@ export default {
                     return res;
                 })
                 .catch((e) => {
-                    console.log(e);
                     // Delete the whole file if any chunk upload fails. The file is
                     // retried again next time. There is no easy way to resume a
                     // chunked file that partly failed during upload.
@@ -489,9 +494,9 @@ export default {
                 this.currentUploadedSize = event.loaded;
             }
         },
-        maybeFinishSubmission(failedFileCount) {
+        maybeFinishSubmission() {
             // Nothing could be submitted so there is nothing to finish
-            if (failedFileCount === this.getFailedFiles().length) {
+            if(this.files.filter(f => f.failed).length > 0){
                 return;
             }
             return StorageRequestApi.update({id: this.storageRequest.id}, {})
