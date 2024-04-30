@@ -144,10 +144,9 @@
                 <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
                     <i class="fa fa-redo"></i> Retry
                 </button>
-                <a class="btn btn-default btn" title="Skip failed uploads"
-                    href={{ URL::previous() }}>
+                <button class="btn btn-default btn" title="Skip failed uploads" v-on:click="skipFailedFiles"> 
                     <i class="fa fa-arrow-left"></i> Skip
-                </a>
+                </button>
                 </p>
             </div>
         </div>
