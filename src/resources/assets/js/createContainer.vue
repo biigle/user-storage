@@ -7,7 +7,7 @@ import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
-const RETRY_UPLOAD = 3;
+const RETRY_UPLOAD = 1;
 
 export default {
     mixins: [LoaderMixin],
@@ -38,6 +38,7 @@ export default {
             pathContainsSpaces: false,
             failedFiles: [],
             finishIncomplete: false,
+            editable: true,
         };
     },
     computed: {
@@ -58,9 +59,6 @@ export default {
         },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
-        },
-        editable() {
-            return !this.loading && !this.finished;
         },
         exceedsMaxSize() {
             return this.availableQuotaBytes !== -1  && this.totalSize() > this.availableQuotaBytes;
@@ -315,7 +313,10 @@ export default {
                     // Must be set here, otherwise array is read and written simulteneously
                     this.failedFiles = this.getFailedFiles();
                     this.finishIncomplete = this.failedFiles.length > 0;
-                    this.finished = this.finishIncomplete ? false : this.finished;
+
+                    this.finished = !this.finishIncomplete;
+                    this.editable = this.finishIncomplete;
+                    
                 });
         },
         getFailedFiles(){
@@ -555,6 +556,11 @@ export default {
 
             return path;
         },
+    }, 
+    watch: {
+        loading(){
+            this.editable = !this.loading;
+        }
     },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
