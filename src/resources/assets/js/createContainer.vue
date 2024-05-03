@@ -7,7 +7,7 @@ import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
-const RETRY_UPLOAD = 1;
+const RETRY_UPLOAD = 3;
 
 export default {
     mixins: [LoaderMixin],
@@ -504,13 +504,10 @@ export default {
                 .then(() => this.finished = !this.finishIncomplete, handleErrorResponse);
         },
         skipFailedFiles() {
-            this.maybeFinishSubmission(true)
-                .then(() => {
-                    // Redirect to storage request page
-                    // Do not use histroy.back, because it does not refresh page
-                    let url = window.location.pathname;
-                    window.location.pathname = url.substring(0, url.lastIndexOf('/'));
-                }, handleErrorResponse)
+            // Redirect to storage request page
+            // Do not use histroy.back, because it does not refresh page
+            let url = window.location.pathname;
+            window.location.pathname = url.substring(0, url.lastIndexOf('/'));
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
