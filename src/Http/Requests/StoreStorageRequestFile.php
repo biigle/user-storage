@@ -145,7 +145,6 @@ class StoreStorageRequestFile extends FormRequest
                     // chunk failed.
                     if ($shouldDeletePreviousChunks) {
                         DeleteStorageRequestFile::dispatch($this->storageRequestFile);
-                        $this->storageRequestFile->delete();
                     }
 
                     if ($this->storageRequestFile->total_chunks !== (int) $this->input('chunk_total')) {
