@@ -151,9 +151,6 @@ class StoreStorageRequestFile extends FormRequest
                         $validator->errors()->add('chunk_total', 'The specified number of chunks does not match the previously specified number for this file.');
                     }
 
-                    // if (in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks)) {
-                    //     $validator->errors()->add('chunk_index', 'The chunk was already uploaded.');
-                    // }
                 } elseif ($this->input('chunk_index') > 0) {
                     $validator->errors()->add('chunk_index', 'The first chunk of a new file must be uploaded before the remaining chunks.');
                 }
