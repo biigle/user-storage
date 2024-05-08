@@ -26,6 +26,7 @@ class StorageRequestFile extends Model
         'size' => 'int',
         'received_chunks' => 'array',
         'total_chunks' => 'int',
+        'retry_count' => 'int',
     ];
 
     /**

@@ -56,9 +56,15 @@ class StorageRequestFileController extends Controller
             $file = $request->file('file');
             $disk = config('user_storage.pending_disk');
             $filePath = $request->getFilePath();
-            $fileModel = $request->storageRequestFile;
+            $fileModel = $request->storageRequestFile;     
 
             if ($request->isChunked()) {
+                
+                // Skip already saved chunks
+                if($fileModel && in_array($request->input('chunk_index'), $fileModel->received_chunks)){
+                    return $fileModel;
+                } 
+
                 $chunkIndex = (int) $request->input('chunk_index');
 
                 if ($fileModel) {
@@ -79,6 +85,7 @@ class StorageRequestFileController extends Controller
                 }
 
                 $filePath .= '.'.$chunkIndex;
+                $fileModel = $fileModel->fresh();
 
             } else {
                 if ($fileModel) {
@@ -101,6 +108,12 @@ class StorageRequestFileController extends Controller
                     ]);
                 } catch (UnableToWriteFile $e) {
                     $success = false;
+                }
+
+                // Save retry counts for chunked files to recognize if it was changed
+                if($fileModel->exists() && $request->input('retry')){
+                    $fileModel->retry_count += 1;
+                    $fileModel->save();
                 }
 
                 if ($success === true) {
@@ -183,6 +196,5 @@ class StorageRequestFileController extends Controller
     public function destroy(DestroyStorageRequestFile $request)
     {
         DeleteStorageRequestFile::dispatch($request->file);
-        $request->file->delete();
     }
 }

@@ -43,6 +43,12 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
     public $chunks;
 
     /**
+     * Count for retry attempts of a chunked file
+     * 
+     * **/
+    public $retryCount = 1;
+
+    /**
      * Create a new job instance.
      *
      * @param StorageRequestFile $file
@@ -50,6 +56,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
     public function __construct(StorageRequestFile $file)
     {
         $this->path = $file->path;
+        $this->retryCount = $file->retry_count;
         $request = $file->request;
         $this->pending = is_null($request->expires_at);
         if ($this->pending) {
@@ -67,6 +74,13 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      */
     public function handle()
     {
+        $file = StorageRequestFile::where('path','=',$this->path);
+
+        // Do not delete files when delete-request is outdated
+        if($file->exists() && $this->retryCount != $file->first()->retry_count){
+            return;
+        }
+
         if ($this->pending) {
             $disk = Storage::disk(config('user_storage.pending_disk'));
         } else {
@@ -95,6 +109,10 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             if (!$success) {
                 throw new Exception("Could not delete empty directory of storage request with prefix '{$this->prefix}'.");
             }
+        }
+
+        if($file->exists()){
+            $file->delete();
         }
     }
 }

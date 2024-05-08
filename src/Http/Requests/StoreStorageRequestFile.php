@@ -60,6 +60,7 @@ class StoreStorageRequestFile extends FormRequest
             'prefix' => ['filled', new FilePrefix],
             'chunk_index' => 'filled|integer|required_with:chunk_total|min:0|lt:chunk_total',
             'chunk_total' => 'filled|integer|required_with:chunk_index|min:2',
+            'retry' => 'filled|bool',
         ];
     }
 
@@ -146,9 +147,9 @@ class StoreStorageRequestFile extends FormRequest
                         $validator->errors()->add('chunk_total', 'The specified number of chunks does not match the previously specified number for this file.');
                     }
 
-                    if (in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks)) {
-                        $validator->errors()->add('chunk_index', 'The chunk was already uploaded.');
-                    }
+                    // if (in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks)) {
+                    //     $validator->errors()->add('chunk_index', 'The chunk was already uploaded.');
+                    // }
                 } elseif ($this->input('chunk_index') > 0) {
                     $validator->errors()->add('chunk_index', 'The first chunk of a new file must be uploaded before the remaining chunks.');
                 }
