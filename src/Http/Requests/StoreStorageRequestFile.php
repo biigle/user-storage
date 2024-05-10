@@ -165,10 +165,12 @@ class StoreStorageRequestFile extends FormRequest
                 $validator->errors()->add('file', 'The filename and prefix combined must not exceed 512 characters.');
             }
 
+            $filename = $file->getClientOriginalName();
+            
             $existsInOtherRequest = StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
                 ->where('storage_requests.id', '!=', $this->storageRequest->id)
                 ->where('storage_requests.user_id', $this->storageRequest->user_id)
-                ->where('storage_request_files.path', $path)
+                ->where('storage_request_files.path','LIKE', '%'.$filename.'%')
                 ->exists();
 
             // Deny uploading of files that already exist in another request of the same
