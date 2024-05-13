@@ -1,5 +1,4 @@
 <script>
-import { get } from '@biigle/ol/proj';
 import DirectoriesApi from './api/storageRequestDirectories';
 import FilesApi from './api/storageRequestFiles';
 import StorageRequestApi from './api/storageRequests';
