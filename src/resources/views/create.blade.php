@@ -138,9 +138,8 @@
             </div>
 
             <div v-cloak v-else class="panel-body text-warning">
+                <p><i class="fa fa-exclamation-triangle"> </i></p><p>Some file uploads failed.</p>
                 <p>
-                <i class="fa fa-exclamation-triangle"></i>
-                Some file uploads failed.
                 <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
                     <i class="fa fa-redo"></i> Retry
                 </button>
@@ -148,6 +147,13 @@
                     <i class="fa fa-arrow-left"></i> Skip
                 </button>
                 </p>
+                
+            </div>
+        </div>
+        <div class="panel panel-info text-center" v-cloak v-if="hasDuplicatedFiles">
+            <div v-cloak class="panel-body text-info">
+                <p><i class="fa fa-info-circle"></i></p>
+                <p>Some files already exist in other storage-requests.<br>Please consider that those were not uploaded again.
             </div>
         </div>
 
@@ -159,7 +165,7 @@
             Files larger than the maximum allowed size of <span v-text="maxFilesize"></span> have been ignored.
         </p>
 
-        <p v-cloak v-if="finished" class="text-success">
+        <p v-cloak v-if="finished && !uploadNotSuccessfull" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">

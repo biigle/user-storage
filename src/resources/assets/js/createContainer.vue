@@ -39,9 +39,13 @@ export default {
             failedFiles: [],
             finishIncomplete: false,
             editable: true,
+            nbrDuplicatedFiles: 0,
         };
     },
     computed: {
+        hasDuplicatedFiles() {
+            return this.nbrDuplicatedFiles > 0;
+        },
         hasSelectedDirectory() {
             return this.selectedDirectory !== null;
         },
@@ -72,8 +76,14 @@ export default {
         maxFilesize() {
             return sizeForHumans(this.maxFilesizeBytes);
         },
+        uploadNotSuccessfull() {
+            return this.finishIncomplete || this.noFilesUploaded();
+        }
     },
     methods: {
+        noFilesUploaded() {
+            return (this.nbrDuplicatedFiles === this.files.length) || (this.getFailedFiles().length === this.files.length);
+        },
         totalSize() {
             let files = this.finishIncomplete ? this.failedFiles : this.files;
             return files.reduce(function (carry, file) {
@@ -149,7 +159,7 @@ export default {
                 directories: {},
                 files: [],
                 selected: false,
-                warningFiles: new Set(),
+                warningFiles: {},
             };
         },
         handleNewDirectory(path, root) {
@@ -319,8 +329,8 @@ export default {
                     
                 });
         },
-        getFailedFiles(){
-            return this.files.filter(f => f.failed);
+        getFailedFiles() {
+            return this.files.filter(f => f.error);
         },
         proceedWithUpload(response, files) {
             this.storageRequest = response.body;
@@ -361,21 +371,33 @@ export default {
                 return response;
             };
 
-            let saveFailedFiles = () => {
-                file.failed = true;
+            let saveFailedFiles = (e) => {
+                const FAILED = 1;
+                const DUPLICATE = 2;
+
+                // Do not add duplicated files to failed files,
+                // because they cannot be uploaded.
+                if (e.body.errors && e.body.errors['file_duplicated']) {
+                    file.file.saved = true;
+                    file.directory.warningFiles[file.file.name] = DUPLICATE;
+                    this.nbrDuplicatedFiles += 1;
+                    return;
+                }
+
+                file.error = e.body.errors ? e.body.errors : e.body.exception;
                 file.file.saved = false;
-                file.directory.warningFiles.add(file.file.name);
+                file.directory.warningFiles[file.file.name] = FAILED;
             };
 
             if (file.file.size > this.chunkSize) {
                 return this.uploadChunkedFile(file)
-                .then(() => {
-                    if(file.failed){
-                        delete file.failed;
-                        file.directory.warningFiles.delete(file.file.name);
-                    }
-                }, saveFailedFiles)
-                .then(updateFinishedSize);
+                    .then(() => {
+                        if (file.error) {
+                            delete file.error;
+                            delete file.directory.warningFiles[file.file.name];
+                        }
+                    }, saveFailedFiles)
+                    .then(updateFinishedSize);
             }
 
             return this.uploadBlob(file.file, file.prefix)
@@ -384,10 +406,10 @@ export default {
                     // they should be deleted.
                     file.file.saved = true;
                     file.file.id = response.body.id;
-                    
-                    if(file.failed){
-                        delete file.failed;
-                        file.directory.warningFiles.delete(file.file.name);
+
+                    if (file.error) {
+                        delete file.error;
+                        delete file.directory.warningFiles[file.file.name];
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);
@@ -499,9 +521,8 @@ export default {
                 this.currentUploadedSize = event.loaded;
             }
         },
-        maybeFinishSubmission(force = false) {
-            // Do not submit when files fail or storage request was already submitted
-            if ((this.files.filter(f => f.failed).length > 0 && !force) || (force && this.finished)) {
+        maybeFinishSubmission() {
+            if ((this.files.filter(f => f.error).length > 0) || this.noFilesUploaded()) {
                 return Promise.resolve();
             }
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
