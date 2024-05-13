@@ -65,7 +65,9 @@ export default {
             return sizeForHumans(this.uploadedSize);
         },
         exceedsMaxSize() {
-            return this.availableQuotaBytes !== -1  && this.totalSize() > this.availableQuotaBytes;
+            let selectionExceedsQuota = this.availableQuotaBytes !== -1  && this.totalSize() > this.availableQuotaBytes;
+            let exceedsStorage = this.availableQuotaBytes !== -1 && this.usedQuota !== -1 && this.totalSize() + this.usedQuota > this.availableQuotaBytes;
+            return selectionExceedsQuota || exceedsStorage;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
@@ -82,7 +84,9 @@ export default {
     },
     methods: {
         noFilesUploaded() {
-            return (this.nbrDuplicatedFiles === this.files.length) || (this.getFailedFiles().length === this.files.length);
+            return this.exceedsMaxSize
+                || (this.nbrDuplicatedFiles === this.files.length)
+                || (this.getFailedFiles().length === this.files.length);
         },
         totalSize() {
             let files = this.finishIncomplete ? this.failedFiles : this.files;
@@ -588,6 +592,7 @@ export default {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         this.chunkSize = biigle.$require('user-storage.chunkSize');
+        this.usedQuota = biigle.$require('user-storage.usedQuota')
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {
