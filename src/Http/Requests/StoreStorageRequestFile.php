@@ -108,7 +108,7 @@ class StoreStorageRequestFile extends FormRequest
             $shouldDeletePreviousChunks = false;
 
             if ($file->getSize() > $user->storage_quota_remaining) {
-                $validator->errors()->add('file', 'The file size exceeds the available storage quota.');
+                $validator->errors()->add('storage_exceeded', 'The file size exceeds the available storage quota.');
                 $shouldDeletePreviousChunks = true;
             }
 
@@ -181,7 +181,7 @@ class StoreStorageRequestFile extends FormRequest
             // of the duplicate file will remain in the used quota because it could be
             // deleted only once.
             if ($existsInOtherRequest) {
-                $validator->errors()->add('file', 'The file already exists in the user storage.');
+                $validator->errors()->add('file_duplicated', 'The file already exists in the user storage.');
             }
         });
     }
