@@ -21,6 +21,7 @@ class DeleteStorageRequestFileTest extends TestCase
         $file = StorageRequestFile::factory()->create([
             'path' => 'a.jpg',
             'storage_request_id' => $request->id,
+            'retry_count' => 1,
         ]);
 
         $disk->put("user-{$request->user_id}/a.jpg", 'abc');
@@ -41,6 +42,7 @@ class DeleteStorageRequestFileTest extends TestCase
         $file = StorageRequestFile::factory()->create([
             'path' => 'a.jpg',
             'storage_request_id' => $request->id,
+            'retry_count' => 1,
         ]);
 
         $disk->put("user-{$request->user_id}/a.jpg", 'abc');
@@ -57,6 +59,7 @@ class DeleteStorageRequestFileTest extends TestCase
         $disk = Storage::fake('test');
         $file = StorageRequestFile::factory()->create([
             'path' => 'a.jpg',
+            'retry_count' => 1,
         ]);
 
         $disk->put("request-{$file->storage_request_id}/a.jpg", 'abc');
@@ -75,6 +78,7 @@ class DeleteStorageRequestFileTest extends TestCase
             'path' => 'a.jpg',
             'received_chunks' => [0, 2],
             'total_chunks' => 3,
+            'retry_count' => 1,
         ]);
 
         $disk->put("request-{$file->storage_request_id}/a.jpg.0", 'abc');
