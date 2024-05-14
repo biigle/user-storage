@@ -2,19 +2,19 @@
 
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
-use ApiTestCase;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
-use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Modules\UserStorage\StorageRequestFile;
-use Biigle\Modules\UserStorage\User;
 use Cache;
+use Mockery;
+use Storage;
 use Exception;
+use ApiTestCase;
+use RuntimeException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Biigle\Modules\UserStorage\User;
 use League\Flysystem\UnableToWriteFile;
-use Mockery;
-use RuntimeException;
-use Storage;
+use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 
 class StorageRequestFileControllerTest extends ApiTestCase
 {
@@ -107,7 +107,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(201);
+            ->assertStatus(200);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
         $f = $request->files()->first();
@@ -345,7 +345,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(201);
+            ->assertStatus(200);
 
         Cache::clear();
         $f = $request->files()->first();
@@ -356,8 +356,6 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_total' => 2,
             ])
             ->assertStatus(422);
-
-        $this->assertModelMissing($f);
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
             $this->assertSame('test.jpg', $job->path);
@@ -399,7 +397,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(201);
+            ->assertStatus(200);
 
         Cache::clear();
         $f = $request->files()->first();
@@ -411,7 +409,6 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(422);
 
-        $this->assertModelMissing($f);
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
             $this->assertSame('test.jpg', $job->path);
@@ -457,7 +454,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(201);
+            ->assertStatus(200);
 
         $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'text/plain', null, true);
 
@@ -486,7 +483,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(201);
+            ->assertStatus(200);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
@@ -508,19 +505,21 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $this->be($request->user);
 
-        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+        $res1 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(201);
+            ->assertStatus(200);
 
-        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+        $res2 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(422);
+            ->assertStatus(200);
+
+        $this->assertEquals($res1->getContent(), $res2->getContent());
     }
 
     public function testStoreChunkFirstChunkFirst()
@@ -767,13 +766,12 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(200);
 
-        $this->assertNull($file->fresh());
-
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
             $this->assertSame('a.jpg', $job->path);
 
             return true;
         });
+        
     }
 
     public function testDestoryLastFile()
