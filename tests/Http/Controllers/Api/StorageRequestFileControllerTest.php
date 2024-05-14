@@ -10,6 +10,7 @@ use ApiTestCase;
 use RuntimeException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use Biigle\Modules\UserStorage\User;
 use League\Flysystem\UnableToWriteFile;
 use Biigle\Modules\UserStorage\StorageRequest;
@@ -104,8 +105,18 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
+                'chunk_index' => 2,
+                'chunk_total' => 2,
+                'retry' => 'test'
+            ])
+            // retry must be boolean
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
                 'chunk_index' => 0,
                 'chunk_total' => 2,
+                'retry' => true,
             ])
             ->assertStatus(200);
 
@@ -116,11 +127,13 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame(44074, $f->size);
         $this->assertSame(2, $f->total_chunks);
         $this->assertSame([0], $f->received_chunks);
+        $this->assertEquals(3, $f->retry_count);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
                 'chunk_index' => 1,
                 'chunk_total' => 2,
+                'retry' => true,
             ])
             ->assertStatus(200);
 
@@ -129,6 +142,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame(88148, $f->size);
         $this->assertSame(2, $f->total_chunks);
         $this->assertSame([0, 1], $f->received_chunks);
+        $this->assertEquals(5, $f->retry_count);
     }
 
     public function testStoreDenyTooLargeNotChunked()
@@ -519,6 +533,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
+        // Filemodel is just returned
         $this->assertEquals($res1->getContent(), $res2->getContent());
     }
 
@@ -600,6 +615,17 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(422);
+
+        $fileDuplicate = StorageRequestFile::factory()->create([
+            'path' => 'abc/test.jpg',
+            'storage_request_id' => StorageRequest::factory()->create([
+                'user_id' => $request->user_id,
+            ])->id,
+        ]);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $fileDuplicate])
+            ->assertStatus(422);
+    
     }
 
     public function testStoreExceedsQuota()
