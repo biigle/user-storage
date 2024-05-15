@@ -154,7 +154,7 @@
         <div class="panel panel-info text-center" v-cloak v-if="hasDuplicatedFiles">
             <div v-cloak class="panel-body text-info">
                 <p><i class="fa fa-info-circle"></i></p>
-                <p>Some files already exist in other storage-requests.<br>Please consider that those were not uploaded again.
+                <p>Some files were skipped during upload because they already exist in other storage requests</p>
             </div>
         </div>
 
