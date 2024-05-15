@@ -450,11 +450,15 @@ export default {
                     // chunked file that partly failed during upload.
                     if (file.id !== undefined) {
                         if (this.files.filter(f => f.file.saved).length > 1) {
-                            FilesApi.delete({id: file.id})
+                            FilesApi.delete({id: file.id}).catch(() => {
+                                // Do nothing when file is already deleted
+                            });
                         } else {
                             // If this is the only saved file, we must delete the
                             // whole storage request.
-                            StorageRequestApi.delete({id: this.storageRequest.id});
+                            StorageRequestApi.delete({id: this.storageRequest.id}).catch(() => {
+                                // Do nothing when file is already deleted
+                            });
                             this.storageRequest = null;
                         }
                         delete file.id;
