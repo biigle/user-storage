@@ -57,14 +57,13 @@
             v-on:input="handleFilesChosen"
             >
 
-        <div v-if="!finished && !finishIncomplete" class="create-storage-request-buttons clearfix">
-            <div v-cloak v-if="loading" class="text-info">
+        <div v-cloak v-if="loading" class="text-info">
                 <loader v-bind:active="true"></loader>
                 Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans()"></span>
                 (<span v-text="uploadedPercent"></span>%).
-            </div>
-            <div v-else>
-
+        </div>
+        <div v-cloak v-if="!finished && !finishIncomplete && !loading" class="create-storage-request-buttons clearfix">
+            <div>
                 <button
                     class="btn btn-default"
                     title="Add a new root directory"
@@ -130,28 +129,20 @@
                 </span>
             </div>
         </div>
-
-        <div class="panel panel-warning text-center" v-cloak v-if="finishIncomplete">
-            <div v-cloak v-if="loading" class="text-info">
-                <loader v-bind:active="true"></loader>
-                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans()"></span>
-                (<span v-text="uploadedPercent"></span>%).
-            </div>
-
-            <div v-cloak v-else class="panel-body text-warning">
+        <div v-cloak v-if="finishIncomplete && !loading" class="panel panel-warning text-center">
+            <div class="panel-body text-warning">
                 <p><i class="fa fa-exclamation-triangle"> </i></p><p>Some file uploads failed.</p>
                 <p>
-                <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
-                    <i class="fa fa-redo"></i> Retry
-                </button>
                 <button class="btn btn-default btn" title="Skip failed uploads" v-on:click="skipFailedFiles"> 
                     <i class="fa fa-arrow-left"></i> Skip
                 </button>
+                <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
+                    <i class="fa fa-redo"></i> Retry
+                </button>
                 </p>
-                
             </div>
         </div>
-        <div class="panel panel-info text-center" v-cloak v-if="hasDuplicatedFiles">
+        <div v-cloak v-if="hasDuplicatedFiles" class="panel panel-info text-center">
             <div v-cloak class="panel-body text-info">
                 <p><i class="fa fa-info-circle"></i></p>
                 <p>Some files were skipped during upload because they already exist in other storage requests</p>
