@@ -162,7 +162,6 @@ export default {
                 directories: {},
                 files: [],
                 selected: false,
-                warningFiles: {},
             };
         },
         handleNewDirectory(path, root) {
@@ -382,14 +381,14 @@ export default {
                 // because they cannot be uploaded.
                 if (e.body.errors && e.body.errors['file_duplicated']) {
                     file.file.saved = true;
-                    file.directory.warningFiles[file.file.name] = DUPLICATE;
+                    file.file.warningCode = DUPLICATE;
                     this.nbrDuplicatedFiles += 1;
                     return;
                 }
 
                 file.error = e.body.errors ? e.body.errors : e.body.exception;
                 file.file.saved = false;
-                file.directory.warningFiles[file.file.name] = FAILED;
+                file.file.warningCode = FAILED;
             };
 
             if (file.file.size > this.chunkSize) {
@@ -397,7 +396,7 @@ export default {
                     .then(() => {
                         if (file.error) {
                             delete file.error;
-                            delete file.directory.warningFiles[file.file.name];
+                            delete file.file.warningCode;
                         }
                     }, saveFailedFiles)
                     .then(updateFinishedSize);
@@ -412,7 +411,7 @@ export default {
 
                     if (file.error) {
                         delete file.error;
-                        delete file.directory.warningFiles[file.file.name];
+                        delete file.file.warningCode;
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);
@@ -589,7 +588,7 @@ export default {
     watch: {
         loading(){
             this.editable = !this.loading;
-        }
+        },
     },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
