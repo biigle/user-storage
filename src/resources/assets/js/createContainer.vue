@@ -151,6 +151,11 @@ export default {
                     let newName = newFiles[i].name.replace(/ /g, '_');
                     file = new File([newFiles[i]], newName, { type: newFiles[i].type });
                 }
+                file._status = {
+                    failed: false,
+                    info: false,
+                };
+                Vue.observable(file._status);
                 files.push(file);
             }
 
@@ -374,21 +379,18 @@ export default {
             };
 
             let saveFailedFiles = (e) => {
-                const FAILED = 1;
-                const DUPLICATE = 2;
-
                 // Do not add duplicated files to failed files,
                 // because they cannot be uploaded.
                 if (e.body.errors && e.body.errors['file_duplicated']) {
                     file.file.saved = true;
-                    file.file.warningCode = DUPLICATE;
+                    file.file._status.info = true;
                     this.nbrDuplicatedFiles += 1;
                     return;
                 }
 
                 file.error = e.body.errors ? e.body.errors : e.body.exception;
                 file.file.saved = false;
-                file.file.warningCode = FAILED;
+                file.file._status.failed = true;
             };
 
             if (file.file.size > this.chunkSize) {
@@ -396,7 +398,7 @@ export default {
                     .then(() => {
                         if (file.error) {
                             delete file.error;
-                            delete file.file.warningCode;
+                            file.file._status.failed = false;
                         }
                     }, saveFailedFiles)
                     .then(updateFinishedSize);
@@ -411,7 +413,7 @@ export default {
 
                     if (file.error) {
                         delete file.error;
-                        delete file.file.warningCode;
+                        file.file._status.failed = false;
                     }
                 }, saveFailedFiles)
                 .then(updateFinishedSize);
