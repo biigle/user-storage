@@ -77,7 +77,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
         $file = StorageRequestFile::where('path','=',$this->path);
 
         // Do not delete files when delete-request is outdated
-        if($file->exists() && $this->retryCount != $file->first()->retry_count){
+        if($file->exists() && $this->retryCount != $file->first()->retry_count) {
             return;
         }
 
@@ -111,7 +111,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             }
         }
 
-        if($file->exists()){
+        if($file->exists()) {
             $file->delete();
         }
     }

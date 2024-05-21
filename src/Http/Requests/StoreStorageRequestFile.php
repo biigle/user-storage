@@ -108,7 +108,7 @@ class StoreStorageRequestFile extends FormRequest
             $shouldDeletePreviousChunks = false;
 
             if ($file->getSize() > $user->storage_quota_remaining) {
-                $validator->errors()->add('storage_exceeded', 'The file size exceeds the available storage quota.');
+                $validator->errors()->add('file', 'The file size exceeds the available storage quota.');
                 $shouldDeletePreviousChunks = true;
             }
 
@@ -170,6 +170,7 @@ class StoreStorageRequestFile extends FormRequest
             $existsInOtherRequest = StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
                 ->where('storage_requests.id', '!=', $this->storageRequest->id)
                 ->where('storage_requests.user_id', $this->storageRequest->user_id)
+                // Don't use $path here, because it contains directory name
                 ->where('storage_request_files.path','LIKE', '%'.$filename.'%')
                 ->exists();
 

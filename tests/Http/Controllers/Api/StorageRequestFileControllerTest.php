@@ -2,20 +2,19 @@
 
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
-use Cache;
-use Mockery;
-use Storage;
-use Exception;
 use ApiTestCase;
-use RuntimeException;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\Log;
-use Biigle\Modules\UserStorage\User;
-use League\Flysystem\UnableToWriteFile;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
+use Biigle\Modules\UserStorage\User;
+use Cache;
+use Exception;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Bus;
+use League\Flysystem\UnableToWriteFile;
+use Mockery;
+use RuntimeException;
+use Storage;
 
 class StorageRequestFileControllerTest extends ApiTestCase
 {
@@ -526,6 +525,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
+        // Duplicated chunks do not cause errors any more
         $res2 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
                 'chunk_index' => 0,
@@ -533,7 +533,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
-        // Filemodel is just returned
+        // File model is just returned
         $this->assertEquals($res1->getContent(), $res2->getContent());
     }
 

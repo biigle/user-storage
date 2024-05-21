@@ -131,7 +131,7 @@
         </div>
         <div v-cloak v-if="finishIncomplete && !loading" class="panel panel-warning text-center">
             <div class="panel-body text-warning">
-                <p><i class="fa fa-exclamation-triangle"> </i></p><p>Some file uploads failed.</p>
+                <p><i class="fa fa-exclamation-triangle"> </i></p><p>Some file uploads failed</p>
                 <p>
                 <button class="btn btn-default btn" title="Skip failed uploads" v-on:click="skipFailedFiles"> 
                     <i class="fa fa-arrow-left"></i> Skip
