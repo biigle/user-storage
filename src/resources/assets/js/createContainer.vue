@@ -332,8 +332,6 @@ export default {
                     this.finishIncomplete = this.failedFiles.length > 0;
 
                     this.finished = !this.finishIncomplete;
-                    this.editable = this.finishIncomplete;
-                    
                 });
         },
         getFailedFiles() {
@@ -589,7 +587,7 @@ export default {
     }, 
     watch: {
         loading(){
-            this.editable = !this.loading;
+            this.editable = !this.loading && !this.finished;
         },
     },
     created() {
