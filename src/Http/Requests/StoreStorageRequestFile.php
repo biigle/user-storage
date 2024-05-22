@@ -164,18 +164,16 @@ class StoreStorageRequestFile extends FormRequest
             if (strlen($path) > 512) {
                 $validator->errors()->add('file', 'The filename and prefix combined must not exceed 512 characters.');
             }
-
-            $filename = $file->getClientOriginalName();
             
             $existsInOtherRequest = StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
                 ->where('storage_requests.id', '!=', $this->storageRequest->id)
                 ->where('storage_requests.user_id', $this->storageRequest->user_id)
-                // Don't use $path here, because it contains directory name
-                ->where('storage_request_files.path','LIKE', '%'.$filename.'%')
+                ->where('storage_request_files.path', $path)
                 ->exists();
 
-            // Deny uploading of files that already exist in another request of the same
-            // user. This could lead to the following issue:
+            // Deny file uploads that would create a request for the same user 
+            // with a directory name that already exists and that also contains the same file.
+            // This could lead to the following issue:
             // The file exists in request A and B. Its size was added twice during each
             // upload to the used quota of the user. But ultimately the file exists only
             // once in storage. If requests A and B are deleted with all files, the size
