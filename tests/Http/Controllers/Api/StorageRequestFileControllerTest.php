@@ -117,7 +117,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_total' => 2,
                 'retry' => true,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
         $f = $request->files()->first();
@@ -358,7 +358,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         Cache::clear();
         $f = $request->files()->first();
@@ -410,7 +410,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         Cache::clear();
         $f = $request->files()->first();
@@ -467,7 +467,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $file = new UploadedFile(__DIR__."/../../../files/test.txt", 'test.jpg', 'text/plain', null, true);
 
@@ -496,7 +496,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
@@ -523,7 +523,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
-            ->assertStatus(200);
+            ->assertStatus(201);
 
         // Duplicated chunks do not cause errors any more
         $res2 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
