@@ -77,11 +77,6 @@ class StoreStorageRequestFile extends FormRequest
                 'prefix' => $this->sanitizePrefix($this->input('prefix')),
             ]);
         }
-
-        // Cast boolean as string to boolean
-        $this->merge([
-            'retry' => $this->toBoolean($this->input('retry')),
-        ]);
     }
 
     /**
@@ -225,15 +220,5 @@ class StoreStorageRequestFile extends FormRequest
     public function isChunked()
     {
         return $this->has('chunk_index');
-    }
-
-    /**
-     * Cast input to boolean or return input value when it is not boolean.
-     * 
-     * @return boolean
-     */
-    public function toBoolean($input){
-        $maybeBool = filter_var($input, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
-        return $maybeBool === null ? $input : $maybeBool;
     }
 }

@@ -432,9 +432,9 @@ export default {
                     lastModified: file.lastModified,
                 });
                 let retryCount = 0;
-                let retryChunk = true;
+                let retryChunkTrue = 1;
 
-                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunk)
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunkTrue)
                 .then(function (res) {
                     start = end;
                     this.finishedChunksSize += chunk.size;
@@ -486,7 +486,7 @@ export default {
                 })
                 .then(() => uploadNextChunk(true));
         },
-        uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount, retryChunk=false) {
+        uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount, retryChunk = 0) {
             retryCount = retryCount || 1;
 
             let data = new FormData();
