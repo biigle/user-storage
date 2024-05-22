@@ -524,18 +524,17 @@ export default {
                 this.currentUploadedSize = event.loaded;
             }
         },
-        maybeFinishSubmission() {
-            if ((this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded()) {
+        maybeFinishSubmission(force = false) {
+            if (!force && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded()) {
                 return Promise.resolve();
             }
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
                 .then(() => this.finished = !this.finishIncomplete, handleErrorResponse);
         },
         skipFailedFiles() {
-            // Redirect to storage request page
-            // Do not use histroy.back, because it does not refresh page
-            let url = window.location.pathname;
-            window.location.pathname = url.substring(0, url.lastIndexOf('/'));
+            this.finishIncomplete = false;
+            this.failedFiles = [];
+            this.maybeFinishSubmission(true);
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
