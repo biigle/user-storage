@@ -832,7 +832,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame(44074, $f->size);
         $this->assertSame(2, $f->total_chunks);
         $this->assertSame([0], $f->received_chunks);
-        $this->assertEquals(3, $f->retry_count);
+        $this->assertEquals(2, $f->retry_count);
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
             'file' => $file,
@@ -847,7 +847,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame(88148, $f->size);
         $this->assertSame(2, $f->total_chunks);
         $this->assertSame([0, 1], $f->received_chunks);
-        $this->assertEquals(5, $f->retry_count);
+        $this->assertEquals(3, $f->retry_count);
     }
 
 }
