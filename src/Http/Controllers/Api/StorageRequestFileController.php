@@ -85,7 +85,7 @@ class StorageRequestFileController extends Controller
                 }
 
                 $filePath .= '.'.$chunkIndex;
-                $fileModel = $fileModel->fresh();
+                $fileModel = $fileModel->refresh();
 
             } else {
                 if ($fileModel) {
