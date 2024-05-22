@@ -147,12 +147,6 @@
                 </p>
             </div>
         </div>
-        <div v-cloak v-if="hasDuplicatedFiles" class="panel panel-info text-center">
-            <div v-cloak class="panel-body text-info">
-                <p><i class="fa fa-info-circle"></i></p>
-                <p>Some files were skipped during upload because they already exist in other storage requests</p>
-            </div>
-        </div>
 
         <p v-cloak v-if="exceedsMaxSize" class="text-danger">
             You have selected more than the <span v-text="availableQuota"></span> of storage available to you.
@@ -165,6 +159,12 @@
         <p v-cloak v-if="finished && !uploadNotSuccessfull" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
+
+        <p v-cloak v-if="hasDuplicatedFiles" class="text-info small">
+            Some files <i class="fa fa-info-circle"></i> were skipped during upload. 
+            They already exist in another storage request with equal directory name.
+        </p>
+
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">
             <span v-if="finishIncomplete">Failed </span> 
             <span v-else>Selected </span>
