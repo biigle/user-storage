@@ -335,7 +335,7 @@ export default {
                 });
         },
         getFailedFiles() {
-            return this.files.filter(f => f.error);
+            return this.files.filter(f => f.file._status.failed);
         },
         proceedWithUpload(response, files) {
             this.storageRequest = response.body;
@@ -386,7 +386,6 @@ export default {
                     return;
                 }
 
-                file.error = e.body.errors ? e.body.errors : e.body.exception;
                 file.file.saved = false;
                 file.file._status.failed = true;
             };
@@ -394,8 +393,7 @@ export default {
             if (file.file.size > this.chunkSize) {
                 return this.uploadChunkedFile(file)
                     .then(() => {
-                        if (file.error) {
-                            delete file.error;
+                        if (file.file._status.failed) {
                             file.file._status.failed = false;
                         }
                     }, saveFailedFiles)
@@ -409,8 +407,7 @@ export default {
                     file.file.saved = true;
                     file.file.id = response.body.id;
 
-                    if (file.error) {
-                        delete file.error;
+                    if (file.file._status.failed) {
                         file.file._status.failed = false;
                     }
                 }, saveFailedFiles)
@@ -528,7 +525,7 @@ export default {
             }
         },
         maybeFinishSubmission() {
-            if ((this.files.filter(f => f.error).length > 0) || this.noFilesUploaded()) {
+            if ((this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded()) {
                 return Promise.resolve();
             }
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
