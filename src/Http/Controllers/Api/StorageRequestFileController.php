@@ -116,7 +116,7 @@ class StorageRequestFileController extends Controller
                     $fileModel->save();
                 }
 
-                if ($success === true) {
+                if ($success !== false) {
                     break;
                 }
             }
