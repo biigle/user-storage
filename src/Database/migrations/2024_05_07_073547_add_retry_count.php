@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Add a retry count to prevent the race condition betweeen the delete job and a retry upload request
         Schema::table('storage_request_files', function (Blueprint $table) {
             $table->unsignedInteger('retry_count')->default(1);
         });
