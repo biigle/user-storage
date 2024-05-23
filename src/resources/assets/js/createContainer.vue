@@ -383,6 +383,11 @@ export default {
                     file.file.saved = true;
                     file.file._status.info = true;
                     this.nbrDuplicatedFiles += 1;
+                    // Set status of failed files on false, because they will not be saved
+                    // and will otherwise block the upload
+                    if (file.file._status.failed) {
+                        file.file._status.failed = false;
+                    }
                     return;
                 }
 
