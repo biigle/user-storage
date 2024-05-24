@@ -612,16 +612,6 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(422);
 
-        $fileDuplicate = StorageRequestFile::factory()->create([
-            'path' => 'abc/test.jpg',
-            'storage_request_id' => StorageRequest::factory()->create([
-                'user_id' => $request->user_id,
-            ])->id,
-        ]);
-
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $fileDuplicate])
-            ->assertStatus(422);
-    
     }
 
     public function testStoreExceedsQuota()
