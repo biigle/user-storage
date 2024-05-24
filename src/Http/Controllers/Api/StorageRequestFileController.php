@@ -110,15 +110,15 @@ class StorageRequestFileController extends Controller
                     $success = false;
                 }
 
-                // Save retry counts for chunked files to recognize if it was changed
-                if($fileModel->exists() && $request->input('retry')) {
-                    $fileModel->retry_count += 1;
-                    $fileModel->save();
-                }
-
                 if ($success !== false) {
                     break;
                 }
+            }
+
+            // Save retry counts for chunked files to recognize if it was changed
+            if($fileModel->exists() && $request->input('retry')) {
+                $fileModel->retry_count += 1;
+                $fileModel->save();
             }
 
             if ($success === false) {
