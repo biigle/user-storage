@@ -89,7 +89,7 @@ class StorageRequestFileController extends Controller
 
             } else {
                 if ($fileModel) {
-                    $fileModel->update(['size' => $file->getSize()]);
+                    return $fileModel;
                 } else {
                     $fileModel = $sr->files()->create([
                         'path' => $filePath,

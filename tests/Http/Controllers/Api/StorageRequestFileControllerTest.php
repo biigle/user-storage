@@ -778,6 +778,8 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(200);
 
+        $this->assertNotNull($file->fresh());
+
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
             $this->assertSame('a.jpg', $job->path);
 
