@@ -589,9 +589,9 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(200);
 
-        $this->assertNotSame('abc', $disk->get("request-{$id}/test.jpg"));
+        $this->assertSame('abc', $disk->get("request-{$id}/test.jpg"));
         $this->assertSame(1, $request->files()->count());
-        $this->assertSame(44074, $request->files()->first()->size);
+        $this->assertSame(123, $request->files()->first()->size);
     }
 
     public function testStoreExistsInOtherRequest()
