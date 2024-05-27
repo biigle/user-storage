@@ -37,7 +37,6 @@ export default {
             pathContainsSpaces: false,
             failedFiles: [],
             finishIncomplete: false,
-            editable: true,
             nbrDuplicatedFiles: 0,
         };
     },
@@ -79,6 +78,9 @@ export default {
         },
         uploadNotSuccessfull() {
             return this.finishIncomplete || this.noFilesUploaded();
+        },
+        editable(){
+            return !this.loading && !this.finished;
         }
     },
     methods: {
@@ -586,11 +588,6 @@ export default {
             return path;
         },
     }, 
-    watch: {
-        loading(){
-            this.editable = !this.loading && !this.finished;
-        },
-    },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
