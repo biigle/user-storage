@@ -367,7 +367,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422);
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame('test.jpg', $job->file->path);
             $this->assertSame([0], $job->chunks);
 
             return true;
@@ -420,7 +420,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame('test.jpg', $job->file->path);
             $this->assertSame([0], $job->chunks);
 
             return true;
@@ -521,15 +521,21 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(201);
 
-        // Duplicated chunks do not cause errors any more
-        $res2 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
+            ->assertStatus(422);
+
+        $res2 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+                'retry' => true,
+            ])
             ->assertStatus(200);
 
-        // File model is just returned
         $this->assertEquals($res1->getContent(), $res2->getContent());
     }
 
@@ -781,7 +787,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertNotNull($file->fresh());
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('a.jpg', $job->path);
+            $this->assertSame('a.jpg', $job->file->path);
 
             return true;
         });
