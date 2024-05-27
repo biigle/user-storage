@@ -379,7 +379,7 @@ export default {
                 return response;
             };
 
-            let saveFailedFiles = (e) => {
+            let handleFailedFile = (e) => {
                 // Do not add duplicated files to failed files,
                 // because they cannot be uploaded.
                 if (e.body.errors && e.body.errors['file_duplicated']) {
@@ -404,7 +404,7 @@ export default {
                         if (file.file._status.failed) {
                             file.file._status.failed = false;
                         }
-                    }, saveFailedFiles)
+                    }, handleFailedFile)
                     .then(updateFinishedSize);
             }
 
@@ -418,7 +418,7 @@ export default {
                     if (file.file._status.failed) {
                         file.file._status.failed = false;
                     }
-                }, saveFailedFiles)
+                }, handleFailedFile)
                 .then(updateFinishedSize);
         },
         uploadChunkedFile(file) {
