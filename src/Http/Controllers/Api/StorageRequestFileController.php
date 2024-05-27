@@ -63,7 +63,10 @@ class StorageRequestFileController extends Controller
                 
                 // Skip already saved chunks
                 if($fileModel && in_array($request->input('chunk_index'), $fileModel->received_chunks)) {
-                    return $fileModel;
+                    if($request->input('retry')) {
+                        return $fileModel;
+                    }
+                    abort(422);
                 }
 
                 $chunkIndex = (int) $request->input('chunk_index');
