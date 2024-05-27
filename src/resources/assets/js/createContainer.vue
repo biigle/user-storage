@@ -41,6 +41,28 @@ export default {
         };
     },
     computed: {
+        totalSize() {
+            let files = this.finishIncomplete ? this.failedFiles : this.files;
+            return files.reduce(function (carry, file) {
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeToUpload() {
+            let files = this.finishIncomplete ? this.failedFiles : this.files;
+            return files.reduce(function (carry, file) {
+                if (file.saved) {
+                    return carry;
+                }
+
+                return carry + file.size;
+            }, 0);
+        },
+        totalSizeToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUpload);
+        },
+        totalSizeForHumans() {
+            return sizeForHumans(this.totalSize);
+        },
         hasDuplicatedFiles() {
             return this.nbrDuplicatedFiles > 0;
         },
@@ -57,14 +79,14 @@ export default {
             return this.currentUploadedSize + this.finishedUploadedSize + this.finishedChunksSize;
         },
         uploadedPercent() {
-            return Math.round(this.uploadedSize / this.totalSizeToUpload() * 100);
+            return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
         },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
         },
         exceedsMaxSize() {
-            let selectionExceedsQuota = this.availableQuotaBytes !== -1  && this.totalSize() > this.availableQuotaBytes;
-            let exceedsStorage = this.availableQuotaBytes !== -1 && this.usedQuota !== -1 && this.totalSize() + this.usedQuota > this.availableQuotaBytes;
+            let selectionExceedsQuota = this.availableQuotaBytes !== -1  && this.totalSize > this.availableQuotaBytes;
+            let exceedsStorage = this.availableQuotaBytes !== -1 && this.usedQuota !== -1 && this.totalSize + this.usedQuota > this.availableQuotaBytes;
             return selectionExceedsQuota || exceedsStorage;
         },
         canSubmit() {
@@ -88,28 +110,6 @@ export default {
             return this.exceedsMaxSize
                 || (this.nbrDuplicatedFiles === this.files.length)
                 || (this.getFailedFiles().length === this.files.length);
-        },
-        totalSize() {
-            let files = this.finishIncomplete ? this.failedFiles : this.files;
-            return files.reduce(function (carry, file) {
-                return carry + file.size;
-            }, 0);
-        },
-        totalSizeToUpload() {
-            let files = this.finishIncomplete ? this.failedFiles : this.files;
-            return files.reduce(function (carry, file) {
-                if (file.saved) {
-                    return carry;
-                }
-
-                return carry + file.size;
-            }, 0);
-        },
-        totalSizeToUploadForHumans() {
-            return sizeForHumans(this.totalSizeToUpload());
-        },
-        totalSizeForHumans() {
-            return sizeForHumans(this.totalSize());
         },
         handleFilesChosen(event) {
             // Force users to create new directories for their files. Otherwise they
