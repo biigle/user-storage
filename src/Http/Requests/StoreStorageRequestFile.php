@@ -159,7 +159,6 @@ class StoreStorageRequestFile extends FormRequest
             if (strlen($path) > 512) {
                 $validator->errors()->add('file', 'The filename and prefix combined must not exceed 512 characters.');
             }
-            
             $existsInOtherRequest = StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
                 ->where('storage_requests.id', '!=', $this->storageRequest->id)
                 ->where('storage_requests.user_id', $this->storageRequest->user_id)
