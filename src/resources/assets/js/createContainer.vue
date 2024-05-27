@@ -36,7 +36,6 @@ export default {
             chunkSize: 0,
             pathContainsSpaces: false,
             failedFiles: [],
-            finishIncomplete: false,
             nbrDuplicatedFiles: 0,
         };
     },
@@ -104,6 +103,9 @@ export default {
         },
         remainingQuota(){
             return sizeForHumans(this.availableQuotaBytes - this.usedQuota);
+        },
+        finishIncomplete(){
+            return this.failedFiles.length > 0;
         }
     },
     methods: {
@@ -332,8 +334,6 @@ export default {
                     this.resetSizes();
                     // Must be set here, otherwise array is read and written simulteneously
                     this.failedFiles = this.getFailedFiles();
-                    this.finishIncomplete = this.failedFiles.length > 0;
-
                     this.finished = !this.finishIncomplete;
                 });
         },
@@ -540,7 +540,6 @@ export default {
                 .then(() => this.finished = !this.finishIncomplete, handleErrorResponse);
         },
         skipFailedFiles() {
-            this.finishIncomplete = false;
             this.failedFiles = [];
             this.maybeFinishSubmission(true);
         },
