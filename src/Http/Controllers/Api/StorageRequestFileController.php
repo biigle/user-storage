@@ -43,7 +43,8 @@ class StorageRequestFileController extends Controller
      * @apiParam (Optional arguments) {string} prefix Optional prefix to prepend to the filename. Use slashes to create directories.
      * @apiParam (Optional arguments) {int} chunk_index Index of the uploaded chunk in case the file is uploaded in chunks. The first chunk must be uploaded first.
      * @apiParam (Optional arguments) {int} chunk_total Total number of chunks for this file in case the file is uploaded in chunks.
-     *
+     * @apiParam (Optional arguments) {bool} retry Bool is used to change the retry count if a chunked file failed previously and should be saved now.
+     * 
      * @param StoreStorageRequestFile $request
      *
      * @return \Illuminate\Http\Response
@@ -115,7 +116,9 @@ class StorageRequestFileController extends Controller
                 }
             }
 
-            // Save retry counts for chunked files to recognize if it was changed
+            // Use retry counts to determine if a delete request still should be executed.
+            // A delete request can be outdated if in the mean time a save request was sent
+            // for the same file. Then the retry count is changed.
             if($fileModel->exists() && $request->input('retry')) {
                 $fileModel->retry_count += 1;
                 $fileModel->save();
