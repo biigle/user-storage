@@ -85,9 +85,7 @@ export default {
             return sizeForHumans(this.uploadedSize);
         },
         exceedsMaxSize() {
-            let selectionExceedsQuota = this.availableQuotaBytes !== -1  && this.totalSize > this.availableQuotaBytes;
-            let exceedsStorage = this.availableQuotaBytes !== -1 && this.usedQuota !== -1 && this.totalSize + this.usedQuota > this.availableQuotaBytes;
-            return selectionExceedsQuota || exceedsStorage;
+            return this.availableQuotaBytes !== -1 && this.totalSize + this.usedQuota > this.availableQuotaBytes;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
@@ -103,6 +101,9 @@ export default {
         },
         editable(){
             return !this.loading && !this.finished;
+        },
+        remainingQuota(){
+            return sizeForHumans(this.availableQuotaBytes - this.usedQuota);
         }
     },
     methods: {
