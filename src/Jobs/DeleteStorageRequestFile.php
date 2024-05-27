@@ -15,11 +15,10 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
     use InteractsWithQueue, Batchable;
 
     /**
-     * File path to be deleted.
-     *
-     * @var string
-     */
-    public $path;
+     * File that should be deleted
+     * 
+     * **/
+    public $file;
 
     /**
      * Whether the request of the file was pending or not.
@@ -46,7 +45,9 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      * Count for retry attempts of a chunked file
      * 
      * **/
-    public $retryCount = 1;
+    public $oldRetryCount;
+
+    public $deleteWhenMissingModels = true;
 
     /**
      * Create a new job instance.
@@ -55,8 +56,8 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      */
     public function __construct(StorageRequestFile $file)
     {
-        $this->path = $file->path;
-        $this->retryCount = $file->retry_count;
+        $this->file = $file;
+        $this->oldRetryCount = $file->retry_count;
         $request = $file->request;
         $this->pending = is_null($request->expires_at);
         if ($this->pending) {
@@ -74,10 +75,8 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      */
     public function handle()
     {
-        $file = StorageRequestFile::where('path','=',$this->path);
-
         // Do not delete files when delete-request is outdated
-        if($file->exists() && $this->retryCount != $file->first()->retry_count) {
+        if($this->oldRetryCount != $this->file->refresh()->retry_count) {
             return;
         }
 
@@ -87,7 +86,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             $disk = Storage::disk(config('user_storage.storage_disk'));
         }
 
-        $path = "{$this->prefix}/{$this->path}";
+        $path = "{$this->prefix}/{$this->file->path}";
 
         if ($this->chunks) {
             $paths = array_map(function ($chunk) use ($path) {
@@ -100,7 +99,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
         }
 
         if (!$success) {
-            throw new Exception("Could not delete file '{$this->path}' for storage request with prefix '{$this->prefix}'.");
+            throw new Exception("Could not delete file '{$this->file->path}' for storage request with prefix '{$this->prefix}'.");
         }
 
         if ($success && count($disk->allFiles($this->prefix)) === 0) {
@@ -111,8 +110,6 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             }
         }
 
-        if($file->exists()) {
-            $file->delete();
-        }
+        $this->file->delete();
     }
 }
