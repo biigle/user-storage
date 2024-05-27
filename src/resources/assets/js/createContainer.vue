@@ -437,9 +437,9 @@ export default {
                     lastModified: file.lastModified,
                 });
                 let retryCount = 0;
-                let retryChunkTrue = 1;
+                let retryChunk = file._status.failed ? 1 : 0;
 
-                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunkTrue)
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunk)
                 .then(function (res) {
                     start = end;
                     this.finishedChunksSize += chunk.size;
@@ -497,11 +497,11 @@ export default {
             let data = new FormData();
             data.append('file', blob);
             data.append('prefix', prefix);
-            data.append('retry', retryChunk);
 
             if (chunkIndex !== undefined && totalChunks !== undefined) {
                 data.append('chunk_index', chunkIndex);
                 data.append('chunk_total', totalChunks);
+                data.append('retry', retryChunk);
             }
 
             let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
