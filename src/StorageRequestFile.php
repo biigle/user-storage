@@ -39,6 +39,7 @@ class StorageRequestFile extends Model
         'size',
         'received_chunks',
         'total_chunks',
+        'retry_count'
     ];
 
     /**

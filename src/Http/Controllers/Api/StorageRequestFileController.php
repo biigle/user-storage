@@ -82,6 +82,7 @@ class StorageRequestFileController extends Controller
                         'size' => $file->getSize(),
                         'received_chunks' => [0],
                         'total_chunks' => $request->input('chunk_total'),
+                        'retry_count' => 1,
                     ]);
                 } else {
                     // This should never be allowed by the validation.
@@ -89,8 +90,6 @@ class StorageRequestFileController extends Controller
                 }
 
                 $filePath .= '.'.$chunkIndex;
-                $fileModel = $fileModel->refresh();
-
             } else {
                 if ($fileModel) {
                     return $fileModel;
