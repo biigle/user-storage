@@ -371,12 +371,10 @@ export default {
         uploadFile(file) {
             this.currentUploadedSize = 0;
 
-            let updateFinishedSize = function (response) {
+            let updateFinishedSize = function () {
                 this.currentUploadedSize = 0;
                 this.finishedChunksSize = 0;
                 this.finishedUploadedSize += file.file.size;
-
-                return response;
             };
 
             let handleFailedFile = (e) => {
