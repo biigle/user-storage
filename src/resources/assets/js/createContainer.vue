@@ -336,6 +336,7 @@ export default {
             if (!this.canSubmit) {
                 return;
             }
+            let hasError = false;
 
             this.startLoading();
 
@@ -345,13 +346,16 @@ export default {
             
             promise.then((res) => this.proceedWithUpload(res, files))
                 .then(this.maybeFinishSubmission)
-                .catch(handleErrorResponse)
+                .catch((e) => {
+                    this.handleErrorResponse(e);
+                    hasError = true;
+                })
                 .finally(() => {
                     this.finishLoading();
                     this.resetSizes();
                     // Must be set here, otherwise array is read and written simulteneously
                     this.failedFiles = this.getFailedFiles();
-                    this.finished = !this.finishIncomplete;
+                    this.finished = !this.finishIncomplete && !hasError;
                 });
         },
         getFailedFiles() {
@@ -410,8 +414,13 @@ export default {
                     return;
                 }
 
-                file.file.saved = false;
-                file.file._status.failed = true;
+                if (e.status === 500) {
+                    file.file.saved = false;
+                    file.file._status.failed = true;
+                    return;
+                }
+                
+                throw e;
             };
 
             if (file.file.size > this.chunkSize) {
