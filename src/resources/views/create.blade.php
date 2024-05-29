@@ -192,7 +192,6 @@
             v-on:remove-directory="removeDirectory"
             v-on:remove-file="removeFile"
             ></file-browser>
-            
       </div>
     </div>
 </div>
