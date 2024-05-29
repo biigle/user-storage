@@ -41,26 +41,28 @@ export default {
     },
     computed: {
         totalSize() {
-            let files = this.finishIncomplete ? this.failedFiles : this.files;
-            return files.reduce(function (carry, file) {
-                return carry + file.size;
-            }, 0);
+            return this.computeTotalSize(this.files);
         },
         totalSizeToUpload() {
-            let files = this.finishIncomplete ? this.failedFiles : this.files;
-            return files.reduce(function (carry, file) {
-                if (file.saved) {
-                    return carry;
-                }
-
-                return carry + file.size;
-            }, 0);
+            return this.computeTotalSizeUpload(this.files);
         },
         totalSizeToUploadForHumans() {
             return sizeForHumans(this.totalSizeToUpload);
         },
         totalSizeForHumans() {
             return sizeForHumans(this.totalSize);
+        },
+        totalSizeFailedFiles() {
+            return this.computeTotalSize(this.failedFiles);
+        },
+        totalSizeToUploadFailedFiles() {
+            return this.computeTotalSizeUpload(this.failedFiles);
+        },
+        totalSizeFailedFilesToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUploadFailedFiles);
+        },
+        totalSizeFailedFilesForHumans() {
+            return sizeForHumans(this.totalSizeFailedFiles);
         },
         hasDuplicatedFiles() {
             return this.nbrDuplicatedFiles > 0;
@@ -80,11 +82,15 @@ export default {
         uploadedPercent() {
             return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
         },
+        uploadedPercentFailedFiles(){
+            return Math.round(this.uploadedSize / this.totalSizeToUploadFailedFiles * 100);
+        },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
         },
         exceedsMaxSize() {
-            return this.availableQuotaBytes !== -1 && this.totalSize + this.usedQuota > this.availableQuotaBytes;
+            let currentTotalSize = this.finishIncomplete ? this.totalSizeFailedFiles : this.totalSize;
+            return this.availableQuotaBytes !== -1 && currentTotalSize + this.usedQuota > this.availableQuotaBytes;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
@@ -109,6 +115,20 @@ export default {
         }
     },
     methods: {
+        computeTotalSize(files){
+            return files.reduce(function (carry, file) {
+                return carry + file.size;
+            }, 0);
+        },
+        computeTotalSizeUpload(files){
+            return files.reduce(function (carry, file) {
+                if (file.saved) {
+                    return carry;
+                }
+
+                return carry + file.size;
+            }, 0);
+        },
         noFilesUploaded() {
             return this.exceedsMaxSize
                 || (this.nbrDuplicatedFiles === this.files.length)

@@ -58,10 +58,19 @@
             >
 
         <div v-cloak v-if="loading" class="text-info">
-                <loader v-bind:active="true"></loader>
-                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
+            <loader v-bind:active="true"></loader>
+            Uploaded
+            <span v-if="finishIncomplete">
+                <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeFailedFilesToUploadForHumans"></span>
+                (<span v-text="uploadedPercentFailedFiles"></span>%).
+
+            </span>
+            <span v-else>
+                <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
                 (<span v-text="uploadedPercent"></span>%).
-        </div>
+
+            </span>
+         </div>
         <div v-cloak v-if="!finished && !finishIncomplete && !loading" class="create-storage-request-buttons clearfix">
             <div>
                 <button
@@ -166,9 +175,8 @@
         </p>
 
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">
-            <span v-if="finishIncomplete">Failed </span> 
-            <span v-else>Selected </span>
-            <span>files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
+            <span v-if="finishIncomplete">Failed files with a total size of <span v-text="totalSizeFailedFilesForHumans"></span>.</span> 
+            <span v-else>Selected files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
         </p>
 
         <p v-cloak v-if="pathContainsSpaces" class="text-warning">
