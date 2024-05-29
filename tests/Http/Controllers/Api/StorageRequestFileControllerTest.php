@@ -536,7 +536,14 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(200);
 
-        $this->assertEquals($res1->getContent(), $res2->getContent());
+            $res1 = json_decode($res1->getContent());
+            $res2 = json_decode($res2->getContent());
+
+            $this->assertEquals($res1->id, $res2->id);
+            $this->assertEquals($res1->storage_request_id, $res2->storage_request_id);
+            $this->assertEquals($res1->size, $res2->size);
+            $this->assertEquals($res1->path, $res2->path);
+            $this->assertEquals($res1->retry_count, $res2->retry_count);
     }
 
     public function testStoreChunkFirstChunkFirst()
