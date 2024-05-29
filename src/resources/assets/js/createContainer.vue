@@ -318,14 +318,11 @@ export default {
             }
 
             this.startLoading();
-            // Reuse already created storage request in case something went wrong.
-            let promise = this.storageRequest
-                ? Promise.resolve({ body: this.storageRequest })
-                : StorageRequestApi.save();
+
+            let promise = Promise.resolve({ body: this.storageRequest });
 
             let files = reupload ? this.failedFiles : this.files;
             
-
             promise.then((res) => this.proceedWithUpload(res, files))
                 .then(this.maybeFinishSubmission)
                 .catch(handleErrorResponse)
@@ -353,11 +350,12 @@ export default {
                     return;
                 }
 
-                if(this.storageRequest === null){
+                if (this.storageRequest === null) {
                     return StorageRequestApi.save()
-                    .then((res) => {this.storageRequest = res.body})
-                    .then(() => this.uploadFile(queue.shift()).then(loadNextFile))
+                        .then((res) => { this.storageRequest = res.body })
+                        .then(() => this.uploadFile(queue.shift()).then(loadNextFile));
                 }
+                
                 return this.uploadFile(queue.shift()).then(loadNextFile);
             };
 
