@@ -438,9 +438,11 @@ export default {
                 let retryCount = 0;
                 let retryChunk = file._status.failed ? 1 : 0;
 
-                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunk)
-                .then(function (res) {
-                    start = end;
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunk);
+                start = end;
+                chunkIndex += 1;
+
+                promise = promise.then(function (res) {
                     this.finishedChunksSize += chunk.size;
                     return res;
                 })
@@ -473,11 +475,6 @@ export default {
 
                     throw e;
 
-                })
-                .finally((res) => {
-                    start = end;
-                    chunkIndex += 1;
-                    return res;
                 });
 
                 if (loop) {
