@@ -160,7 +160,7 @@
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
 
-        <p v-cloak v-if="hasDuplicatedFiles" class="text-info small">
+        <p v-cloak v-if="hasDuplicatedFiles" class="text-info">
             Some files <i class="fa fa-info-circle"></i> were skipped during upload. 
             They already exist in another storage request with equal directory name.
         </p>
