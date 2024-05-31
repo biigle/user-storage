@@ -37,6 +37,7 @@ export default {
             pathContainsSpaces: false,
             failedFiles: [],
             nbrDuplicatedFiles: 0,
+            ignoreFiles: false,
         };
     },
     computed: {
@@ -560,16 +561,19 @@ export default {
                 this.currentUploadedSize = event.loaded;
             }
         },
-        maybeFinishSubmission(force = false) {
-            if (!force && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded()) {
+        maybeFinishSubmission() {
+            if (!this.ignoreFiles && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded()) {
                 return Promise.resolve();
             }
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
-                .then(() => this.finished = !this.finishIncomplete, handleErrorResponse);
+                .then(() => {
+                    this.finished = !this.finishIncomplete;
+                    this.ignoreFiles = false;}, handleErrorResponse);
         },
         skipFailedFiles() {
+            this.ignoreFiles = true;
             this.failedFiles = [];
-            this.maybeFinishSubmission(true);
+            this.maybeFinishSubmission();
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);

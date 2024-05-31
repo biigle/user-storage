@@ -71,7 +71,7 @@
 
             </span>
          </div>
-        <div v-cloak v-if="!finished && !finishIncomplete && !loading" class="create-storage-request-buttons clearfix">
+        <div v-cloak v-if="!finished && !finishIncomplete && !loading && !ignoreFiles" class="create-storage-request-buttons clearfix">
             <div>
                 <button
                     class="btn btn-default"
