@@ -142,7 +142,7 @@
             <div class="panel-body text-warning">
                 <p><i class="fa fa-exclamation-triangle"> </i></p>
                 <p v-if="noFilesUploaded">
-                    All file uploads failed.<br>
+                    No files were uploaded.<br>
                     You can cancel or retry the upload.
                 </p>
                 <p v-else>

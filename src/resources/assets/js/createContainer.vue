@@ -6,7 +6,7 @@ import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
-const RETRY_UPLOAD = 1;
+const RETRY_UPLOAD = 3;
 
 export default {
     mixins: [LoaderMixin],
@@ -115,9 +115,11 @@ export default {
             return this.failedFiles.length > 0;
         },
         noFilesUploaded() {
+            let nbrFailedFiles = this.getFailedFiles().length;
             return this.exceedsMaxSize
                 || (this.nbrDuplicatedFiles === this.files.length)
-                || (this.getFailedFiles().length === this.files.length);
+                || (nbrFailedFiles === this.files.length)
+                || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
         },
     },
     methods: {
@@ -565,10 +567,30 @@ export default {
             if (!this.ignoreFiles && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded) {
                 return Promise.resolve();
             }
+
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
                 .then(() => {
                     this.finished = !this.finishIncomplete;
-                    this.ignoreFiles = false;}, handleErrorResponse);
+                    this.ignoreFiles = false;
+                }, this.handleUploadError);
+        },
+        handleUploadError(e) {
+            this.handleErrorResponse(e);
+            StorageRequestApi.delete({ id: this.storageRequest.id }).catch((e) => {
+                if (e.status !== 404) {
+                    return e;
+                }
+                // Do nothing if request already has been deleted.
+            });
+            this.storageRequest = null;
+            this.finished = false;
+            this.failedFiles = [];
+            this.ignoreFiles = false;
+            this.files.map(f => {
+                f.saved = false;
+                f.file._status.failed = false;
+                f.file._status.info = false;
+            })
         },
         skipFailedFiles() {
             this.ignoreFiles = true;
