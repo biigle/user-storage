@@ -141,15 +141,22 @@
         <div v-cloak v-if="finishIncomplete && !loading" class="panel panel-warning text-center">
             <div class="panel-body text-warning">
                 <p><i class="fa fa-exclamation-triangle"> </i></p>
-                <p>
-                Some file uploads failed.<br>
-                You can ignore the files and submit the storage request anyway<br>
-                or retry the upload.
+                <p v-if="noFilesUploaded">
+                    All file uploads failed.<br>
+                    You can cancel or retry the upload.
+                </p>
+                <p v-else>
+                    Some file uploads failed.<br>
+                    You can ignore the files and submit the storage request anyway<br>or retry the upload.
                 </p>
                 <p>
-                <button class="btn btn-default btn" title="Skip failed uploads" v-on:click="skipFailedFiles"> 
+                <a v-if="noFilesUploaded" class="btn btn-default btn" title="Cancel uploads" href="{{URL::previous()}}"> 
+                    Cancel
+                </a>
+                <button v-else class="btn btn-default btn" title="Skip failed uploads" v-on:click="skipFailedFiles"> 
                     Ignore
                 </button>
+
                 <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
                     Retry
                 </button>

@@ -6,7 +6,7 @@ import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
 
 // Number of times a file upload is retried.
-const RETRY_UPLOAD = 3;
+const RETRY_UPLOAD = 1;
 
 export default {
     mixins: [LoaderMixin],
@@ -103,7 +103,7 @@ export default {
             return sizeForHumans(this.maxFilesizeBytes);
         },
         uploadNotSuccessfull() {
-            return this.finishIncomplete || this.noFilesUploaded();
+            return this.finishIncomplete || this.noFilesUploaded;
         },
         editable(){
             return !this.loading && !this.finished;
@@ -113,7 +113,12 @@ export default {
         },
         finishIncomplete(){
             return this.failedFiles.length > 0;
-        }
+        },
+        noFilesUploaded() {
+            return this.exceedsMaxSize
+                || (this.nbrDuplicatedFiles === this.files.length)
+                || (this.getFailedFiles().length === this.files.length);
+        },
     },
     methods: {
         computeTotalSize(files){
@@ -129,11 +134,6 @@ export default {
 
                 return carry + file.size;
             }, 0);
-        },
-        noFilesUploaded() {
-            return this.exceedsMaxSize
-                || (this.nbrDuplicatedFiles === this.files.length)
-                || (this.getFailedFiles().length === this.files.length);
         },
         handleFilesChosen(event) {
             // Force users to create new directories for their files. Otherwise they
@@ -562,7 +562,7 @@ export default {
             }
         },
         maybeFinishSubmission() {
-            if (!this.ignoreFiles && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded()) {
+            if (!this.ignoreFiles && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded) {
                 return Promise.resolve();
             }
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
