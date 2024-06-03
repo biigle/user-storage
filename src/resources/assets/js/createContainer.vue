@@ -643,6 +643,15 @@ export default {
 
             return path;
         },
+        reinitializeFiles() {
+            this.files.map(f => {
+                f.file._status = {
+                    failed: false,
+                    info: false,
+                };
+                Vue.observable(f.file._status);
+            });
+        }
     }, 
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
@@ -664,6 +673,11 @@ export default {
                 return 'This page is asking you to confirm that you want to leave - the file upload is still in progress.';
             }
         });
+
+        if (this.files.length !== 0) {
+            // Reinitialize file status
+            this.reinitializeFiles();
+        }
     },
 };
 </script>
