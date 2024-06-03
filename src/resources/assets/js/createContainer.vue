@@ -488,7 +488,7 @@ export default {
                         if (this.files.filter(f => f.file.saved).length > 1) {
                             FilesApi.delete({id: file.id}).catch((e) => {
                                 if (e.status !== 404) {
-                                    return e;
+                                    throw e;
                                 }
                                 // Do nothing if file already has been deleted.
                             });
@@ -497,7 +497,7 @@ export default {
                             // whole storage request.
                             StorageRequestApi.delete({id: this.storageRequest.id}).catch((e) => {
                                 if (e.status !== 404) {
-                                    return e;
+                                    throw e;
                                 }
                                 // Do nothing if file already has been deleted.
                             });
