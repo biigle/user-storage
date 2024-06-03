@@ -417,7 +417,9 @@ export default {
                     return;
                 }
 
-                if (e.status === 500) {
+                // Also catch the chunk index error,
+                // as it is caused by the race between the save and delete requests.
+                if (e.status === 500 || e.body.errors['chunk_index']) {
                     file.file.saved = false;
                     file.file._status.failed = true;
                     return;
