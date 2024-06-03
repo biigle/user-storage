@@ -574,25 +574,7 @@ export default {
                 .then(() => {
                     this.finished = !this.finishIncomplete;
                     this.ignoreFiles = false;
-                }, this.handleUploadError);
-        },
-        handleUploadError(e) {
-            this.handleErrorResponse(e);
-            StorageRequestApi.delete({ id: this.storageRequest.id }).catch((e) => {
-                if (e.status !== 404) {
-                    return e;
-                }
-                // Do nothing if request already has been deleted.
-            });
-            this.storageRequest = null;
-            this.finished = false;
-            this.failedFiles = [];
-            this.ignoreFiles = false;
-            this.files.map(f => {
-                f.saved = false;
-                f.file._status.failed = false;
-                f.file._status.info = false;
-            })
+                });
         },
         skipFailedFiles() {
             this.ignoreFiles = true;
