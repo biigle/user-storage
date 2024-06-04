@@ -579,7 +579,8 @@ export default {
         skipFailedFiles() {
             this.ignoreFiles = true;
             this.failedFiles = [];
-            this.maybeFinishSubmission();
+            this.maybeFinishSubmission()
+                .catch(handleErrorResponse);
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
