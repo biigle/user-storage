@@ -102,7 +102,7 @@ export default {
         maxFilesize() {
             return sizeForHumans(this.maxFilesizeBytes);
         },
-        uploadNotSuccessfull() {
+        hasError() {
             return this.finishIncomplete || this.noFilesUploaded;
         },
         editable(){

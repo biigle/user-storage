@@ -172,7 +172,7 @@
             Files larger than the maximum allowed size of <span v-text="maxFilesize"></span> have been ignored.
         </p>
 
-        <p v-cloak v-if="finished && !uploadNotSuccessfull" class="text-success">
+        <p v-cloak v-if="finished && !hasError" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
 
