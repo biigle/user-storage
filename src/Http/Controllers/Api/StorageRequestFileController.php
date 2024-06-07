@@ -60,13 +60,9 @@ class StorageRequestFileController extends Controller
             $fileModel = $request->storageRequestFile;
 
             if ($request->isChunked()) {
-                
                 // Skip already saved chunks
-                if($fileModel && in_array($request->input('chunk_index'), $fileModel->received_chunks)) {
-                    if($request->input('retry')) {
-                        return $fileModel;
-                    }
-                    abort(422);
+                if($request->chunkOrFileExists) {
+                    return $fileModel;
                 }
 
                 $chunkIndex = (int) $request->input('chunk_index');
@@ -91,7 +87,7 @@ class StorageRequestFileController extends Controller
 
                 $filePath .= '.'.$chunkIndex;
             } else {
-                if ($fileModel) {
+                if ($request->chunkOrFileExists) {
                     return $fileModel;
                 } else {
                     $fileModel = $sr->files()->create([

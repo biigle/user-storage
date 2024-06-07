@@ -28,6 +28,8 @@ class StoreStorageRequestFile extends FormRequest
      */
     public $storageRequestFile;
 
+    public $chunkOrFileExists;
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -127,6 +129,13 @@ class StoreStorageRequestFile extends FormRequest
             $this->storageRequestFile = $this->storageRequest->files()
                     ->where('path', $path)
                     ->first();
+
+            $this->chunkOrFileExists = ($this->isChunked() && $this->storageRequestFile && in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks))
+            || $this->storageRequestFile;
+
+            if($this->chunkOrFileExists && !$this->input('retry')) {
+                $validator->errors()->add('uploaded_file', 'The file was already uploaded but the retry option is not enabled.');
+            }
 
             if ($this->isChunked()) {
                 if ($this->storageRequestFile) {
