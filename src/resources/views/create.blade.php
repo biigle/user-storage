@@ -165,7 +165,7 @@
         </div>
 
         <p v-cloak v-if="exceedsMaxSize" class="text-danger">
-            Your upload is larger than the last <span v-text="remainingQuota"></span> of storage available to you.
+            You have selected more than the <span v-text="availableQuota"></span> of storage available to you.
         </p>
 
         <p v-cloak v-if="exceedsMaxFilesize" class="text-danger">
