@@ -532,11 +532,11 @@ export default {
             let data = new FormData();
             data.append('file', blob);
             data.append('prefix', prefix);
+            data.append('retry', retryChunk);
 
             if (chunkIndex !== undefined && totalChunks !== undefined) {
                 data.append('chunk_index', chunkIndex);
                 data.append('chunk_total', totalChunks);
-                data.append('retry', retryChunk);
             }
 
             let url = `api/v1/storage-requests/${this.storageRequest.id}/files`;
@@ -552,8 +552,9 @@ export default {
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
                         // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
                         // short moments of unavailability.
+                        retryChunk = 1;
                         return new Vue.Promise((resolve) => {
-                            setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)), 5000);
+                            setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1, retryChunk)), 5000);
                         });
                     }
                     throw e;
