@@ -571,7 +571,6 @@ export default {
 
             return StorageRequestApi.update({ id: this.storageRequest.id }, {})
                 .then(() => {
-                    this.finished = !this.finishIncomplete;
                     this.ignoreFiles = false;
                 });
         },
