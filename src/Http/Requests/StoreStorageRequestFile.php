@@ -130,8 +130,8 @@ class StoreStorageRequestFile extends FormRequest
                     ->where('path', $path)
                     ->first();
 
-            $this->chunkOrFileExists = ($this->isChunked() && $this->storageRequestFile && in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks))
-            || $this->storageRequestFile;
+            $this->chunkOrFileExists = $this->storageRequestFile && (($this->isChunked() && in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks))
+                || !$this->isChunked());
 
             if($this->chunkOrFileExists && !$this->input('retry')) {
                 $validator->errors()->add('uploaded_file', 'The file was already uploaded but the retry option is not enabled.');
