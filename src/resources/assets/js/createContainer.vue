@@ -342,11 +342,9 @@ export default {
 
             this.startLoading();
 
-            let promise = Promise.resolve({ body: this.storageRequest });
-
             let files = reupload ? this.failedFiles : this.files;
             
-            promise.then((res) => this.proceedWithUpload(res, files))
+            this.uploadAllFiles(files)
                 .then(this.maybeFinishSubmission)
                 .catch((e) => {
                     this.handleErrorResponse(e);
@@ -362,11 +360,6 @@ export default {
         },
         getFailedFiles() {
             return this.files.filter(f => f.file._status.failed);
-        },
-        proceedWithUpload(response, files) {
-            this.storageRequest = response.body;
-
-            return this.uploadAllFiles(files);
         },
         uploadAllFiles(files) {
             // Exclude files initialized from an unfinished request.
