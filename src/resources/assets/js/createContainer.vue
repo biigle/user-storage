@@ -366,7 +366,7 @@ export default {
             let queue = files.filter(f => f.file.saved !== true);
             let loadNextFile = () => {
                 if (queue.length === 0) {
-                    return;
+                    return Vue.Promise.resolve();
                 }
 
                 if (this.storageRequest === null) {
@@ -374,7 +374,6 @@ export default {
                         .then((res) => { this.storageRequest = res.body })
                         .then(() => this.uploadFile(queue.shift()).then(loadNextFile));
                 }
-                
                 return this.uploadFile(queue.shift()).then(loadNextFile);
             };
 
