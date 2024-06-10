@@ -90,8 +90,7 @@ export default {
             return sizeForHumans(this.uploadedSize);
         },
         exceedsMaxSize() {
-            let currentTotalSize = this.finishIncomplete ? this.totalSizeFailedFiles : this.totalSize;
-            return this.availableQuotaBytes !== -1 && currentTotalSize + this.usedQuota > this.availableQuotaBytes;
+            return this.availableQuotaBytes !== -1 && (this.totalSize + this.usedQuota) > this.availableQuotaBytes;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
