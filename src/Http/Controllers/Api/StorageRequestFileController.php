@@ -59,12 +59,16 @@ class StorageRequestFileController extends Controller
             $filePath = $request->getFilePath();
             $fileModel = $request->storageRequestFile;
 
-            if ($request->isChunked()) {
-                // Skip already saved chunks
-                if($request->chunkOrFileExists) {
-                    return $fileModel;
-                }
+            if($request->chunkOrFileExists) {
+                // Use retry counts to determine if a delete request still should be executed.
+                // A delete request can be outdated if in the mean time a save request was sent
+                // for the same file. Then the retry count is changed.
+                $fileModel->retry_count += 1;
+                $fileModel->save();
+                return $fileModel;
+            }
 
+            if ($request->isChunked()) {
                 $chunkIndex = (int) $request->input('chunk_index');
 
                 if ($fileModel) {
@@ -87,14 +91,11 @@ class StorageRequestFileController extends Controller
 
                 $filePath .= '.'.$chunkIndex;
             } else {
-                if ($request->chunkOrFileExists) {
-                    return $fileModel;
-                } else {
-                    $fileModel = $sr->files()->create([
-                        'path' => $filePath,
-                        'size' => $file->getSize(),
-                    ]);
-                }
+                $fileModel = $sr->files()->create([
+                    'path' => $filePath,
+                    'size' => $file->getSize(),
+                ]);
+                
             }
 
             // Retry the upload a few times, as we observed storage backends that threw
@@ -112,14 +113,6 @@ class StorageRequestFileController extends Controller
                 if ($success !== false) {
                     break;
                 }
-            }
-
-            // Use retry counts to determine if a delete request still should be executed.
-            // A delete request can be outdated if in the mean time a save request was sent
-            // for the same file. Then the retry count is changed.
-            if($fileModel->exists() && $request->input('retry')) {
-                $fileModel->retry_count += 1;
-                $fileModel->save();
             }
 
             if ($success === false) {
