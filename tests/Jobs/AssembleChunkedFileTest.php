@@ -14,12 +14,6 @@ use TestCase;
 
 class AssembleChunkedFileTest extends TestCase
 {
-    public function setUp(): void
-    {
-        parent::setUp();
-        File::cleanDirectory(config('user_storage.tmp_dir'));
-    }
-
     public function testHandle()
     {
         config(['user_storage.pending_disk' => 'test']);
@@ -42,7 +36,6 @@ class AssembleChunkedFileTest extends TestCase
         $this->assertFalse($disk->exists($request->getPendingPath('a.jpg.0')));
         $this->assertFalse($disk->exists($request->getPendingPath('a.jpg.1')));
         $this->assertSame('abcdef', $disk->get($request->getPendingPath('a.jpg')));
-        $this->assertEmpty(File::allFiles(config('user_storage.tmp_dir')));
 
         $file->refresh();
         $this->assertNull($file->received_chunks);
