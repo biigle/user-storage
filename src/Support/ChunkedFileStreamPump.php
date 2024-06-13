@@ -33,7 +33,7 @@ class ChunkedFileStreamPump
         $this->currentChunk = 0;
         $this->disk = Storage::disk(config('user_storage.pending_disk'));
         $this->path = $this->file->request->getPendingPath($this->file->path);
-        $this->buffer = fopen('php://memory', 'r+');
+        $this->buffer = fopen('php://temp', 'r+');
     }
 
     public function __destruct()
@@ -43,18 +43,28 @@ class ChunkedFileStreamPump
 
     public function __invoke($length)
     {
-        if (feof($this->buffer)) {
+        $data = fread($this->buffer, $length);
+
+        if ($data === '') {
             if ($this->currentChunk >= $this->file->total_chunks) {
                 return false;
             }
 
-            rewind($this->buffer);
+            // Recreate the buffer in case the chunks have uneven sizes. A larger previous
+            // chunk could leave trailing data in the buffer otherwise. The last chunk is
+            // often smaller than the previous chunks.
+            fclose($this->buffer);
+            $this->buffer = fopen('php://temp', 'r+');
+
             $chunkPath = "{$this->path}.{$this->currentChunk}";
             $this->currentChunk += 1;
 
             stream_copy_to_stream($this->disk->readStream($chunkPath), $this->buffer);
+            rewind($this->buffer);
+
+            return $this($length);
         }
 
-        return fread($this->buffer, $length);
+        return $data;
     }
 }
