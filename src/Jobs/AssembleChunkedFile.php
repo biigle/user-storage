@@ -4,13 +4,16 @@ namespace Biigle\Modules\UserStorage\Jobs;
 
 use Biigle\Jobs\Job;
 use Biigle\Modules\UserStorage\StorageRequestFile;
+use Biigle\Modules\UserStorage\Support\ChunkedFileStreamPump;
 use Exception;
-use File;
+use GuzzleHttp\Psr7\PumpStream;
+use GuzzleHttp\Psr7\StreamWrapper;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Storage;
+
 
 class AssembleChunkedFile extends Job implements ShouldQueue
 {
@@ -53,42 +56,29 @@ class AssembleChunkedFile extends Job implements ShouldQueue
             return;
         }
 
+        $pump = new ChunkedFileStreamPump($this->file);
+        $stream = new PumpStream($pump, ['size' => $this->file->size]);
+        $resource = StreamWrapper::getResource($stream);
+
         $disk = Storage::disk(config('user_storage.pending_disk'));
-        File::ensureDirectoryExists(config('user_storage.tmp_dir'));
-        $filename = tempnam(config('user_storage.tmp_dir'), 'assemble-chunks-');
 
-        try {
-            $tempFile = fopen($filename, 'w+');
-            $path = $this->file->request->getPendingPath($this->file->path);
-            $chunkPaths = [];
+        $path = $this->file->request->getPendingPath($this->file->path);
+        $success = $disk->writeStream($path, $resource);
 
-            for ($i = 0; $i < $this->file->total_chunks; $i++) {
-                $chunkPath = "{$path}.{$i}";
-                $chunkPaths[] = $chunkPath;
-                $stream = $disk->readStream($chunkPath);
-                stream_copy_to_stream($stream, $tempFile);
-            }
-
-            fseek($tempFile, 0);
-            $success = $disk->writeStream($path, $tempFile);
-            fclose($tempFile);
-
-            if (!$success) {
-                throw new Exception("Could not store assembled file at '{$path}'.");
-            }
-
-            $success = $disk->delete($chunkPaths);
-
-            if (!$success) {
-                throw new Exception("Could not delete chunks of file '{$path}'.");
-            }
-
-            $this->file->update([
-                'received_chunks' => null,
-                'total_chunks' => null,
-            ]);
-        } finally {
-            unlink($filename);
+        if (!$success) {
+            throw new Exception("Could not store assembled file at '{$path}'.");
         }
+
+        $chunkPaths = array_map(fn ($i) => "{$path}.{$i}", $this->file->received_chunks);
+        $success = $disk->delete($chunkPaths);
+
+        if (!$success) {
+            throw new Exception("Could not delete chunks of file '{$path}'.");
+        }
+
+        $this->file->update([
+            'received_chunks' => null,
+            'total_chunks' => null,
+        ]);
     }
 }
