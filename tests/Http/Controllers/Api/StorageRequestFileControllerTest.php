@@ -847,4 +847,42 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertEquals(2, $f->retry_count);
     }
 
+    public function testRetryUploadChunkedFile()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'chunk_index' => 0,
+            'chunk_total' => 3,
+        ])
+            ->assertStatus(201);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
+        $f = $request->files()->first();
+        $this->assertSame(44074, $f->size);
+        $this->assertEquals(1, $f->retry_count);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'chunk_index' => 0,
+            'chunk_total' => 3,
+            'retry' => true,
+        ])
+            ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
+        $f = $request->files()->first();
+        $this->assertSame(44074, $f->size);
+        $this->assertEquals(2, $f->retry_count);
+    }
+
 }
