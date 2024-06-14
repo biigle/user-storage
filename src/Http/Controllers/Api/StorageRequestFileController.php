@@ -43,7 +43,8 @@ class StorageRequestFileController extends Controller
      * @apiParam (Optional arguments) {string} prefix Optional prefix to prepend to the filename. Use slashes to create directories.
      * @apiParam (Optional arguments) {int} chunk_index Index of the uploaded chunk in case the file is uploaded in chunks. The first chunk must be uploaded first.
      * @apiParam (Optional arguments) {int} chunk_total Total number of chunks for this file in case the file is uploaded in chunks.
-     *
+     * @apiParam (Optional arguments) {bool} retry Bool is used to change the retry count if a chunked file failed previously and should be saved now.
+     * 
      * @param StoreStorageRequestFile $request
      *
      * @return \Illuminate\Http\Response
@@ -57,6 +58,15 @@ class StorageRequestFileController extends Controller
             $disk = config('user_storage.pending_disk');
             $filePath = $request->getFilePath();
             $fileModel = $request->storageRequestFile;
+
+            if($request->chunkOrFileExists) {
+                // Use retry counts to determine if a delete request still should be executed.
+                // A delete request can be outdated if in the mean time a save request was sent
+                // for the same file. Then the retry count is changed.
+                $fileModel->retry_count += 1;
+                $fileModel->save();
+                return $fileModel;
+            }
 
             if ($request->isChunked()) {
                 $chunkIndex = (int) $request->input('chunk_index');
@@ -72,6 +82,7 @@ class StorageRequestFileController extends Controller
                         'size' => $file->getSize(),
                         'received_chunks' => [0],
                         'total_chunks' => $request->input('chunk_total'),
+                        'retry_count' => 1,
                     ]);
                 } else {
                     // This should never be allowed by the validation.
@@ -79,16 +90,12 @@ class StorageRequestFileController extends Controller
                 }
 
                 $filePath .= '.'.$chunkIndex;
-
             } else {
-                if ($fileModel) {
-                    $fileModel->update(['size' => $file->getSize()]);
-                } else {
-                    $fileModel = $sr->files()->create([
-                        'path' => $filePath,
-                        'size' => $file->getSize(),
-                    ]);
-                }
+                $fileModel = $sr->files()->create([
+                    'path' => $filePath,
+                    'size' => $file->getSize(),
+                ]);
+                
             }
 
             // Retry the upload a few times, as we observed storage backends that threw
@@ -103,7 +110,7 @@ class StorageRequestFileController extends Controller
                     $success = false;
                 }
 
-                if ($success === true) {
+                if ($success !== false) {
                     break;
                 }
             }
@@ -183,6 +190,5 @@ class StorageRequestFileController extends Controller
     public function destroy(DestroyStorageRequestFile $request)
     {
         DeleteStorageRequestFile::dispatch($request->file);
-        $request->file->delete();
     }
 }

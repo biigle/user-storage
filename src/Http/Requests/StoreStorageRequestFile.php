@@ -28,6 +28,8 @@ class StoreStorageRequestFile extends FormRequest
      */
     public $storageRequestFile;
 
+    public $chunkOrFileExists;
+
     /**
      * Determine if the user is authorized to make this request.
      *
@@ -60,6 +62,7 @@ class StoreStorageRequestFile extends FormRequest
             'prefix' => ['filled', new FilePrefix],
             'chunk_index' => 'filled|integer|required_with:chunk_total|min:0|lt:chunk_total',
             'chunk_total' => 'filled|integer|required_with:chunk_index|min:2',
+            'retry' => 'filled|boolean',
         ];
     }
 
@@ -127,6 +130,13 @@ class StoreStorageRequestFile extends FormRequest
                     ->where('path', $path)
                     ->first();
 
+            $this->chunkOrFileExists = $this->storageRequestFile && (($this->isChunked() && in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks))
+                || !$this->isChunked());
+
+            if($this->chunkOrFileExists && !$this->input('retry')) {
+                $validator->errors()->add('uploaded_file', 'The file was already uploaded but the retry option is not enabled.');
+            }
+
             if ($this->isChunked()) {
                 if ($this->storageRequestFile) {
                     $combinedSize = $this->storageRequestFile->size + $file->getSize();
@@ -139,16 +149,12 @@ class StoreStorageRequestFile extends FormRequest
                     // chunk failed.
                     if ($shouldDeletePreviousChunks) {
                         DeleteStorageRequestFile::dispatch($this->storageRequestFile);
-                        $this->storageRequestFile->delete();
                     }
 
                     if ($this->storageRequestFile->total_chunks !== (int) $this->input('chunk_total')) {
                         $validator->errors()->add('chunk_total', 'The specified number of chunks does not match the previously specified number for this file.');
                     }
 
-                    if (in_array($this->input('chunk_index'), $this->storageRequestFile->received_chunks)) {
-                        $validator->errors()->add('chunk_index', 'The chunk was already uploaded.');
-                    }
                 } elseif ($this->input('chunk_index') > 0) {
                     $validator->errors()->add('chunk_index', 'The first chunk of a new file must be uploaded before the remaining chunks.');
                 }
@@ -162,22 +168,22 @@ class StoreStorageRequestFile extends FormRequest
             if (strlen($path) > 512) {
                 $validator->errors()->add('file', 'The filename and prefix combined must not exceed 512 characters.');
             }
-
             $existsInOtherRequest = StorageRequestFile::join('storage_requests', 'storage_requests.id', '=', 'storage_request_files.storage_request_id')
                 ->where('storage_requests.id', '!=', $this->storageRequest->id)
                 ->where('storage_requests.user_id', $this->storageRequest->user_id)
                 ->where('storage_request_files.path', $path)
                 ->exists();
 
-            // Deny uploading of files that already exist in another request of the same
-            // user. This could lead to the following issue:
+            // Deny file uploads that would create a request for the same user 
+            // with a directory name that already exists and that also contains the same file.
+            // This could lead to the following issue:
             // The file exists in request A and B. Its size was added twice during each
             // upload to the used quota of the user. But ultimately the file exists only
             // once in storage. If requests A and B are deleted with all files, the size
             // of the duplicate file will remain in the used quota because it could be
             // deleted only once.
             if ($existsInOtherRequest) {
-                $validator->errors()->add('file', 'The file already exists in the user storage.');
+                $validator->errors()->add('file_duplicated', 'The file already exists in the user storage.');
             }
         });
     }

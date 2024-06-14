@@ -9,6 +9,7 @@
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
+        biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
     </script>
 @endpush
 
@@ -56,14 +57,22 @@
             v-on:input="handleFilesChosen"
             >
 
-        <div v-if="!finished" class="create-storage-request-buttons clearfix">
-            <div v-cloak v-if="loading" class="text-info">
-                <loader v-bind:active="true"></loader>
-                Uploaded <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
-                (<span v-text="uploadedPercent"></span>%).
-            </div>
-            <div v-else>
+        <div v-cloak v-if="loading" class="text-info">
+            <loader v-bind:active="true"></loader>
+            Uploaded
+            <span v-if="finishIncomplete">
+                <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeFailedFilesToUploadForHumans"></span>
+                (<span v-text="uploadedPercentFailedFiles"></span>%).
 
+            </span>
+            <span v-else>
+                <span v-text="uploadedSizeForHumans"></span> of <span v-text="totalSizeToUploadForHumans"></span>
+                (<span v-text="uploadedPercent"></span>%).
+
+            </span>
+         </div>
+        <div v-cloak v-if="!finished && !finishIncomplete && !loading && !ignoreFiles" class="create-storage-request-buttons clearfix">
+            <div>
                 <button
                     class="btn btn-default"
                     title="Add a new root directory"
@@ -113,7 +122,7 @@
                         v-if="hasFiles"
                         title="Submit the storage request and upload the files"
                         class="btn btn-success"
-                        v-on:click="handleSubmit"
+                        v-on:click="handleSubmit()"
                         v-bind:disabled="exceedsMaxSize"
                         >
                         <i class="fa fa-upload"></i> Submit
@@ -129,20 +138,52 @@
                 </span>
             </div>
         </div>
+        <div v-cloak v-if="finishIncomplete && !loading" class="panel panel-warning text-center">
+            <div class="panel-body text-warning">
+                <p><i class="fa fa-exclamation-triangle"> </i></p>
+                <p v-if="noFilesUploaded">
+                    No files were uploaded.<br>
+                    You can cancel or retry the upload.
+                </p>
+                <p v-else>
+                    Some file uploads failed.<br>
+                    You can ignore the files and submit the storage request anyway<br>or retry the upload.
+                </p>
+                <p>
+                <a v-if="noFilesUploaded" class="btn btn-default btn" title="Cancel uploads" href="{{URL::previous()}}"> 
+                    Cancel
+                </a>
+                <button v-else class="btn btn-default btn" title="Skip failed uploads" v-on:click="skipFailedFiles"> 
+                    Ignore
+                </button>
+
+                <button class="btn btn-success" title="Reupload failed files" v-on:click="handleSubmit(true)">
+                    Retry
+                </button>
+                </p>
+            </div>
+        </div>
 
         <p v-cloak v-if="exceedsMaxSize" class="text-danger">
-            You have selected more than the <span v-text="availableQuota"></span> of storage available to you.
+            You have selected more than the <span v-text="remainingQuota"></span> of storage available to you.
         </p>
 
         <p v-cloak v-if="exceedsMaxFilesize" class="text-danger">
             Files larger than the maximum allowed size of <span v-text="maxFilesize"></span> have been ignored.
         </p>
 
-        <p v-cloak v-if="finished" class="text-success">
+        <p v-cloak v-if="finished && !hasError" class="text-success">
             The storage request has been submitted. You will be notified when it has been reviewed.
         </p>
+
+        <p v-cloak v-if="hasDuplicatedFiles" class="text-info">
+            Some files <i class="fa fa-info-circle"></i> were skipped during upload. 
+            They already exist in another storage request with equal directory name.
+        </p>
+
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">
-            Selected files with a total size of <span v-text="totalSizeForHumans"></span>.
+            <span v-if="finishIncomplete">Failed files with a total size of <span v-text="totalSizeFailedFilesForHumans"></span>.</span> 
+            <span v-else>Selected files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
         </p>
 
         <p v-cloak v-if="pathContainsSpaces" class="text-warning">
@@ -150,7 +191,6 @@
         </p>
 
         <file-browser
-            v-cloak
             v-bind:root-directory="rootDirectory"
             v-bind:editable="editable"
             v-bind:selectable="true"
@@ -159,7 +199,6 @@
             v-on:remove-directory="removeDirectory"
             v-on:remove-file="removeFile"
             ></file-browser>
-
       </div>
     </div>
 </div>

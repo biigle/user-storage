@@ -352,7 +352,7 @@ class StorageRequestControllerTest extends ApiTestCase
 
         Bus::assertBatched(function (PendingBatch $batch) use ($file) {
             $this->assertEquals(1, $batch->jobs->count());
-            $this->assertEquals($file->path, $batch->jobs->first()->path);
+            $this->assertEquals($file->path, $batch->jobs->first()->file->path);
             return true;
         });
         $this->assertNull($request->fresh());

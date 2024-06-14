@@ -35,9 +35,39 @@ export default {
             exceedsMaxFilesize: false,
             chunkSize: 0,
             pathContainsSpaces: false,
+            failedFiles: [],
+            nbrDuplicatedFiles: 0,
+            ignoreFiles: false,
         };
     },
     computed: {
+        totalSize() {
+            return this.computeTotalSize(this.files);
+        },
+        totalSizeToUpload() {
+            return this.computeTotalSizeUpload(this.files);
+        },
+        totalSizeToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUpload);
+        },
+        totalSizeForHumans() {
+            return sizeForHumans(this.totalSize);
+        },
+        totalSizeFailedFiles() {
+            return this.computeTotalSize(this.failedFiles);
+        },
+        totalSizeToUploadFailedFiles() {
+            return this.computeTotalSizeUpload(this.failedFiles);
+        },
+        totalSizeFailedFilesToUploadForHumans() {
+            return sizeForHumans(this.totalSizeToUploadFailedFiles);
+        },
+        totalSizeFailedFilesForHumans() {
+            return sizeForHumans(this.totalSizeFailedFiles);
+        },
+        hasDuplicatedFiles() {
+            return this.nbrDuplicatedFiles > 0;
+        },
         hasSelectedDirectory() {
             return this.selectedDirectory !== null;
         },
@@ -47,40 +77,20 @@ export default {
         hasFiles() {
             return this.files.length > 0;
         },
-        totalSize() {
-            return this.files.reduce(function (carry, file) {
-                return carry + file.size;
-            }, 0);
-        },
-        totalSizeToUpload() {
-            return this.files.reduce(function (carry, file) {
-                if (file.saved) {
-                    return carry;
-                }
-
-                return carry + file.size;
-            }, 0);
-        },
-        totalSizeToUploadForHumans() {
-            return sizeForHumans(this.totalSizeToUpload);
-        },
-        totalSizeForHumans() {
-            return sizeForHumans(this.totalSize);
-        },
         uploadedSize() {
             return this.currentUploadedSize + this.finishedUploadedSize + this.finishedChunksSize;
         },
         uploadedPercent() {
             return Math.round(this.uploadedSize / this.totalSizeToUpload * 100);
         },
+        uploadedPercentFailedFiles(){
+            return Math.round(this.uploadedSize / this.totalSizeToUploadFailedFiles * 100);
+        },
         uploadedSizeForHumans() {
             return sizeForHumans(this.uploadedSize);
         },
-        editable() {
-            return !this.loading && !this.finished;
-        },
         exceedsMaxSize() {
-            return this.availableQuotaBytes !== -1  && this.totalSize > this.availableQuotaBytes;
+            return this.availableQuotaBytes !== -1 && (this.totalSize + this.usedQuota) > this.availableQuotaBytes;
         },
         canSubmit() {
             return this.hasFiles && !this.exceedsMaxSize;
@@ -91,8 +101,41 @@ export default {
         maxFilesize() {
             return sizeForHumans(this.maxFilesizeBytes);
         },
+        hasError() {
+            return this.finishIncomplete || this.noFilesUploaded;
+        },
+        editable(){
+            return !this.loading && !this.finished;
+        },
+        remainingQuota(){
+            return sizeForHumans(this.availableQuotaBytes - this.usedQuota);
+        },
+        finishIncomplete(){
+            return this.failedFiles.length > 0;
+        },
+        noFilesUploaded() {
+            let nbrFailedFiles = this.getFailedFiles().length;
+            return this.exceedsMaxSize
+                || (this.nbrDuplicatedFiles === this.files.length)
+                || (nbrFailedFiles === this.files.length)
+                || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
+        },
     },
     methods: {
+        computeTotalSize(files){
+            return files.reduce(function (carry, file) {
+                return carry + file.size;
+            }, 0);
+        },
+        computeTotalSizeUpload(files){
+            return files.reduce(function (carry, file) {
+                if (file.saved) {
+                    return carry;
+                }
+
+                return carry + file.size;
+            }, 0);
+        },
         handleFilesChosen(event) {
             // Force users to create new directories for their files. Otherwise they
             // could upload all their files in the same directory in multiple storage
@@ -135,6 +178,11 @@ export default {
                     let newName = newFiles[i].name.replace(/ /g, '_');
                     file = new File([newFiles[i]], newName, { type: newFiles[i].type });
                 }
+                file._status = {
+                    failed: false,
+                    info: false,
+                };
+                Vue.observable(file._status);
                 files.push(file);
             }
 
@@ -286,53 +334,99 @@ export default {
         syncFiles() {
             this.files = this.extractFiles(this.rootDirectory);
         },
-        handleSubmit() {
+        handleSubmit(reupload = false) {
             if (!this.canSubmit) {
                 return;
             }
+            let hasError = false;
 
             this.startLoading();
-            // Reuse already created storage request in case something went wrong.
-            let promise = this.storageRequest
-                ? Promise.resolve({body: this.storageRequest})
-                : StorageRequestApi.save();
 
-            promise.then(this.proceedWithUpload)
-                .then(this.finishSubmission)
-                .catch(handleErrorResponse)
-                .finally(this.finishLoading);
+            let files = reupload ? this.failedFiles : this.files;
+            
+            this.uploadAllFiles(files)
+                .then(this.maybeFinishSubmission)
+                .catch((e) => {
+                    this.handleErrorResponse(e);
+                    hasError = true;
+                })
+                .finally(() => {
+                    this.finishLoading();
+                    this.resetSizes();
+                    // Must be set here, otherwise array is read and written simulteneously
+                    this.failedFiles = this.getFailedFiles();
+                    this.finished = !this.finishIncomplete && !hasError;
+                });
         },
-        proceedWithUpload(response) {
-            this.storageRequest = response.body;
-
-            return this.uploadAllFiles();
+        getFailedFiles() {
+            return this.files.filter(f => f.file._status.failed);
         },
-        uploadAllFiles() {
+        uploadAllFiles(files) {
             // Exclude files initialized from an unfinished request.
-            let queue = this.files.filter(f => f.file.saved !== true);
+            let queue = files.filter(f => f.file.saved !== true);
             let loadNextFile = () => {
                 if (queue.length === 0) {
-                    return;
+                    return Vue.Promise.resolve();
                 }
 
+                if (this.storageRequest === null) {
+                    return StorageRequestApi.save()
+                        .then((res) => { this.storageRequest = res.body })
+                        .then(() => this.uploadFile(queue.shift()).then(loadNextFile));
+                }
                 return this.uploadFile(queue.shift()).then(loadNextFile);
             };
 
             return loadNextFile();
         },
+        resetSizes(){
+            this.currentUploadedSize = 0;
+            this.finishedChunksSize = 0;
+            this.finishedUploadedSize = 0;
+        },
         uploadFile(file) {
             this.currentUploadedSize = 0;
 
-            let updateFinishedSize = function (response) {
+            let updateFinishedSize = function () {
                 this.currentUploadedSize = 0;
                 this.finishedChunksSize = 0;
                 this.finishedUploadedSize += file.file.size;
+            };
 
-                return response;
+            let handleFailedFile = (e) => {
+                // Do not add duplicated files to failed files,
+                // because they cannot be uploaded.
+                if (e.body.errors && e.body.errors['file_duplicated']) {
+                    file.file.saved = true;
+                    file.file._status.info = true;
+                    this.nbrDuplicatedFiles += 1;
+                    // Set status of failed files on false, because they will not be saved
+                    // and will otherwise block the upload
+                    if (file.file._status.failed) {
+                        file.file._status.failed = false;
+                    }
+                    return;
+                }
+
+                // Also catch the chunk index error,
+                // as it is caused by the race between the save and delete requests.
+                if (e.status === 500 || e.body.errors['chunk_index']) {
+                    file.file.saved = false;
+                    file.file._status.failed = true;
+                    return;
+                }
+                
+                throw e;
             };
 
             if (file.file.size > this.chunkSize) {
-                return this.uploadChunkedFile(file).then(updateFinishedSize);
+                return this.uploadChunkedFile(file)
+                    .then(() => {
+                        if (file.file._status.failed) {
+                            file.file._status.failed = false;
+                        }
+                    }, handleFailedFile)
+                    .then(updateFinishedSize);
             }
 
             return this.uploadBlob(file.file, file.prefix)
@@ -341,7 +435,11 @@ export default {
                     // they should be deleted.
                     file.file.saved = true;
                     file.file.id = response.body.id;
-                })
+
+                    if (file.file._status.failed) {
+                        file.file._status.failed = false;
+                    }
+                }, handleFailedFile)
                 .then(updateFinishedSize);
         },
         uploadChunkedFile(file) {
@@ -362,24 +460,38 @@ export default {
                     type: file.type,
                     lastModified: file.lastModified,
                 });
-                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks);
+                let retryCount = 0;
+                let retryChunk = file._status.failed ? 1 : 0;
+
+                let promise = this.uploadBlob(chunk, prefix, chunkIndex, totalChunks, retryCount, retryChunk);
                 start = end;
                 chunkIndex += 1;
 
-                promise.then(function () {
+                promise = promise.then(function (res) {
                     this.finishedChunksSize += chunk.size;
-                },
-                function (e) {
+                    return res;
+                })
+                .catch((e) => {
                     // Delete the whole file if any chunk upload fails. The file is
                     // retried again next time. There is no easy way to resume a
                     // chunked file that partly failed during upload.
                     if (file.id !== undefined) {
                         if (this.files.filter(f => f.file.saved).length > 1) {
-                            FilesApi.delete({id: file.id})
+                            FilesApi.delete({id: file.id}).catch((e) => {
+                                if (e.status !== 404) {
+                                    throw e;
+                                }
+                                // Do nothing if file already has been deleted.
+                            });
                         } else {
                             // If this is the only saved file, we must delete the
                             // whole storage request.
-                            StorageRequestApi.delete({id: this.storageRequest.id});
+                            StorageRequestApi.delete({id: this.storageRequest.id}).catch((e) => {
+                                if (e.status !== 404) {
+                                    throw e;
+                                }
+                                // Do nothing if file already has been deleted.
+                            });
                             this.storageRequest = null;
                         }
                         delete file.id;
@@ -387,6 +499,7 @@ export default {
                     }
 
                     throw e;
+
                 });
 
                 if (loop) {
@@ -405,12 +518,13 @@ export default {
                 })
                 .then(() => uploadNextChunk(true));
         },
-        uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount) {
+        uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount, retryChunk = 0) {
             retryCount = retryCount || 1;
 
             let data = new FormData();
             data.append('file', blob);
             data.append('prefix', prefix);
+            data.append('retry', retryChunk);
 
             if (chunkIndex !== undefined && totalChunks !== undefined) {
                 data.append('chunk_index', chunkIndex);
@@ -430,8 +544,9 @@ export default {
                     if (e.status >= 500 && retryCount < RETRY_UPLOAD) {
                         // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
                         // short moments of unavailability.
+                        retryChunk = 1;
                         return new Vue.Promise((resolve) => {
-                            setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1)), 5000);
+                            setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1, retryChunk)), 5000);
                         });
                     }
                     throw e;
@@ -442,9 +557,21 @@ export default {
                 this.currentUploadedSize = event.loaded;
             }
         },
-        finishSubmission() {
-            return StorageRequestApi.update({id: this.storageRequest.id}, {})
-                .then(() => this.finished = true, handleErrorResponse);
+        maybeFinishSubmission() {
+            if (!this.ignoreFiles && (this.files.filter(f => f.file._status.failed).length > 0) || this.noFilesUploaded) {
+                return Promise.resolve();
+            }
+
+            return StorageRequestApi.update({ id: this.storageRequest.id }, {})
+                .then(() => {
+                    this.ignoreFiles = false;
+                });
+        },
+        skipFailedFiles() {
+            this.ignoreFiles = true;
+            this.failedFiles = [];
+            this.maybeFinishSubmission()
+                .catch(handleErrorResponse);
         },
         addExistingFiles(files) {
             files.forEach(this.addExistingFile);
@@ -490,11 +617,21 @@ export default {
 
             return path;
         },
-    },
+        reinitializeFiles() {
+            this.files.map(f => {
+                f.file._status = {
+                    failed: false,
+                    info: false,
+                };
+                Vue.observable(f.file._status);
+            });
+        }
+    }, 
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         this.chunkSize = biigle.$require('user-storage.chunkSize');
+        this.usedQuota = biigle.$require('user-storage.usedQuota')
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {
@@ -510,6 +647,11 @@ export default {
                 return 'This page is asking you to confirm that you want to leave - the file upload is still in progress.';
             }
         });
+
+        if (this.files.length !== 0) {
+            // Reinitialize file status
+            this.reinitializeFiles();
+        }
     },
 };
 </script>

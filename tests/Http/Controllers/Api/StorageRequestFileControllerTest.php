@@ -104,6 +104,15 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
+                'chunk_index' => 2,
+                'chunk_total' => 2,
+                'retry' => 'test'
+            ])
+            // retry must be boolean
+            ->assertStatus(422);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
                 'chunk_index' => 0,
                 'chunk_total' => 2,
             ])
@@ -357,10 +366,8 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(422);
 
-        $this->assertModelMissing($f);
-
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame('test.jpg', $job->file->path);
             $this->assertSame([0], $job->chunks);
 
             return true;
@@ -411,10 +418,9 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ])
             ->assertStatus(422);
 
-        $this->assertModelMissing($f);
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('test.jpg', $job->path);
+            $this->assertSame('test.jpg', $job->file->path);
             $this->assertSame([0], $job->chunks);
 
             return true;
@@ -508,7 +514,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $this->be($request->user);
 
-        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+        $res1 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
                 'file' => $file,
                 'chunk_index' => 0,
                 'chunk_total' => 2,
@@ -521,6 +527,24 @@ class StorageRequestFileControllerTest extends ApiTestCase
                 'chunk_total' => 2,
             ])
             ->assertStatus(422);
+
+        $res2 = $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'chunk_index' => 0,
+                'chunk_total' => 2,
+                'retry' => true,
+            ])
+            ->assertStatus(200);
+
+            $res1 = json_decode($res1->getContent());
+            $res2 = json_decode($res2->getContent());
+
+            $this->assertEquals($res1->id, $res2->id);
+            $this->assertEquals($res1->storage_request_id, $res2->storage_request_id);
+            $this->assertEquals($res1->size, $res2->size);
+            $this->assertEquals($res1->path, $res2->path);
+            $this->assertEquals(1, $res1->retry_count);
+            $this->assertEquals(2, $res2->retry_count);
     }
 
     public function testStoreChunkFirstChunkFirst()
@@ -576,12 +600,12 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
         $this->be($request->user);
-        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file, 'retry' => true])
             ->assertStatus(200);
 
-        $this->assertNotSame('abc', $disk->get("request-{$id}/test.jpg"));
+        $this->assertSame('abc', $disk->get("request-{$id}/test.jpg"));
         $this->assertSame(1, $request->files()->count());
-        $this->assertSame(44074, $request->files()->first()->size);
+        $this->assertSame(123, $request->files()->first()->size);
     }
 
     public function testStoreExistsInOtherRequest()
@@ -601,6 +625,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($request->user);
         $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
             ->assertStatus(422);
+
     }
 
     public function testStoreExceedsQuota()
@@ -767,13 +792,14 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(200);
 
-        $this->assertNull($file->fresh());
+        $this->assertNotNull($file->fresh());
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('a.jpg', $job->path);
+            $this->assertSame('a.jpg', $job->file->path);
 
             return true;
         });
+        
     }
 
     public function testDestoryLastFile()
@@ -785,6 +811,78 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->be($file->request->user);
         $this->deleteJson("/api/v1/storage-request-files/{$file->id}")
             ->assertStatus(422);
+    }
+
+    public function testRetryUpload()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+        ])
+        ->assertStatus(201);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg"));
+        $f = $request->files()->first();
+        $this->assertSame(44074, $f->size);
+        $this->assertEquals(1, $f->retry_count);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'retry' => true,
+        ])
+        ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg"));
+        $f = $request->files()->first();
+        $this->assertSame(44074, $f->size);
+        $this->assertEquals(2, $f->retry_count);
+    }
+
+    public function testRetryUploadChunkedFile()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+
+        $this->be($request->user);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'chunk_index' => 0,
+            'chunk_total' => 3,
+        ])
+            ->assertStatus(201);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
+        $f = $request->files()->first();
+        $this->assertSame(44074, $f->size);
+        $this->assertEquals(1, $f->retry_count);
+
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'chunk_index' => 0,
+            'chunk_total' => 3,
+            'retry' => true,
+        ])
+            ->assertStatus(200);
+
+        $this->assertTrue($disk->exists("request-{$id}/test.jpg.0"));
+        $f = $request->files()->first();
+        $this->assertSame(44074, $f->size);
+        $this->assertEquals(2, $f->retry_count);
     }
 
 }
