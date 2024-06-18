@@ -63,6 +63,9 @@ class AssembleChunkedFile extends Job implements ShouldQueue
         $disk = Storage::disk(config('user_storage.pending_disk'));
 
         $path = $this->file->request->getPendingPath($this->file->path);
+        // Make sure not to configure the S3 mup_threshold to be larger than the chunk
+        // size! The upload needs to use the MultipartUploader because only it can handle
+        // the unseekable PumpStream correctly.
         $success = $disk->writeStream($path, $resource);
 
         if (!$success) {
