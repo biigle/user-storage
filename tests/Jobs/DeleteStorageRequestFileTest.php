@@ -119,4 +119,29 @@ class DeleteStorageRequestFileTest extends TestCase
         $this->assertTrue($disk->exists("request-{$file->storage_request_id}/a.jpg.2"));
         $this->assertModelExists($file);
     }
+
+    public function testMissingModel(){
+        config(['user_storage.storage_disk' => 'test']);
+        $disk = Storage::fake('test');
+
+        $request = StorageRequest::factory()->create([
+            'expires_at' => now()->subWeeks(2),
+        ]);
+        
+        $file = StorageRequestFile::factory()->create([
+            'path' => 'image.png',
+            'storage_request_id' => $request->id,
+            'retry_count' => 1,
+        ]);
+
+        $disk->put('user-1/image.png','');
+
+        $job = new DeleteStorageRequestFile($file);
+        $request->delete(); // Simulate deleted models
+        $job->handle();
+
+        $this->assertFalse($disk->exists("user-{$request->user_id}/a.jpg"));
+        $this->assertModelMissing($request);
+        $this->assertModelMissing($file);
+    }
 }
