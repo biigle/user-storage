@@ -47,8 +47,6 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      * **/
     public $oldRetryCount;
 
-    public $deleteWhenMissingModels = true;
-
     /**
      * Create a new job instance.
      *
@@ -76,7 +74,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
     public function handle()
     {
         // Do not delete files when delete-request is outdated
-        if($this->oldRetryCount != $this->file->refresh()->retry_count) {
+        if($this->file->exists() && $this->oldRetryCount != $this->file->refresh()->retry_count) {
             return;
         }
 
@@ -110,6 +108,8 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             }
         }
 
-        $this->file->delete();
+        if($this->file->exists()) {
+            $this->file->delete();
+        }
     }
 }
