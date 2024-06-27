@@ -140,7 +140,7 @@ class DeleteStorageRequestFileTest extends TestCase
         $request->delete(); // Simulate deleted models
         $job->handle();
 
-        $this->assertFalse($disk->exists("user-{$request->user_id}/a.jpg"));
+        $this->assertFalse($disk->exists("user-{$request->user_id}/image.png"));
         $this->assertModelMissing($request);
         $this->assertModelMissing($file);
     }
