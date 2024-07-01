@@ -50,7 +50,7 @@ class StorageRequestTest extends ModelTestCase
         $this->model->delete();
         Bus::assertBatched(function (PendingBatch $batch) use ($file) {
             $this->assertEquals(1, $batch->jobs->count());
-            $this->assertEquals($file->path, $batch->jobs->first()->file->path);
+            $this->assertEquals($file->id, $batch->jobs->first()->fileId);
             return true;
         });
     }
