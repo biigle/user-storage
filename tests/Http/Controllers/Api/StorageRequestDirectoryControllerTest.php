@@ -48,8 +48,8 @@ class StorageRequestDirectoryControllerTest extends ApiTestCase
         $this->assertNull($file1->fresh());
         $this->assertNotNull($file2->fresh());
 
-        Queue::assertPushed(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('a/a.jpg', $job->file->path);
+        Queue::assertPushed(function (DeleteStorageRequestFile $job) use ($file1) {
+            $this->assertSame($file1->id, $job->fileId);
 
             return true;
         });

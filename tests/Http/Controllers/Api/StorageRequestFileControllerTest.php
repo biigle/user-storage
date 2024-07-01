@@ -367,7 +367,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422);
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('test.jpg', $job->file->path);
+            $this->assertSame('test.jpg', $job->path);
             $this->assertSame([0], $job->chunks);
 
             return true;
@@ -420,7 +420,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
 
         Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('test.jpg', $job->file->path);
+            $this->assertSame('test.jpg', $job->path);
             $this->assertSame([0], $job->chunks);
 
             return true;
@@ -794,12 +794,11 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $this->assertNotNull($file->fresh());
 
-        Bus::assertDispatched(function (DeleteStorageRequestFile $job) {
-            $this->assertSame('a.jpg', $job->file->path);
+        Bus::assertDispatched(function (DeleteStorageRequestFile $job) use ($file) {
+            $this->assertSame($file->id, $job->fileId);
 
             return true;
         });
-        
     }
 
     public function testDestoryLastFile()

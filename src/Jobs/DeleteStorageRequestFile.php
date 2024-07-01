@@ -15,9 +15,9 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
     use InteractsWithQueue, Batchable;
 
     /**
-     * File that should be deleted
+     * ID of the file that should be deleted
      */
-    public $file;
+    public $fileId;
 
     /**
      * Path of the file to be deleted.
@@ -60,7 +60,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      */
     public function __construct(StorageRequestFile $file)
     {
-        $this->file = $file;
+        $this->fileId = $file->id;
         $this->path = $file->path;
         $this->oldRetryCount = $file->retry_count;
         $request = $file->request;
@@ -80,10 +80,10 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
      */
     public function handle()
     {
-        $fileExists = $this->file && $this->file->exists();
+        $file = StorageRequestFile::find($this->fileId);
 
         // Do not delete files when delete-request is outdated
-        if ($fileExists && $this->oldRetryCount != $this->file->refresh()->retry_count) {
+        if ($file && $this->oldRetryCount != $file->retry_count) {
             return;
         }
 
@@ -117,8 +117,8 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             }
         }
 
-        if ($fileExists) {
-            $this->file->delete();
+        if ($file) {
+            $file->delete();
         }
     }
 }

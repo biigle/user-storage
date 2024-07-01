@@ -41,7 +41,7 @@ class PruneExpiredStorageRequestsTest extends TestCase
 
         Bus::assertBatched(function (PendingBatch $batch) use ($file1) {
             $this->assertEquals(1, $batch->jobs->count());
-            $this->assertEquals($file1->path, $batch->jobs->first()->file->path);
+            $this->assertEquals($file1->id, $batch->jobs->first()->fileId);
             return true;
         });
 
