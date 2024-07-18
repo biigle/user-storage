@@ -27,11 +27,11 @@ class StorageRequestDirectoryController extends Controller
      */
     public function destroy(DestroyStorageRequestDirectory $request)
     {
-        $request->files->load('request');
-        Queue::bulk($request->files->map(function ($file) {
+        $request->srFiles->load('request');
+        Queue::bulk($request->srFiles->map(function ($file) {
             return new DeleteStorageRequestFile($file);
         })->toArray());
 
-        StorageRequestFile::whereIn('id', $request->files->pluck('id'))->delete();
+        StorageRequestFile::whereIn('id', $request->srFiles->pluck('id'))->delete();
     }
 }
