@@ -19,7 +19,7 @@ class DestroyStorageRequestDirectory extends FormRequest
      *
      * @var array
      */
-    public $files;
+    public $srFiles;
 
     /**
      * Determine if the user is authorized to make this request.
@@ -61,13 +61,13 @@ class DestroyStorageRequestDirectory extends FormRequest
 
             $files = $this->storageRequest->files;
             $allFilesCount = $files->count();
-            $this->files = $files->filter(function ($file) use ($directories) {
+            $this->srFiles = $files->filter(function ($file) use ($directories) {
                 return array_reduce($directories, function ($carry, $item) use ($file) {
                     return $carry || strpos($file->path, $item) === 0;
                 }, false);
             });
 
-            $filesCount = count($this->files);
+            $filesCount = count($this->srFiles);
 
             if ($filesCount === 0) {
                 $validator->errors()->add('directories', 'No files were found for the specified directories.');
