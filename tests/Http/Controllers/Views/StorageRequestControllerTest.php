@@ -50,10 +50,9 @@ class StorageRequestControllerTest extends TestCase
             ->get('storage-requests')
             ->assertViewIs('user-storage::index');
     }
-
     public function testReview()
     {
-        $request = StorageRequest::factory()->create();
+        $request = StorageRequest::factory()->create(['submitted_at' => now()]);
         $id = $request->id;
     
         $this->get("storage-requests/{$id}/review")->assertRedirect('login');
@@ -77,7 +76,7 @@ class StorageRequestControllerTest extends TestCase
             ->get("storage-requests/{$id}/review")
             ->assertViewIs('user-storage::review');
     
-        $request->update(['expires_at' => '2022-03-28 10:40:00']);
+        $request->update(['expires_at' => now()]);
         $this->actingAs($user)
             ->get("storage-requests/{$id}/review")
             ->assertStatus(404);
@@ -88,7 +87,8 @@ class StorageRequestControllerTest extends TestCase
     
         $this->actingAs($user)
             ->get("storage-requests/{$unsubmittedRequest->id}/review")
-            ->assertStatus(404); 
+            ->assertStatus(404);
     }
+    
     
 }
