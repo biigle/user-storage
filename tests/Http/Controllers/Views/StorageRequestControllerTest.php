@@ -55,31 +55,40 @@ class StorageRequestControllerTest extends TestCase
     {
         $request = StorageRequest::factory()->create();
         $id = $request->id;
-
+    
         $this->get("storage-requests/{$id}/review")->assertRedirect('login');
-
+    
         $this->actingAs($request->user)
             ->get("storage-requests/{$id}/review")
             ->assertStatus(403);
-
+    
         $user = UserTest::create([
             'role_id' => Role::editorId(),
         ]);
-
+    
         $this->actingAs($user)
             ->get("storage-requests/{$id}/review")
             ->assertStatus(403);
-
+    
         $user->role_id = Role::adminId();
         $user->save();
-
+    
         $this->actingAs($user)
             ->get("storage-requests/{$id}/review")
             ->assertViewIs('user-storage::review');
-
+    
         $request->update(['expires_at' => '2022-03-28 10:40:00']);
         $this->actingAs($user)
             ->get("storage-requests/{$id}/review")
             ->assertStatus(404);
+    
+        $unsubmittedRequest = StorageRequest::factory()->create([
+            'submitted_at' => null,
+        ]);
+    
+        $this->actingAs($user)
+            ->get("storage-requests/{$unsubmittedRequest->id}/review")
+            ->assertStatus(404); 
     }
+    
 }

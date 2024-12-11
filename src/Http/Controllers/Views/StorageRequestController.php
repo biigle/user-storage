@@ -76,15 +76,19 @@ class StorageRequestController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function review($id)
-    {
-        $request = StorageRequest::whereNull('expires_at')
-            ->with('files')
-            ->findOrFail($id);
-        $this->authorize('approve', $request);
 
-        return view('user-storage::review', [
-            'request' => $request,
-        ]);
-    }
+     public function review($id)
+{
+    $request = StorageRequest::whereNull('expires_at')
+        ->whereNotNull('submitted_at') // Add this condition
+        ->with('files')
+        ->findOrFail($id);
+
+    $this->authorize('approve', $request);
+
+    return view('user-storage::review', [
+        'request' => $request,
+    ]);
+}
+
 }
