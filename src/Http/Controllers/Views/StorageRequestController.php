@@ -79,6 +79,7 @@ class StorageRequestController extends Controller
     public function review($id)
     {
         $request = StorageRequest::whereNull('expires_at')
+            ->whereNotNull('submitted_at')
             ->with('files')
             ->findOrFail($id);
         $this->authorize('approve', $request);
