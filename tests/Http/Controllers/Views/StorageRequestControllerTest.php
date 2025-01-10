@@ -85,7 +85,7 @@ class StorageRequestControllerTest extends TestCase
 
     public function testReviewUnsubmittedRequest(){
         $user = UserTest::create([
-            'role_id' => Role::editorId(),
+            'role_id' => Role::adminId(),
         ]);
         $unsubmittedRequest = StorageRequest::factory()->create([
             'submitted_at' => null,
