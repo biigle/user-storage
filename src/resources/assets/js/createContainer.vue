@@ -38,6 +38,7 @@ export default {
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
+            hasTIFF: 0,
         };
     },
     computed: {
@@ -120,6 +121,9 @@ export default {
                 || (nbrFailedFiles === this.files.length)
                 || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
         },
+        hasTIFFfile() {
+            return this.hasTIFF > 0;
+        },
     },
     methods: {
         computeTotalSize(files){
@@ -177,6 +181,9 @@ export default {
                     this.pathContainsSpaces = true;
                     let newName = newFiles[i].name.replace(/ /g, '_');
                     file = new File([newFiles[i]], newName, { type: newFiles[i].type });
+                }
+                if (file.type == "image/tiff") {
+                    this.hasTIFF += 1;
                 }
                 file._status = {
                     failed: false,
@@ -308,6 +315,9 @@ export default {
             promise.then(() => {
                 let index = files.indexOf(file);
                 if (index !== -1) {
+                    if (files[index].type == "image/tiff") {
+                        this.hasTIFF -= 1;
+                    }
                     files.splice(index, 1);
                 }
 

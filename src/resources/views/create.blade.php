@@ -181,6 +181,10 @@
             They already exist in another storage request with equal directory name.
         </p>
 
+        <p v-cloak v-if="hasTIFFfile" class="text-info">
+            Only large TIFF files (10,000+ px) are supported. Smaller files may not work.
+        </p>
+        
         <p v-cloak v-if="!finished && hasFiles" class="text-muted">
             <span v-if="finishIncomplete">Failed files with a total size of <span v-text="totalSizeFailedFilesForHumans"></span>.</span> 
             <span v-else>Selected files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
