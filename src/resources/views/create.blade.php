@@ -191,7 +191,7 @@
         </p>
 
         <p v-cloak v-if="hasTIFFfile" class="text-warning">
-            Only large TIFF files (10,000+ px) are supported. Smaller files may not work.
+            Only large TIFF files ({{config('image.tiles.threshold')}}+ px) are supported. Smaller files cannot be displayed.
         </p>
 
         <file-browser
