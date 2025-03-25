@@ -3,7 +3,7 @@
 @section('title', 'Your storage requests')
 
 @push('scripts')
-    {{vite_hot(base_path('vendor/biigle/module/hot'), ['src/resources/assets/js/main.js'], 'vendor/module')}}
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/js/main.js'], 'vendor/user-storage')}}
     <script type="module">
       biigle.$declare('user-storage.requests', {!! $requests !!});
       biigle.$declare('user-storage.expireDate', '{!! $expireDate->toJson() !!}');
@@ -33,7 +33,7 @@
             @endcan
             Your storage requests<br>
             <small>
-                <span v-text="usedQuota">{{size_for_humans($usedQuota)}}</span> of {{size_for_humans($availableQuota)}} used (<span v-text="usedQuotaPercent">{{round($usedQuota / $availableQuota * 100)}}</span>%)
+                <span v-if="false">{{size_for_humans($usedQuota)}}</span><span v-text="usedQuota"></span> of {{size_for_humans($availableQuota)}} used (<span v-if="false">{{round($usedQuota / $availableQuota * 100)}}</span><span v-text="usedQuotaPercent"></span>%)
             </small>
         </h2>
         <p>

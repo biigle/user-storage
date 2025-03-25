@@ -61,7 +61,7 @@ export default {
         },
         setFilesAndSelectRequest(response) {
             let request = this.requests.find((r) => r.id === response.body.id);
-            Vue.set(request, 'files', response.body.files);
+            request.files = response.body.files;
             request.files_count = response.body.files_count;
 
             this.selectedRequest = request;

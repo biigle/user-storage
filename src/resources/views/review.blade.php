@@ -3,7 +3,7 @@
 @section('title', 'Review request')
 
 @push('scripts')
-    {{vite_hot(base_path('vendor/biigle/module/hot'), ['src/resources/assets/js/main.js'], 'vendor/module')}}
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/js/main.js'], 'vendor/user-storage')}}
     <script type="module">
       biigle.$declare('user-storage.request', {!! $request !!});
       biigle.$declare('user-storage.fileUrl', '{!! url("api/v1/storage-request-files") !!}');
