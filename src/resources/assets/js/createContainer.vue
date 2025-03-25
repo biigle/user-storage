@@ -1,9 +1,9 @@
 <script>
-import DirectoriesApi from './api/storageRequestDirectories';
-import FilesApi from './api/storageRequestFiles';
-import StorageRequestApi from './api/storageRequests';
-import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
-import {sizeForHumans} from './utils';
+import DirectoriesApi from './api/storageRequestDirectories.js';
+import FilesApi from './api/storageRequestFiles.js';
+import StorageRequestApi from './api/storageRequests.js';
+import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import.js';
+import {sizeForHumans} from './utils.js';
 
 // Number of times a file upload is retried.
 const RETRY_UPLOAD = 3;

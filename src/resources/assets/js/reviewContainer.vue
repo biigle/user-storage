@@ -1,7 +1,7 @@
 <script>
-import RequestApi from './api/storageRequests';
-import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
-import {buildDirectoryTree} from './utils';
+import RequestApi from './api/storageRequests.js';
+import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import.js';
+import {buildDirectoryTree} from './utils.js';
 
 export default {
     mixins: [LoaderMixin],

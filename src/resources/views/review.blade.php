@@ -3,15 +3,15 @@
 @section('title', 'Review request')
 
 @push('scripts')
-    <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
-    <script type="text/javascript">
+    {{vite_hot(base_path('vendor/biigle/module/hot'), ['src/resources/assets/js/main.js'], 'vendor/module')}}
+    <script type="module">
       biigle.$declare('user-storage.request', {!! $request !!});
       biigle.$declare('user-storage.fileUrl', '{!! url("api/v1/storage-request-files") !!}');
    </script>
 @endpush
 
 @push('styles')
-    <link href="{{ cachebust_asset('vendor/user-storage/styles/main.css') }}" rel="stylesheet">
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/sass/main.scss'], 'vendor/user-storage')}}
 @endpush
 
 @section('content')

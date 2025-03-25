@@ -51,7 +51,7 @@
 </template>
 
 <script>
-import {sizeForHumans} from './../utils';
+import {sizeForHumans} from './../utils.js';
 
 export default {
     props: {

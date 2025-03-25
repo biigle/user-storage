@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import ListItem from './storageRequestListItem';
+import ListItem from './storageRequestListItem.vue';
 
 export default {
     components: {
