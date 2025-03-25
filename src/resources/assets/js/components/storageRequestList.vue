@@ -23,6 +23,11 @@
 import ListItem from './storageRequestListItem.vue';
 
 export default {
+    emits: [
+        'delete',
+        'select',
+        'extend',
+    ],
     components: {
         listItem: ListItem,
     },

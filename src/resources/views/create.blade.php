@@ -37,7 +37,7 @@
                             type="submit"
                             class="btn btn-default btn-xs"
                             title="Delete all files of the previous upload"
-                            v-bind:disabled="loading"
+                            v-bind:disabled="loading || null"
                             >
                             Discard all files
                         </button>
@@ -123,7 +123,7 @@
                         title="Submit the storage request and upload the files"
                         class="btn btn-success"
                         v-on:click="handleSubmit()"
-                        v-bind:disabled="exceedsMaxSize"
+                        v-bind:disabled="exceedsMaxSize || null"
                         >
                         <i class="fa fa-upload"></i> Submit
                     </button>

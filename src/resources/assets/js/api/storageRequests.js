@@ -1,3 +1,5 @@
+import {Resource} from '../import.js';
+
 /**
  * Resource for storage requests.
  *
@@ -18,10 +20,8 @@
  *
  * Delete a storage request:
  * resource.delete({id: videoId}).then(...);
- *
- * @type {Vue.resource}
  */
-export default Vue.resource('api/v1/storage-requests{/id}', {}, {
+export default Resource('api/v1/storage-requests{/id}', {}, {
     approve: {
         method: 'POST',
         url: 'api/v1/storage-requests{/id}/approve',

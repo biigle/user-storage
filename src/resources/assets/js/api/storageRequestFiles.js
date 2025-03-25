@@ -1,3 +1,5 @@
+import {Resource} from '../import.js';
+
 /**
  * Resource for storage request files.
  *
@@ -6,10 +8,8 @@
  *
  * Delete a file:
  * resource.delete({id: fileId}).then(...)
- *
- * @type {Vue.resource}
  */
-export default Vue.resource('api/v1/storage-request-files{/id}', {}, {
+export default Resource('api/v1/storage-request-files{/id}', {}, {
     save: {
         method: 'POST',
         url: 'api/v1/storage-requests{/id}/files',

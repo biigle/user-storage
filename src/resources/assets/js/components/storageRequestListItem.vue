@@ -54,6 +54,11 @@
 import {sizeForHumans} from './../utils.js';
 
 export default {
+    emits: [
+        'delete',
+        'select',
+        'extend',
+    ],
     props: {
         request: {
             type: Object,

@@ -47,7 +47,7 @@
                         class="btn btn-danger pull-right"
                         title="Reject the request and delete all files"
                         type="submit"
-                        v-bind:disabled="cannotReject"
+                        v-bind:disabled="cannotReject || null"
                         >
                         <loader v-cloak v-bind:active="loading"></loader>
                         Reject
@@ -57,7 +57,7 @@
                         class="btn btn-default"
                         title="Cancel rejecting the request"
                         type="button"
-                        v-bind:disabled="loading"
+                        v-bind:disabled="loading || null"
                         v-on:click="handleCancelReject"
                         >
                         Cancel
@@ -68,7 +68,7 @@
                 <button
                     class="btn btn-success pull-right"
                     title="Approve the request"
-                    v-bind:disabled="loading"
+                    v-bind:disabled="loading || null"
                     v-on:click="handleApprove"
                     >
                     <loader v-cloak v-bind:active="loading"></loader>
@@ -78,7 +78,7 @@
                 <button
                     class="btn btn-default"
                     title="Reject the request"
-                    v-bind:disabled="loading"
+                    v-bind:disabled="loading || null"
                     v-on:click="handleRejecting"
                     >
                     Reject

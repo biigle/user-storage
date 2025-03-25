@@ -270,7 +270,7 @@ export default {
             if (hasSavedFiles) {
                 promise = DirectoriesApi.delete({id: this.storageRequest.id}, {directories: [path]});
             } else {
-                promise = Vue.Promise.resolve();
+                promise = Promise.resolve();
             }
 
             promise.then(() => {
@@ -302,7 +302,7 @@ export default {
             if (file.saved) {
                 promise = FilesApi.delete({id: file.id});
             } else {
-                promise = Vue.Promise.resolve();
+                promise = Promise.resolve();
             }
 
             promise.then(() => {
@@ -366,7 +366,7 @@ export default {
             let queue = files.filter(f => f.file.saved !== true);
             let loadNextFile = () => {
                 if (queue.length === 0) {
-                    return Vue.Promise.resolve();
+                    return Promise.resolve();
                 }
 
                 if (this.storageRequest === null) {
@@ -415,7 +415,7 @@ export default {
                     file.file._status.failed = true;
                     return;
                 }
-                
+
                 throw e;
             };
 
@@ -452,7 +452,7 @@ export default {
             let totalChunks = Math.ceil(file.size / this.chunkSize);
             let uploadNextChunk = (loop) => {
                 if (start === file.size) {
-                    return Vue.Promise.resolve();
+                    return Promise.resolve();
                 }
 
                 let end = Math.min(start + this.chunkSize, file.size);
@@ -545,7 +545,7 @@ export default {
                         // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
                         // short moments of unavailability.
                         retryChunk = 1;
-                        return new Vue.Promise((resolve) => {
+                        return new Promise((resolve) => {
                             setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1, retryChunk)), 5000);
                         });
                     }
