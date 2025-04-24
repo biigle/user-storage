@@ -174,7 +174,7 @@ export default {
             // Remove previously selected files that were not yet uploaded and now
             // selected again. The newer selection should be used and is added below.
             let newFileNames = newFiles.map(f => f.name);
-            files = files.filter(f => f.saved || !newNames.includes(f.name));
+            files = files.filter(f => f.saved || !newFileNames.includes(f.name));
 
             newFiles.forEach((file) => {
                 file._status = {
