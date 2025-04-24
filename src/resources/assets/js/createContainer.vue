@@ -152,40 +152,40 @@ export default {
                 this.exceedsMaxFilesize = true;
             }
 
-            let files = this.selectedDirectory.files;
-            let i = 0;
-
-            let newNames = [];
-            for (i = 0; i < newFiles.length; i++) {
-                newNames.push(newFiles[i].name);
-            }
-
-            // Remove previously added files with the same name. They will be replaced
-            // with the new files.
-            i = files.length;
-            while (i--) {
-                if (newNames.includes(files[i].name)) {
-                    files.splice(i, 1);
-                }
-            }
-
-            for (i = 0; i < newFiles.length; i++) {
-                // Replace spaces by underscores in file name due to error when uploading files >5GB.
-                // See https://github.com/biigle/user-storage/issues/16.
-                let file = newFiles[i];
+            // Replace spaces by underscores in file name due to error when uploading
+            // files >5GB.
+            // See: https://github.com/biigle/user-storage/issues/16.
+            newFiles = newFiles.map((file) => {
                 if (file.name.includes(' ')) {
                     this.pathContainsSpaces = true;
-                    let newName = newFiles[i].name.replace(/ /g, '_');
-                    file = new File([newFiles[i]], newName, { type: newFiles[i].type });
+                    let newName = file.name.replace(/ /g, '_');
+                    return new File([file], newName, {type: file.type});
                 }
+
+                return file;
+            });
+
+            let files = this.selectedDirectory.files;
+
+            // Remove selected files that were already uploaded.
+            let savedFileNames = files.filter(f => f.saved).map(f => f.name);
+            newFiles = newFiles.filter(file => !savedFileNames.includes(file.name));
+
+            // Remove previously selected files that were not yet uploaded and now
+            // selected again. The newer selection should be used and is added below.
+            let newFileNames = newFiles.map(f => f.name);
+            files = files.filter(f => f.saved || !newNames.includes(f.name));
+
+            newFiles.forEach((file) => {
                 file._status = {
                     failed: false,
                     info: false,
                 };
                 Vue.observable(file._status);
                 files.push(file);
-            }
+            });
 
+            this.selectedDirectory.files = files;
             this.syncFiles();
         },
         getNewDirectory(name) {
