@@ -30,10 +30,12 @@ $storageUser = Biigle\Modules\UserStorage\User::convert($shownUser);
 </div>
 
 @push('scripts')
-<script type="text/javascript">
+<script type="module">
 biigle.$mount('storage-quota-panel', {
-    data: {
-        editing: false,
+    data() {
+        return {
+            editing: false,
+        };
     },
     computed: {
         classObj() {

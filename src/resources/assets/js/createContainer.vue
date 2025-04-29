@@ -1,9 +1,13 @@
 <script>
-import DirectoriesApi from './api/storageRequestDirectories';
-import FilesApi from './api/storageRequestFiles';
-import StorageRequestApi from './api/storageRequests';
-import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
-import {sizeForHumans} from './utils';
+import DirectoriesApi from './api/storageRequestDirectories.js';
+import FilesApi from './api/storageRequestFiles.js';
+import StorageRequestApi from './api/storageRequests.js';
+import {FileBrowserComponent} from './import.js';
+import {handleErrorResponse} from './import.js';
+import {Http} from './import.js';
+import {LoaderMixin} from './import.js';
+import {reactive} from 'vue';
+import {sizeForHumans} from './utils.js';
 
 // Number of times a file upload is retried.
 const RETRY_UPLOAD = 3;
@@ -177,11 +181,10 @@ export default {
             files = files.filter(f => f.saved || !newFileNames.includes(f.name));
 
             newFiles.forEach((file) => {
-                file._status = {
+                file._status = reactive({
                     failed: false,
                     info: false,
-                };
-                Vue.observable(file._status);
+                });
                 files.push(file);
             });
 
@@ -209,11 +212,7 @@ export default {
             // Windows-style directory separators are converted before.
             this.sanitizePath(path).split('/').forEach((name) => {
                 if (!directories.hasOwnProperty(name)) {
-                    newDirectory = Vue.set(
-                        directories,
-                        name,
-                        this.getNewDirectory(name)
-                    );
+                    newDirectory = directories[name] = this.getNewDirectory(name);
                 }
 
                 directories = directories[name].directories;
@@ -270,11 +269,11 @@ export default {
             if (hasSavedFiles) {
                 promise = DirectoriesApi.delete({id: this.storageRequest.id}, {directories: [path]});
             } else {
-                promise = Vue.Promise.resolve();
+                promise = Promise.resolve();
             }
 
             promise.then(() => {
-                Vue.delete(directories, directory.name);
+                delete directories[directory.name];
                 if (this.hasSelectedSubdirectory(directory)) {
                     this.selectedDirectory = null;
                 }
@@ -302,7 +301,7 @@ export default {
             if (file.saved) {
                 promise = FilesApi.delete({id: file.id});
             } else {
-                promise = Vue.Promise.resolve();
+                promise = Promise.resolve();
             }
 
             promise.then(() => {
@@ -343,11 +342,11 @@ export default {
             this.startLoading();
 
             let files = reupload ? this.failedFiles : this.files;
-            
+
             this.uploadAllFiles(files)
                 .then(this.maybeFinishSubmission)
                 .catch((e) => {
-                    this.handleErrorResponse(e);
+                    handleErrorResponse(e);
                     hasError = true;
                 })
                 .finally(() => {
@@ -366,7 +365,7 @@ export default {
             let queue = files.filter(f => f.file.saved !== true);
             let loadNextFile = () => {
                 if (queue.length === 0) {
-                    return Vue.Promise.resolve();
+                    return Promise.resolve();
                 }
 
                 if (this.storageRequest === null) {
@@ -387,7 +386,7 @@ export default {
         uploadFile(file) {
             this.currentUploadedSize = 0;
 
-            let updateFinishedSize = function () {
+            let updateFinishedSize = () => {
                 this.currentUploadedSize = 0;
                 this.finishedChunksSize = 0;
                 this.finishedUploadedSize += file.file.size;
@@ -415,7 +414,7 @@ export default {
                     file.file._status.failed = true;
                     return;
                 }
-                
+
                 throw e;
             };
 
@@ -452,7 +451,7 @@ export default {
             let totalChunks = Math.ceil(file.size / this.chunkSize);
             let uploadNextChunk = (loop) => {
                 if (start === file.size) {
-                    return Vue.Promise.resolve();
+                    return Promise.resolve();
                 }
 
                 let end = Math.min(start + this.chunkSize, file.size);
@@ -467,7 +466,7 @@ export default {
                 start = end;
                 chunkIndex += 1;
 
-                promise = promise.then(function (res) {
+                promise = promise.then((res) => {
                     this.finishedChunksSize += chunk.size;
                     return res;
                 })
@@ -535,7 +534,7 @@ export default {
 
             // Don't use the API resource object because it does not allow tracking of
             // the upload progress.
-            return this.$http.post(url, data, {
+            return Http.post(url, data, {
                     uploadProgress: this.updateCurrentUploadedSize
                 })
                 .catch((e) => {
@@ -545,7 +544,7 @@ export default {
                         // Add delay to prevent failing uploads due to e.g. BIIGLE instance updates or
                         // short moments of unavailability.
                         retryChunk = 1;
-                        return new Vue.Promise((resolve) => {
+                        return new Promise((resolve) => {
                             setTimeout(() => resolve(this.uploadBlob(blob, prefix, chunkIndex, totalChunks, retryCount + 1, retryChunk)), 5000);
                         });
                     }
@@ -584,7 +583,7 @@ export default {
             let currentDirectory = this.rootDirectory;
             breadcrumbs.forEach((dirname) => {
                 if (!currentDirectory.directories.hasOwnProperty(dirname)) {
-                    Vue.set(currentDirectory.directories, dirname, this.getNewDirectory(dirname));
+                    currentDirectory.directories[dirname] = this.getNewDirectory(dirname);
                 }
                 currentDirectory = currentDirectory.directories[dirname];
             });
@@ -619,11 +618,10 @@ export default {
         },
         reinitializeFiles() {
             this.files.map(f => {
-                f.file._status = {
+                f.file._status = reactive({
                     failed: false,
                     info: false,
-                };
-                Vue.observable(f.file._status);
+                });
             });
         }
     }, 

@@ -1,10 +1,10 @@
 <script>
-import DirectoriesApi from './api/storageRequestDirectories';
-import FilesApi from './api/storageRequestFiles';
-import RequestApi from './api/storageRequests';
-import RequestList from './components/storageRequestList';
-import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
-import {buildDirectoryTree, sizeForHumans} from './utils';
+import DirectoriesApi from './api/storageRequestDirectories.js';
+import FilesApi from './api/storageRequestFiles.js';
+import RequestApi from './api/storageRequests.js';
+import RequestList from './components/storageRequestList.vue';
+import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import.js';
+import {buildDirectoryTree, sizeForHumans} from './utils.js';
 
 export default {
     mixins: [LoaderMixin],
@@ -61,7 +61,7 @@ export default {
         },
         setFilesAndSelectRequest(response) {
             let request = this.requests.find((r) => r.id === response.body.id);
-            Vue.set(request, 'files', response.body.files);
+            request.files = response.body.files;
             request.files_count = response.body.files_count;
 
             this.selectedRequest = request;

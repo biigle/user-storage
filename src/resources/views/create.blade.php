@@ -3,8 +3,8 @@
 @section('title', 'Create storage request')
 
 @push('scripts')
-    <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
-    <script type="text/javascript">
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/js/main.js'], 'vendor/user-storage')}}
+    <script type="module">
         biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
@@ -14,7 +14,7 @@
 @endpush
 
 @push('styles')
-    <link href="{{ cachebust_asset('vendor/user-storage/styles/main.css') }}" rel="stylesheet">
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/sass/main.scss'], 'vendor/user-storage')}}
 @endpush
 
 @section('content')
@@ -37,7 +37,7 @@
                             type="submit"
                             class="btn btn-default btn-xs"
                             title="Delete all files of the previous upload"
-                            v-bind:disabled="loading"
+                            v-bind:disabled="loading || null"
                             >
                             Discard all files
                         </button>
@@ -123,7 +123,7 @@
                         title="Submit the storage request and upload the files"
                         class="btn btn-success"
                         v-on:click="handleSubmit()"
-                        v-bind:disabled="exceedsMaxSize"
+                        v-bind:disabled="exceedsMaxSize || null"
                         >
                         <i class="fa fa-upload"></i> Submit
                     </button>

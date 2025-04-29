@@ -51,9 +51,14 @@
 </template>
 
 <script>
-import {sizeForHumans} from './../utils';
+import {sizeForHumans} from './../utils.js';
 
 export default {
+    emits: [
+        'delete',
+        'select',
+        'extend',
+    ],
     props: {
         request: {
             type: Object,

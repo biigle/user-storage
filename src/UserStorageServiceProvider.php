@@ -84,7 +84,7 @@ class UserStorageServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/public/assets' => public_path('vendor/user-storage'),
+            __DIR__.'/public' => public_path('vendor/user-storage'),
         ], 'public');
 
         Gate::policy(StorageRequest::class, Policies\StorageRequestPolicy::class);
