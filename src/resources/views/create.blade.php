@@ -190,6 +190,7 @@
             Spaces in the file and directory names were replaced by underscores.
         </p>
 
+        <input type="hidden" id="imageThreshold" value="{{ config('image.tiles.threshold') }}">
         <p v-cloak v-if="hasTIFFfile" class="text-warning">
             Only large TIFF files ({{config('image.tiles.threshold')}}+ px) are supported. Smaller files cannot be displayed.
         </p>

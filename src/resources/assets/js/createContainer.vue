@@ -4,6 +4,7 @@ import FilesApi from './api/storageRequestFiles';
 import StorageRequestApi from './api/storageRequests';
 import {LoaderMixin, handleErrorResponse, FileBrowserComponent} from './import';
 import {sizeForHumans} from './utils';
+import * as UTIF from "utif2";
 
 // Number of times a file upload is retried.
 const RETRY_UPLOAD = 3;
@@ -38,6 +39,7 @@ export default {
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
+            hasRejectedTiff: false,
         };
     },
     computed: {
@@ -121,7 +123,7 @@ export default {
                 || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
         },
         hasTIFFfile() {
-            return this.files.some(file => file.file.type === "image/tiff");
+            return this.hasRejectedTiff;
         },
     },
     methods: {
@@ -155,6 +157,7 @@ export default {
                 this.exceedsMaxFilesize = true;
             }
 
+            this.hasRejectedTiff = false; // for Warning of small tiffs
             let files = this.selectedDirectory.files;
             let i = 0;
 
@@ -187,6 +190,19 @@ export default {
                 };
                 Vue.observable(file._status);
                 files.push(file);
+
+                if (file.type == "image/tiff") {
+                    let allFiles = this.extractFiles(this.rootDirectory);
+                    let fileName = file.name;
+                    let dirname = allFiles.find(entry => entry.file.name === fileName);
+                    let path = "/" + dirname.prefix;
+                    this.getHightWidth(file, path, (rightSize) => {
+                        if (!rightSize) {
+                            this.removeFile(file, path);
+                            this.updateRejectedTiff()
+                        }
+                    });
+                }
             }
 
             this.syncFiles();
@@ -628,8 +644,39 @@ export default {
                 };
                 Vue.observable(f.file._status);
             });
-        }
-    }, 
+        },
+        getHightWidth(file, path, callback) {
+            let reader = new FileReader();
+            reader.onload = function (event) {
+                let rightSize = true;
+                let buffer = event.target.result;
+                let threshold = parseInt(document.getElementById("imageThreshold").value);
+                let ifds = [];
+
+                try {
+                    ifds = UTIF.decode(buffer);
+                } catch (error) {
+                    console.warn("UTIF.decode() failed.");
+                    callback(true, path); // decoding failed, add file
+                    return;
+                }
+                if (ifds.length > 0) {
+                    let width = ifds[0].t256[0];
+                    let height = ifds[0].t257[0];
+                    if (width < threshold || height < threshold) {
+                        rightSize = false;
+                    }
+                    callback(rightSize, path);
+                } else {
+                    callback(true, path);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        },
+        updateRejectedTiff() {
+            this.hasRejectedTiff = true
+        },
+    },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
