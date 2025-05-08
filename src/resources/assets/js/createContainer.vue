@@ -154,7 +154,7 @@ export default {
             }
 
             let newFiles = Array.from(event.target.files).filter((file) => {
-                return file.size <= this.maxFilesizeBytes;
+                return file.size <= 5*this.maxFilesizeBytes;
             });
 
             if (newFiles.length < event.target.files.length) {
@@ -208,7 +208,7 @@ export default {
                 }
             });
 
-            this.selectedDirectory.files = files;
+            // this.selectedDirectory.files = files;
             this.syncFiles();
         },
         getNewDirectory(name) {
@@ -670,11 +670,16 @@ export default {
                     callback(true, path);
                 }
             };
+            reader.onerror = function (e) {
+                console.error("FileReader error:", e);
+                callback(true, path);
+            };
             reader.readAsArrayBuffer(file);
         },
         updateRejectedTiff() {
             this.hasRejectedTiff = true
         },
+        
     },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
