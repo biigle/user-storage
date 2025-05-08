@@ -642,7 +642,6 @@ export default {
                     failed: false,
                     info: false,
                 });
-                Vue.observable(f.file._status);
             });
         },
         getHightWidth(file, path, callback) {
