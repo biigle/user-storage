@@ -21,7 +21,7 @@
 </form>
 
 @push('scripts')
-<script type="text/javascript">
+<script type="module">
     biigle.$mount('user-storage-notification-settings', {
         mixins: [biigle.$require('core.mixins.notificationSettings')],
         data: {

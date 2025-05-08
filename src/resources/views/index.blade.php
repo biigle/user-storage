@@ -3,8 +3,8 @@
 @section('title', 'Your storage requests')
 
 @push('scripts')
-    <script src="{{ cachebust_asset('vendor/user-storage/scripts/main.js') }}"></script>
-    <script type="text/javascript">
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/js/main.js'], 'vendor/user-storage')}}
+    <script type="module">
       biigle.$declare('user-storage.requests', {!! $requests !!});
       biigle.$declare('user-storage.expireDate', '{!! $expireDate->toJson() !!}');
       biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
@@ -12,7 +12,7 @@
 @endpush
 
 @push('styles')
-    <link href="{{ cachebust_asset('vendor/user-storage/styles/main.css') }}" rel="stylesheet">
+    {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/sass/main.scss'], 'vendor/user-storage')}}
 @endpush
 
 @section('storage-content')
@@ -33,7 +33,7 @@
             @endcan
             Your storage requests<br>
             <small>
-                <span v-text="usedQuota">{{size_for_humans($usedQuota)}}</span> of {{size_for_humans($availableQuota)}} used (<span v-text="usedQuotaPercent">{{round($usedQuota / $availableQuota * 100)}}</span>%)
+                <span v-if="false">{{size_for_humans($usedQuota)}}</span><span v-text="usedQuota"></span> of {{size_for_humans($availableQuota)}} used (<span v-if="false">{{round($usedQuota / $availableQuota * 100)}}</span><span v-text="usedQuotaPercent"></span>%)
             </small>
         </h2>
         <p>

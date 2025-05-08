@@ -95,7 +95,6 @@ class StorageRequestFileController extends Controller
                     'path' => $filePath,
                     'size' => $file->getSize(),
                 ]);
-                
             }
 
             // Retry the upload a few times, as we observed storage backends that threw
