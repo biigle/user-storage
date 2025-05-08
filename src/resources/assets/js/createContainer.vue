@@ -8,7 +8,7 @@ import {Http} from './import.js';
 import {LoaderMixin} from './import.js';
 import {reactive} from 'vue';
 import {sizeForHumans} from './utils.js';
-import * as UTIF from "utif2.js";
+import * as UTIF from "utif2";
 
 // Number of times a file upload is retried.
 const RETRY_UPLOAD = 3;
@@ -186,6 +186,7 @@ export default {
             let newFileNames = newFiles.map(f => f.name);
             files = files.filter(f => f.saved || !newFileNames.includes(f.name));
 
+            this.selectedDirectory.files = files;
             newFiles.forEach((file) => {
                 file._status = reactive({
                     failed: false,
