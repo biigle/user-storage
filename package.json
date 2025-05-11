@@ -16,5 +16,8 @@
     "vite": "^6.3.4",
     "vite-plugin-externalize-dependencies": "^1.0.1"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "utif2": "^4.1.0"
+  }
 }

@@ -10,6 +10,7 @@
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
+        biigle.$declare('user-storage.threshold', {!! $threshold !!});
     </script>
 @endpush
 
@@ -190,9 +191,9 @@
             Spaces in the file and directory names were replaced by underscores.
         </p>
 
-        <input type="hidden" id="imageThreshold" value="{{ config('image.tiles.threshold') }}">
+        <input type="hidden" id="imageThreshold" value="{{ ($threshold) }}">
         <p v-cloak v-if="hasTIFFfile" class="text-warning">
-            Only large TIFF files ({{config('image.tiles.threshold')}}+ px) are supported. Smaller files cannot be displayed.
+            Only large TIFF files ({{($threshold)}}+ px) are supported. Smaller files cannot be displayed.
         </p>
 
         <file-browser

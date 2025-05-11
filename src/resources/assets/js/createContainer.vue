@@ -44,6 +44,7 @@ export default {
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
             hasRejectedTiff: false,
+            threshold: 0,
         };
     },
     computed: {
@@ -154,7 +155,7 @@ export default {
             }
 
             let newFiles = Array.from(event.target.files).filter((file) => {
-                return file.size <= 5*this.maxFilesizeBytes;
+                return file.size <= this.maxFilesizeBytes;
             });
 
             if (newFiles.length < event.target.files.length) {
@@ -186,29 +187,34 @@ export default {
             let newFileNames = newFiles.map(f => f.name);
             files = files.filter(f => f.saved || !newFileNames.includes(f.name));
 
-            this.selectedDirectory.files = files;
             newFiles.forEach((file) => {
                 file._status = reactive({
                     failed: false,
                     info: false,
                 });
                 files.push(file);
-
-                if (file.type == "image/tiff") {
-                    let allFiles = this.extractFiles(this.rootDirectory);
-                    let fileName = file.name;
-                    let dirname = allFiles.find(entry => entry.file.name === fileName);
-                    let path = "/" + dirname.prefix;
-                    this.getHightWidth(file, path, (rightSize) => {
-                        if (!rightSize) {
-                            this.removeFile(file, path);
-                            this.updateRejectedTiff()
-                        }
-                    });
-                }
             });
 
-            // this.selectedDirectory.files = files;
+            this.selectedDirectory.files = files;
+
+            let allFiles = this.extractFiles(this.rootDirectory);
+            newFiles.filter(f => f.type === "image/tiff").forEach((file) => {
+                let fileName = file.name;
+                let dirname = allFiles.find(entry => entry.file.name === fileName);
+                let path = "/" + dirname.prefix;
+                this.getHeightWidth(file).then((size) => {
+                    if (size.width < this.threshold || size.height < this.threshold) {
+                        if (file.size < 1000000000) {
+                            this.hasRejectedTiff = true;
+                        }
+                        if (size.width > 0 && size.height > 0) {
+                            this.removeFile(file, path);
+                        }
+                    }
+                });
+            });
+
+            this.selectedDirectory.files = files;
             this.syncFiles();
         },
         getNewDirectory(name) {
@@ -644,48 +650,43 @@ export default {
                 });
             });
         },
-        getHightWidth(file, path, callback) {
-            let reader = new FileReader();
-            reader.onload = function (event) {
-                let rightSize = true;
-                let buffer = event.target.result;
-                let threshold = parseInt(document.getElementById("imageThreshold").value);
-                let ifds = [];
-
-                try {
+        getHeightWidth(file) {
+            if (file.size >= 1000000000) {
+                return Promise.resolve({
+                    width: 0,
+                    height: 0,
+                });
+            }
+            return file.arrayBuffer()
+                .then((buffer) => {
+                    let ifds = [];
                     ifds = UTIF.decode(buffer);
-                } catch (error) {
-                    console.warn("UTIF.decode() failed.");
-                    callback(true, path); // decoding failed, add file
-                    return;
-                }
-                if (ifds.length > 0) {
-                    let width = ifds[0].t256[0];
-                    let height = ifds[0].t257[0];
-                    if (width < threshold || height < threshold) {
-                        rightSize = false;
+                    if (ifds.length > 0) {
+                        return {
+                            width: ifds[0].t256[0],
+                            height: ifds[0].t257[0],
+                        };
+                    } else {
+                        return {
+                            width: 0,
+                            height: 0,
+                        };
                     }
-                    callback(rightSize, path);
-                } else {
-                    callback(true, path);
-                }
-            };
-            reader.onerror = function (e) {
-                console.error("FileReader error:", e);
-                callback(true, path);
-            };
-            reader.readAsArrayBuffer(file);
+                })
+                .catch(() => {
+                    return {
+                        width: 0,
+                        height: 0,
+                    };
+                });
         },
-        updateRejectedTiff() {
-            this.hasRejectedTiff = true
-        },
-        
     },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         this.chunkSize = biigle.$require('user-storage.chunkSize');
-        this.usedQuota = biigle.$require('user-storage.usedQuota')
+        this.usedQuota = biigle.$require('user-storage.usedQuota');
+        this.threshold = biigle.$require('user-storage.threshold');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {
