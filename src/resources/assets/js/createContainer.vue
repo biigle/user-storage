@@ -45,6 +45,7 @@ export default {
             ignoreFiles: false,
             hasRejectedTiff: false,
             threshold: 0,
+            filesizeLimit: 1000000000,
         };
     },
     computed: {
@@ -204,10 +205,8 @@ export default {
                 let path = "/" + dirname.prefix;
                 this.getHeightWidth(file).then((size) => {
                     if (size.width < this.threshold || size.height < this.threshold) {
-                        if (file.size < 1000000000) {
-                            this.hasRejectedTiff = true;
-                        }
                         if (size.width > 0 && size.height > 0) {
+                            this.hasRejectedTiff = true;
                             this.removeFile(file, path);
                         }
                     }
@@ -651,7 +650,7 @@ export default {
             });
         },
         getHeightWidth(file) {
-            if (file.size >= 1000000000) {
+            if (file.size >= this.filesizeLimit) {
                 return Promise.resolve({
                     width: 0,
                     height: 0,
@@ -659,12 +658,11 @@ export default {
             }
             return file.arrayBuffer()
                 .then((buffer) => {
-                    let ifds = [];
-                    ifds = UTIF.decode(buffer);
+                    let ifds = UTIF.decode(buffer);
                     if (ifds.length > 0) {
                         return {
-                            width: ifds[0].t256[0],
-                            height: ifds[0].t257[0],
+                            width: ifds[0]?.t256[0] || 0,
+                            height: ifds[0]?.t257[0] || 0,
                         };
                     } else {
                         return {

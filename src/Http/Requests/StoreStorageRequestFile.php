@@ -125,7 +125,6 @@ class StoreStorageRequestFile extends FormRequest
                 $shouldDeletePreviousChunks = true;
             }
 
-            $threshold = config('image.tiles.threshold');
             $path = $this->getFilePath();
             $this->storageRequestFile = $this->storageRequest->files()
                     ->where('path', $path)
