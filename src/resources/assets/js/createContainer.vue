@@ -43,9 +43,10 @@ export default {
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
-            hasRejectedTiff: false,
+            hasSmallTiff: false,
+            failedToGetTiffSize: false,
             threshold: 0,
-            filesizeLimit: 1000000000,
+            filesizeLimit: 1000000000,  
         };
     },
     computed: {
@@ -127,10 +128,7 @@ export default {
                 || (this.nbrDuplicatedFiles === this.files.length)
                 || (nbrFailedFiles === this.files.length)
                 || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
-        },
-        hasTIFFfile() {
-            return this.hasRejectedTiff;
-        },
+        }
     },
     methods: {
         computeTotalSize(files){
@@ -163,7 +161,8 @@ export default {
                 this.exceedsMaxFilesize = true;
             }
 
-            this.hasRejectedTiff = false; // for Warning of small tiffs
+            this.hasSmallTiff = false;
+            this.failedToGetTiffSize = false;
             // Replace spaces by underscores in file name due to error when uploading
             // files >5GB.
             // See: https://github.com/biigle/user-storage/issues/16.
@@ -204,10 +203,13 @@ export default {
                 let dirname = allFiles.find(entry => entry.file.name === fileName);
                 let path = "/" + dirname.prefix;
                 this.getHeightWidth(file).then((size) => {
-                    if (size.width < this.threshold || size.height < this.threshold) {
+                    if (size.width < this.threshold && size.height < this.threshold) {
                         if (size.width > 0 && size.height > 0) {
-                            this.hasRejectedTiff = true;
+                            this.hasSmallTiff = true;
                             this.removeFile(file, path);
+                        }
+                        else if (size.width == 0 && size.height == 0) {
+                            this.failedToGetTiffSize = true;
                         }
                     }
                 });
