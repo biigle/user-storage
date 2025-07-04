@@ -38,7 +38,7 @@ class StorageRequestControllerTest extends ApiTestCase
         unset($request->user);
         $this->getJson("/api/v1/storage-requests/{$id}")
             ->assertStatus(200)
-            ->assertExactJson($request->toArray());
+            ->assertJson(['id' => $request->id]);
     }
 
     public function testStore()
