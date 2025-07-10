@@ -193,10 +193,10 @@
 
         <input type="hidden" id="imageThreshold" value="{{ ($threshold) }}">
         <p v-cloak v-if="hasSmallTiff" class="text-warning">
-            Only large TIFF files ({{($threshold)}}+ px) are supported. Smaller files cannot be displayed.
+            Only TIFF files with more than ({{($threshold)}}+ px) at one edge are supported. Smaller files have been removed from the selection.
         </p>
         <p v-cloak v-if="failedToGetTiffSize" class="text-warning">
-        TIFF size detection failed — the file may be too large or unsupported. It might not display correctly later. Please check the file or try another.
+            Only TIFF files with more than ({{($threshold)}}+ px) at one edge are supported. Smaller files cannot be displayed.
         </p>
 
         <file-browser
