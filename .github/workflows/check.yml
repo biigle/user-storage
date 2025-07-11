@@ -33,7 +33,7 @@ jobs:
         path: core
 
     - name: Update variables stylesheet link
-      run: ln -sf ../core/resources/assets/sass/bootstrap/_variables.scss src/resources/assets/sass/_variables.scss
+      run: ln -sf ../../../../core/resources/assets/sass/bootstrap/_variables.scss src/resources/assets/sass/_variables.scss
 
     - name: Run Vite
       run: npm run build
