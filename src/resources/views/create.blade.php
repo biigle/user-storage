@@ -191,12 +191,11 @@
             Spaces in the file and directory names were replaced by underscores.
         </p>
 
-        <input type="hidden" id="imageThreshold" value="{{ ($threshold) }}">
         <p v-cloak v-if="hasSmallTiff" class="text-warning">
-            Only TIFF files with more than ({{($threshold)}}+ px) at one edge are supported. Smaller files have been removed from the selection.
+            Only TIFF files with more than {{ $threshold }} px at one edge are supported. Smaller files have been removed from the selection.
         </p>
         <p v-cloak v-if="failedToGetTiffSize" class="text-warning">
-            Only TIFF files with more than ({{($threshold)}}+ px) at one edge are supported. Smaller files cannot be displayed.
+            Only TIFF files with more than {{ $threshold }} px at one edge are supported. Smaller files cannot be displayed.
         </p>
 
         <file-browser
