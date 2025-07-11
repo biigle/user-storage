@@ -52,4 +52,4 @@ jobs:
       run: npx vite build
 
     - name: Check for uncommitted changes
-      run: [ -z "$(git status -s --porcelain | grep public)" ]
+      run: '[ -z "$(git status -s --porcelain | grep public)" ]'
