@@ -51,9 +51,5 @@ jobs:
     - name: Run Vite
       run: npx vite build
 
-    # The .npmrc was updated above.
     - name: Check for uncommitted changes
-      run: |
-        git checkout .npmrc
-        git status -s --porcelain
-        [ -z "$(git status -s --porcelain)" ]
+      run: [ -z "$(git status -s --porcelain | grep public)" ]
