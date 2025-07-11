@@ -128,7 +128,7 @@ export default {
                 || (this.nbrDuplicatedFiles === this.files.length)
                 || (nbrFailedFiles === this.files.length)
                 || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
-        }
+        },
     },
     methods: {
         computeTotalSize(files){
