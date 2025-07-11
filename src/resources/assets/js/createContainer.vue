@@ -207,8 +207,7 @@ export default {
                         if (size.width > 0 && size.height > 0) {
                             this.hasSmallTiff = true;
                             this.removeFile(file, path);
-                        }
-                        else if (size.width == 0 && size.height == 0) {
+                        } else {
                             this.failedToGetTiffSize = true;
                         }
                     }
