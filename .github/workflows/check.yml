@@ -24,6 +24,17 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    # Clone core to get access to the variabley stylesheet
+    - uses: actions/checkout@v1
+      with:
+        repository: biigle/core
+        ref: master
+        fetch-depth: 1
+        path: core
+
+    - name: Update variables stylesheet link
+      run: ln -sf ../core/resources/assets/sass/bootstrap/_variables.scss src/resources/assets/sass/_variables.scss
+
     - name: Run Vite
       run: npm run build
 
