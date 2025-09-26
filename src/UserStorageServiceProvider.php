@@ -89,20 +89,19 @@ class UserStorageServiceProvider extends ServiceProvider
 
         Gate::policy(StorageRequest::class, Policies\StorageRequestPolicy::class);
 
-        // Override gate to allow own user disk.
+        // Only extend the use-disk gate (if it exists) because other modules may use
+        // it too.
         $abilities = Gate::abilities();
-        if (array_key_exists('use-disk', $abilities)) {
-            $useDiskAbility = $abilities['use-disk'];
-            Gate::define('use-disk', function (User $user, $disk) use ($useDiskAbility) {
-                if (preg_match('/^user-[0-9]+$/', $disk)) {
-                    if ($disk === "user-{$user->id}" || $user->can('sudo')) {
-                        return true;
-                    }
+        $useDiskAbility = $abilities['use-disk'] ?? fn () => false;
+        Gate::define('use-disk', function (User $user, $disk) use ($useDiskAbility) {
+            if (preg_match('/^user-[0-9]+$/', $disk)) {
+                if ($disk === "user-{$user->id}" || $user->can('sudo')) {
+                    return true;
                 }
+            }
 
-                return $useDiskAbility($user, $disk);
-            });
-        }
+            return $useDiskAbility($user, $disk);
+        });
 
         User::observe(new UserObserver);
 
