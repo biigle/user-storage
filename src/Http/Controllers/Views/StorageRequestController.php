@@ -53,7 +53,6 @@ class StorageRequestController extends Controller
         $availableQuota = $user->storage_quota_available;
         $maxFilesize = config('user_storage.max_file_size');
         $chunkSize = config('user_storage.upload_chunk_size');
-        $threshold = config('image.tiles.threshold');
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
             ->with('files')
@@ -67,7 +66,6 @@ class StorageRequestController extends Controller
             'availableQuota' => $availableQuota,
             'maxFilesize' => $maxFilesize,
             'chunkSize' => $chunkSize,
-            'threshold' => $threshold,
         ]);
     }
 
