@@ -42,6 +42,7 @@ export default {
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
+            allowedMimetypes: [],
         };
     },
     computed: {
@@ -124,6 +125,9 @@ export default {
                 || (nbrFailedFiles === this.files.length)
                 || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
         },
+        allowedMimetypeString() {
+            return this.allowedMimetypes.join(',');
+        },
     },
     methods: {
         computeTotalSize(files){
@@ -148,13 +152,14 @@ export default {
                 return;
             }
 
-            let newFiles = Array.from(event.target.files).filter((file) => {
-                return file.size <= this.maxFilesizeBytes;
-            });
+            let newFiles = Array.from(event.target.files)
+                .filter(file => file.size <= this.maxFilesizeBytes);
 
             if (newFiles.length < event.target.files.length) {
                 this.exceedsMaxFilesize = true;
             }
+
+            newFiles = newFiles.filter(file => this.allowedMimetypes.includes(file.type));
 
             // Replace spaces by underscores in file name due to error when uploading
             // files >5GB.
@@ -630,6 +635,7 @@ export default {
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         this.chunkSize = biigle.$require('user-storage.chunkSize');
         this.usedQuota = biigle.$require('user-storage.usedQuota');
+        this.allowedMimetypes = biigle.$require('user-storage.allowedMimetypes');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {

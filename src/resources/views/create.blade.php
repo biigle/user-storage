@@ -10,6 +10,7 @@
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
+        biigle.$declare('user-storage.allowedMimetypes', {!! $allowedMimeTypes !!});
     </script>
 @endpush
 
@@ -53,7 +54,7 @@
             class="hidden"
             type="file"
             multiple
-            accept="{{$allowedMimeTypes}}"
+            :accept="allowedMimetypeString"
             v-on:input="handleFilesChosen"
             >
 
