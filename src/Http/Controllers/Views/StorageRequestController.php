@@ -60,7 +60,7 @@ class StorageRequestController extends Controller
             ->first();
 
         return view('user-storage::create', [
-            'allowedMimeTypes' => implode(',', array_merge(Image::MIMES, Video::MIMES)),
+            'allowedMimeTypes' => collect(array_merge(Image::MIMES, Video::MIMES)),
             'previousRequest' => $previousRequest,
             'usedQuota' => $usedQuota,
             'availableQuota' => $availableQuota,
