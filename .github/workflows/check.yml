@@ -9,14 +9,14 @@ on:
       - 'src/resources/assets/**'
       - 'src/public/**'
       - 'package.json'
-      - 'package.lock'
+      - 'package-lock.json'
   pull_request:
     paths:
       - '.github/workflows/check.yml'
       - 'src/resources/assets/**'
       - 'src/public/**'
       - 'package.json'
-      - 'package.lock'
+      - 'package-lock.json'
 
 jobs:
   check-js:
