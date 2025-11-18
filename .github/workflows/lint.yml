@@ -8,13 +8,13 @@ on:
       - '.github/workflows/lint.yml'
       - 'src/resources/assets/**'
       - 'package.json'
-      - 'package.lock'
+      - 'package-lock.json'
   pull_request:
     paths:
       - '.github/workflows/lint.yml'
       - 'src/resources/assets/**'
       - 'package.json'
-      - 'package.lock'
+      - 'package-lock.json'
 
 jobs:
   lint:
