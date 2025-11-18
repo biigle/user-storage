@@ -8,7 +8,6 @@ import {Http} from './import.js';
 import {LoaderMixin} from './import.js';
 import {reactive} from 'vue';
 import {sizeForHumans} from './utils.js';
-import * as UTIF from "utif2";
 
 // Number of times a file upload is retried.
 const RETRY_UPLOAD = 3;
@@ -43,10 +42,7 @@ export default {
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
-            hasSmallTiff: false,
-            failedToGetTiffSize: false,
-            threshold: 0,
-            filesizeLimit: 1000000000,  
+            allowedMimetypes: [],
         };
     },
     computed: {
@@ -129,6 +125,9 @@ export default {
                 || (nbrFailedFiles === this.files.length)
                 || (this.nbrDuplicatedFiles + nbrFailedFiles) === this.files.length;
         },
+        allowedMimetypeString() {
+            return this.allowedMimetypes.join(',');
+        },
     },
     methods: {
         computeTotalSize(files){
@@ -153,16 +152,15 @@ export default {
                 return;
             }
 
-            let newFiles = Array.from(event.target.files).filter((file) => {
-                return file.size <= this.maxFilesizeBytes;
-            });
+            let newFiles = Array.from(event.target.files)
+                .filter(file => file.size <= this.maxFilesizeBytes);
 
             if (newFiles.length < event.target.files.length) {
                 this.exceedsMaxFilesize = true;
             }
 
-            this.hasSmallTiff = false;
-            this.failedToGetTiffSize = false;
+            newFiles = newFiles.filter(file => this.allowedMimetypes.includes(file.type));
+
             // Replace spaces by underscores in file name due to error when uploading
             // files >5GB.
             // See: https://github.com/biigle/user-storage/issues/16.
@@ -193,25 +191,6 @@ export default {
                     info: false,
                 });
                 files.push(file);
-            });
-
-            this.selectedDirectory.files = files;
-
-            let allFiles = this.extractFiles(this.rootDirectory);
-            newFiles.filter(f => f.type === "image/tiff").forEach((file) => {
-                let fileName = file.name;
-                let dirname = allFiles.find(entry => entry.file.name === fileName);
-                let path = "/" + dirname.prefix;
-                this.getHeightWidth(file).then((size) => {
-                    if (size.width < this.threshold && size.height < this.threshold) {
-                        if (size.width > 0 && size.height > 0) {
-                            this.hasSmallTiff = true;
-                            this.removeFile(file, path);
-                        } else {
-                            this.failedToGetTiffSize = true;
-                        }
-                    }
-                });
             });
 
             this.selectedDirectory.files = files;
@@ -650,42 +629,13 @@ export default {
                 });
             });
         },
-        getHeightWidth(file) {
-            if (file.size >= this.filesizeLimit) {
-                return Promise.resolve({
-                    width: 0,
-                    height: 0,
-                });
-            }
-            return file.arrayBuffer()
-                .then((buffer) => {
-                    let ifds = UTIF.decode(buffer);
-                    if (ifds.length > 0) {
-                        return {
-                            width: ifds[0]?.t256[0] || 0,
-                            height: ifds[0]?.t257[0] || 0,
-                        };
-                    } else {
-                        return {
-                            width: 0,
-                            height: 0,
-                        };
-                    }
-                })
-                .catch(() => {
-                    return {
-                        width: 0,
-                        height: 0,
-                    };
-                });
-        },
     },
     created() {
         this.availableQuotaBytes = biigle.$require('user-storage.availableQuota');
         this.maxFilesizeBytes = biigle.$require('user-storage.maxFilesize');
         this.chunkSize = biigle.$require('user-storage.chunkSize');
         this.usedQuota = biigle.$require('user-storage.usedQuota');
-        this.threshold = biigle.$require('user-storage.threshold');
+        this.allowedMimetypes = biigle.$require('user-storage.allowedMimetypes');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {

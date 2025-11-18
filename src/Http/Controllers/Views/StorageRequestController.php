@@ -53,7 +53,6 @@ class StorageRequestController extends Controller
         $availableQuota = $user->storage_quota_available;
         $maxFilesize = config('user_storage.max_file_size');
         $chunkSize = config('user_storage.upload_chunk_size');
-        $threshold = config('image.tiles.threshold');
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
             ->with('files')
@@ -61,13 +60,12 @@ class StorageRequestController extends Controller
             ->first();
 
         return view('user-storage::create', [
-            'allowedMimeTypes' => implode(',', array_merge(Image::MIMES, Video::MIMES)),
+            'allowedMimeTypes' => collect(array_merge(Image::MIMES, Video::MIMES)),
             'previousRequest' => $previousRequest,
             'usedQuota' => $usedQuota,
             'availableQuota' => $availableQuota,
             'maxFilesize' => $maxFilesize,
             'chunkSize' => $chunkSize,
-            'threshold' => $threshold,
         ]);
     }
 

@@ -10,7 +10,7 @@
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
-        biigle.$declare('user-storage.threshold', {!! $threshold !!});
+        biigle.$declare('user-storage.allowedMimetypes', {!! $allowedMimeTypes !!});
     </script>
 @endpush
 
@@ -54,7 +54,7 @@
             class="hidden"
             type="file"
             multiple
-            accept="{{$allowedMimeTypes}}"
+            :accept="allowedMimetypeString"
             v-on:input="handleFilesChosen"
             >
 
@@ -189,13 +189,6 @@
 
         <p v-cloak v-if="pathContainsSpaces" class="text-warning">
             Spaces in the file and directory names were replaced by underscores.
-        </p>
-
-        <p v-cloak v-if="hasSmallTiff" class="text-warning">
-            Only TIFF files with more than {{ $threshold }} px at one edge are supported. Smaller files have been removed from the selection.
-        </p>
-        <p v-cloak v-if="failedToGetTiffSize" class="text-warning">
-            Only TIFF files with more than {{ $threshold }} px at one edge are supported. Smaller files cannot be displayed.
         </p>
 
         <file-browser
