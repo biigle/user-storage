@@ -3,14 +3,14 @@
 namespace Biigle\Modules\UserStorage\Http\Requests;
 
 use Biigle\Image;
-use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
-use Biigle\Modules\UserStorage\Rules\FilePrefix;
-use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Modules\UserStorage\StorageRequestFile;
-use Biigle\Modules\UserStorage\User;
 use Biigle\Video;
+use Illuminate\Support\Str;
+use Biigle\Modules\UserStorage\User;
 use Illuminate\Foundation\Http\FormRequest;
-use Storage;
+use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\Rules\FilePrefix;
+use Biigle\Modules\UserStorage\StorageRequestFile;
+use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 
 class StoreStorageRequestFile extends FormRequest
 {
@@ -101,6 +101,18 @@ class StoreStorageRequestFile extends FormRequest
             }
 
             $file = $this->file('file');
+
+            $fileName = $file->getClientOriginalName();
+            $limitedName = Str::limit($fileName, 20);
+            $sanitizedFileName = preg_quote($fileName, '/');
+
+            $remainder = preg_replace("/[A-Za-z0-9]*/", '', $sanitizedFileName);
+            $remainder = Str::replace(["\.", "_", "\-", "~"], "", $remainder);
+
+            if (strlen($remainder) > 0 || !preg_match('/^[A-Za-z0-9]/', $sanitizedFileName)) {
+                $validator->errors()->add('file', "The file name '$limitedName' starts with or contains invalid characters.");
+            }
+
             $user = User::convert($this->storageRequest->user);
             $shouldDeletePreviousChunks = false;
 
