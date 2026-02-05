@@ -52,6 +52,39 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertNull($file->received_chunks);
     }
 
+    public function testStoreInvalidFileName()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        $request = StorageRequest::factory()->create();
+        $this->be($request->user);
+        $id = $request->id;
+
+        $fileName = "“My_Video_III_(2).mp4%0Adone%0A%0A%0A%0A%0A%0Afor_f_in_*.MOV;_do%0A____ffmpeg_-i_My_Video_III_(2).MOV_-c:v_libx264_-crf_0_-c:a_aac_-b:a_192k_“My_Video_III_(2).mp4";
+        $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('file');
+
+        $file = UploadedFile::fake()->create("_test.jpeg", 0, "image/jpeg");
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('file');
+
+        $file = UploadedFile::fake()->create("t.e-s__t~.jpeg", 0, "image/jpeg");
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+        ])->assertSuccessful();
+
+        $file = UploadedFile::fake()->create("test.mp4", 0, "video/mp4");
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+        ])->assertSuccessful();
+    }
+
     public function testStoreChunks()
     {
         config(['user_storage.pending_disk' => 'test']);
