@@ -188,7 +188,7 @@
         </p>
 
         <p v-cloak v-if="pathContainsInvalidChar" class="text-warning">
-            Invalid characters like spaces or "“" in the file or directory names have been replaced by underscores. Directory names ending with invalid characters have been trimmed.
+            File or directory name contains invalid character(s). Spaces were converted to underscores and quotation marks "“" were removed.
         </p>
 
         <file-browser

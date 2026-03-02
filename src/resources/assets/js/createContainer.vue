@@ -167,7 +167,7 @@ export default {
             newFiles = newFiles.map((file) => {
                 if (file.name.includes(' ') || file.name.includes("“")) {
                     this.pathContainsInvalidChar = true;
-                    let newName = file.name.replaceAll(/[\s“]/gu, '_');
+                    let newName = file.name.replaceAll(' ', '_').replaceAll('“', '');
                     return new File([file], newName, {type: file.type});
                 }
 
@@ -231,7 +231,7 @@ export default {
             if (name) {
                 if (name.includes(' ') || name.includes("“")) {
                     this.pathContainsInvalidChar = true;
-                    name = name.replaceAll(/[\s“]/gu, '_');
+                    name = name.replaceAll(' ', '_').replaceAll('“', '');
                 }
                 this.handleNewDirectory(name, root === true);
             }
