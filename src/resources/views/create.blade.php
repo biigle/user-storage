@@ -187,8 +187,8 @@
             <span v-else>Selected files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
         </p>
 
-        <p v-cloak v-if="pathContainsSpaces" class="text-warning">
-            Spaces in the file and directory names were replaced by underscores.
+        <p v-cloak v-if="pathContainsInvalidChar" class="text-warning">
+            Invalid characters like spaces or "“" in the file or directory names have been replaced by underscores. Directory names ending with invalid characters have been trimmed.
         </p>
 
         <file-browser
