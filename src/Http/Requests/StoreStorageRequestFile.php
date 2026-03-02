@@ -101,16 +101,11 @@ class StoreStorageRequestFile extends FormRequest
             }
 
             $file = $this->file('file');
+            $filePath = $file->getClientOriginalPath();
 
-            $fileName = $file->getClientOriginalName();
-            $limitedName = Str::limit($fileName, 20);
-            $sanitizedFileName = preg_quote($fileName, '/');
-
-            $remainder = preg_replace("/[A-Za-z0-9]*/", '', $sanitizedFileName);
-            $remainder = Str::replace(["\.", "_", "\-", "~"], "", $remainder);
-
-            if (strlen($remainder) > 0 || !preg_match('/^[A-Za-z0-9]/', $sanitizedFileName)) {
-                $validator->errors()->add('file', "The file name '$limitedName' starts with or contains invalid characters.");
+            if (Str::contains($filePath, ["“", " "])) {
+                $limitedPath = Str::limit($filePath, 40);
+                $validator->errors()->add('file', "The file path '$limitedPath' contains invalid characters (spaces or '“').");
             }
 
             $user = User::convert($this->storageRequest->user);
