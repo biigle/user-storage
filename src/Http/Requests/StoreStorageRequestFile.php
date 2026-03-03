@@ -103,9 +103,10 @@ class StoreStorageRequestFile extends FormRequest
             $file = $this->file('file');
             $filePath = $file->getClientOriginalPath();
 
-            if (Str::contains($filePath, ["“", " "])) {
+            $denied_chars = config('user_storage.deny_characters');
+            if (Str::contains($filePath, $denied_chars)) {
                 $limitedPath = Str::limit($filePath, 40);
-                $validator->errors()->add('file', "The file path '$limitedPath' contains invalid characters (spaces or '“').");
+                $validator->errors()->add('file', "The file path '$limitedPath' contains invalid characters ('" . implode("', '", $denied_chars) . "').");
             }
 
             $user = User::convert($this->storageRequest->user);

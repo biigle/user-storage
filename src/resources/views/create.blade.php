@@ -11,6 +11,7 @@
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
         biigle.$declare('user-storage.allowedMimetypes', {!! $allowedMimeTypes !!});
+        biigle.$declare('user-storage.denyCharacters', {!! $denyCharacters !!});
     </script>
 @endpush
 

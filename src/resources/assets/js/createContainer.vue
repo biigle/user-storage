@@ -43,6 +43,7 @@ export default {
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
             allowedMimetypes: [],
+            denyCharacters: [],
         };
     },
     computed: {
@@ -636,6 +637,7 @@ export default {
         this.chunkSize = biigle.$require('user-storage.chunkSize');
         this.usedQuota = biigle.$require('user-storage.usedQuota');
         this.allowedMimetypes = biigle.$require('user-storage.allowedMimetypes');
+        this.denyCharacters = biigle.$require('user-storage.denyCharacters');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {

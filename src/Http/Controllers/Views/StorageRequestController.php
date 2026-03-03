@@ -53,6 +53,7 @@ class StorageRequestController extends Controller
         $availableQuota = $user->storage_quota_available;
         $maxFilesize = config('user_storage.max_file_size');
         $chunkSize = config('user_storage.upload_chunk_size');
+        $denyCharacters = config('user_storage.deny_characters');
 
         $previousRequest = StorageRequest::whereNull('submitted_at')
             ->with('files')
@@ -66,6 +67,7 @@ class StorageRequestController extends Controller
             'availableQuota' => $availableQuota,
             'maxFilesize' => $maxFilesize,
             'chunkSize' => $chunkSize,
+            'denyCharacters' => collect($denyCharacters)
         ]);
     }
 

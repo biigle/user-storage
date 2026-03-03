@@ -78,4 +78,9 @@ return [
         */
         'allow_user_settings' => true,
     ],
+
+    /*
+    | Path of uploaded file must not contain following characters.
+    */
+    'deny_characters' => [' ', '“']
 ];
