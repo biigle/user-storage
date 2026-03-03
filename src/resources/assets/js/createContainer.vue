@@ -167,7 +167,7 @@ export default {
             // See: https://github.com/biigle/user-storage/issues/16.
             newFiles = newFiles.map((file) => {
                 let newName = this.removeInvalidCharacters(file.name);
-                this.pathContainsInvalidChar = file.name != newName;
+                this.pathContainsInvalidChar = file.name != newName || this.pathContainsInvalidChar;
                 return this.pathContainsInvalidChar ? new File([file], newName, { type: file.type }) : file;
             });
 
@@ -241,7 +241,7 @@ export default {
             if (name) {
                 let newName = this.removeInvalidCharacters(name);
                 this.pathContainsInvalidChar = name != newName;
-                name = this.pathContainsInvalidChar ? newName : name;
+                name = this.pathContainsInvalidChar ? newName : name || this.pathContainsInvalidChar;
                 this.handleNewDirectory(name, root === true);
             }
         },
