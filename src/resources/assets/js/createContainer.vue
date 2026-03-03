@@ -162,17 +162,13 @@ export default {
 
             newFiles = newFiles.filter(file => this.allowedMimetypes.includes(file.type));
 
-            // Replace spaces by underscores in file name due to error when uploading
+            // Replace spaces by underscores and remove quotation marks "“" in file name due to error when uploading
             // files >5GB.
             // See: https://github.com/biigle/user-storage/issues/16.
             newFiles = newFiles.map((file) => {
-                if (file.name.includes(' ') || file.name.includes("“")) {
-                    this.pathContainsInvalidChar = true;
-                    let newName = file.name.replaceAll(' ', '_').replaceAll('“', '');
-                    return new File([file], newName, {type: file.type});
-                }
-
-                return file;
+                let newName = this.removeInvalidCharacters(file.name);
+                this.pathContainsInvalidChar = file.name != newName;
+                return this.pathContainsInvalidChar ? new File([file], newName, { type: file.type }) : file;
             });
 
             let files = this.selectedDirectory.files;
@@ -196,6 +192,19 @@ export default {
 
             this.selectedDirectory.files = files;
             this.syncFiles();
+        },
+        removeInvalidCharacters(path) {
+            let containsIvalidChars = this.denyCharacters.some((c) => path.includes(c));
+            if (!containsIvalidChars) {
+                return path;
+            }
+
+            let newName = path;
+            this.denyCharacters.forEach((c) => {
+                let replaceString = c === ' ' ? '_' : '';
+                newName = newName.replaceAll(c, replaceString);
+            })
+            return newName;
         },
         getNewDirectory(name) {
             return {
@@ -230,10 +239,9 @@ export default {
         addDirectory(root) {
             let name = prompt('Please enter the new directory name');
             if (name) {
-                if (name.includes(' ') || name.includes("“")) {
-                    this.pathContainsInvalidChar = true;
-                    name = name.replaceAll(' ', '_').replaceAll('“', '');
-                }
+                let newName = this.removeInvalidCharacters(name);
+                this.pathContainsInvalidChar = name != newName;
+                name = this.pathContainsInvalidChar ? newName : name;
                 this.handleNewDirectory(name, root === true);
             }
         },
