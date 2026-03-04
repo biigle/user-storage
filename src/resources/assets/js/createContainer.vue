@@ -200,12 +200,8 @@ export default {
                 return path;
             }
 
-            let newName = path;
-            this.denyCharacters.forEach((c) => {
-                let replaceString = c === ' ' ? '_' : '';
-                newName = newName.replaceAll(c, replaceString);
-            })
-            return newName;
+            const pattern = new RegExp(`[${this.denyCharacters.join('')}]`, 'gu');
+            return path.replace(pattern, (c) => (c === ' ' ? '_' : ''));
         },
         getNewDirectory(name) {
             return {
