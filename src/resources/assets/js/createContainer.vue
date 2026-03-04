@@ -168,7 +168,8 @@ export default {
             newFiles = newFiles.map((file) => {
                 let newName = this.removeInvalidCharacters(file.name);
                 this.pathContainsInvalidChar = file.name !== newName || this.pathContainsInvalidChar;
-                return this.pathContainsInvalidChar ? new File([file], newName, { type: file.type }) : file;
+                let shouldRename = file.name !== newName;
+                return shouldRename ? new File([file], newName, { type: file.type }) : file;
             });
 
             let files = this.selectedDirectory.files;
