@@ -240,8 +240,8 @@ export default {
             let name = prompt('Please enter the new directory name');
             if (name) {
                 let newName = this.removeInvalidCharacters(name);
-                this.pathContainsInvalidChar = name != newName;
-                name = this.pathContainsInvalidChar ? newName : name || this.pathContainsInvalidChar;
+                this.pathContainsInvalidChar = (name != newName) || this.pathContainsInvalidChar;
+                name = this.pathContainsInvalidChar ? newName : name;
                 this.handleNewDirectory(name, root === true);
             }
         },
