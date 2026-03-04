@@ -101,7 +101,7 @@ class StoreStorageRequestFile extends FormRequest
             }
 
             $file = $this->file('file');
-            $filePath = $file->getClientOriginalPath();
+            $filePath = $this->getFilePath();
 
             $deniedChars = config('user_storage.deny_characters');
             if (Str::contains($filePath, $deniedChars)) {
