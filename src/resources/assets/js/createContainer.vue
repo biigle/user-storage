@@ -242,7 +242,7 @@ export default {
             if (name) {
                 let newName = this.removeInvalidCharacters(name);
                 this.pathContainsInvalidChar = (name !== newName) || this.pathContainsInvalidChar;
-                name = this.pathContainsInvalidChar ? newName : name;
+                name = (name !== newName) ? newName : name;
                 this.handleNewDirectory(name, root === true);
             }
         },
