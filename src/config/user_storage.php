@@ -82,5 +82,5 @@ return [
     /*
     | Path of uploaded file must not contain following characters.
     */
-    'deny_characters' => [' ', '“']
+    'deny_characters' => [' ', '“', '”']
 ];
