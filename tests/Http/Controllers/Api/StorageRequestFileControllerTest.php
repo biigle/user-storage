@@ -70,9 +70,10 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $fileName = str_replace("“", "_", $fileName);
         $this->assertStringNotContainsString("“", $fileName);
 
-        $file = UploadedFile::fake()->create("test“ 123/{$fileName}", 0, "video/mp4");
+        $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
             'file' => $file,
+            'prefix' => "test“ 123"
         ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('file');
