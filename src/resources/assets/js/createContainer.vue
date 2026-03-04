@@ -195,8 +195,8 @@ export default {
             this.syncFiles();
         },
         removeInvalidCharacters(path) {
-            let containsIvalidChars = this.denyCharacters.some((c) => path.includes(c));
-            if (!containsIvalidChars) {
+            let containsInvalidChars = this.denyCharacters.some((c) => path.includes(c));
+            if (!containsInvalidChars) {
                 return path;
             }
 
