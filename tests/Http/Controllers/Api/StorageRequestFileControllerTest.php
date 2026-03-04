@@ -78,6 +78,13 @@ class StorageRequestFileControllerTest extends ApiTestCase
             ->assertStatus(422)
             ->assertJsonValidationErrors('file');
 
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'prefix' => "“curly_quotationmarks”"
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('file');
+
         $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
             'file' => $file,
