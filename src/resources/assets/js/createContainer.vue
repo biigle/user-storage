@@ -38,7 +38,7 @@ export default {
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
             chunkSize: 0,
-            pathContainsInvalidChar: false,
+            showInvalidCharError: false,
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
@@ -167,7 +167,7 @@ export default {
             // See: https://github.com/biigle/user-storage/issues/16.
             newFiles = newFiles.map((file) => {
                 let newName = this.removeInvalidCharacters(file.name);
-                this.pathContainsInvalidChar = file.name !== newName || this.pathContainsInvalidChar;
+                this.showInvalidCharError = file.name !== newName || this.showInvalidCharError;
                 let shouldRename = file.name !== newName;
                 return shouldRename ? new File([file], newName, { type: file.type }) : file;
             });
@@ -237,7 +237,7 @@ export default {
             let name = prompt('Please enter the new directory name');
             if (name) {
                 let newName = this.removeInvalidCharacters(name);
-                this.pathContainsInvalidChar = (name !== newName) || this.pathContainsInvalidChar;
+                this.showInvalidCharError = (name !== newName) || this.showInvalidCharError;
                 name = (name !== newName) ? newName : name;
                 this.handleNewDirectory(name, root === true);
             }

@@ -188,7 +188,7 @@
             <span v-else>Selected files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
         </p>
 
-        <p v-cloak v-if="pathContainsInvalidChar" class="text-warning">
+        <p v-cloak v-if="showInvalidCharError" class="text-warning">
             File or directory name contains invalid character(s). Some characters were removed or replaced.
         </p>
 
