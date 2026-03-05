@@ -43,7 +43,7 @@ export default {
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
             allowedMimetypes: [],
-            denyCharacters: [],
+            denyCharacterRegex: null,
         };
     },
     computed: {
@@ -195,13 +195,7 @@ export default {
             this.syncFiles();
         },
         removeInvalidCharacters(path) {
-            let containsInvalidChars = this.denyCharacters.some((c) => path.includes(c));
-            if (!containsInvalidChars) {
-                return path;
-            }
-
-            const pattern = new RegExp(`[${this.denyCharacters.join('')}]`, 'gu');
-            return path.replace(pattern, (c) => (c === ' ' ? '_' : ''));
+            return path.replace(this.denyCharacterRegex, (c) => (c === ' ' ? '_' : ''));
         },
         getNewDirectory(name) {
             return {
@@ -642,7 +636,8 @@ export default {
         this.chunkSize = biigle.$require('user-storage.chunkSize');
         this.usedQuota = biigle.$require('user-storage.usedQuota');
         this.allowedMimetypes = biigle.$require('user-storage.allowedMimetypes');
-        this.denyCharacters = biigle.$require('user-storage.denyCharacters');
+        const denyCharacters = biigle.$require('user-storage.denyCharacters');
+        this.denyCharacterRegex = new RegExp(`[${denyCharacters.join('')}]`, 'gu');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {
