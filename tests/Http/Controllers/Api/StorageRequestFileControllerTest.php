@@ -65,7 +65,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             'file' => $file,
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('file');
+            ->assertJsonValidationErrors('file_name');
 
         $fileName = str_replace($invalidChar, "_", $fileName);
         $this->assertStringNotContainsString($invalidChar, $fileName);
@@ -75,7 +75,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
             'prefix' => "“curly quotationmarks”"
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors('file');
+            ->assertJsonValidationErrors('file_name');
 
         $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
