@@ -192,6 +192,10 @@
             File or directory name contains invalid character(s). Some characters were removed or replaced.
         </p>
 
+        <p v-cloak v-if="omitsFilesOrDirectory" class="text-warning">
+            Files or directories with names consisting only of invalid characters are omitted.
+        </p>
+
         <file-browser
             v-bind:root-directory="rootDirectory"
             v-bind:editable="editable"

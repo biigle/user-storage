@@ -44,6 +44,7 @@ export default {
             ignoreFiles: false,
             allowedMimetypes: [],
             denyCharacterRegex: null,
+            omitsFilesOrDirectory: false
         };
     },
     computed: {
@@ -165,12 +166,22 @@ export default {
             // Replace spaces by underscores and remove quotation marks "“" in file name due to error when uploading
             // files >5GB.
             // See: https://github.com/biigle/user-storage/issues/16.
-            newFiles = newFiles.map((file) => {
+            newFiles = newFiles.reduce((res, file) => {
                 let newName = this.removeInvalidCharacters(file.name);
-                this.showInvalidCharError = file.name !== newName || this.showInvalidCharError;
                 let shouldRename = file.name !== newName;
-                return shouldRename ? new File([file], newName, { type: file.type }) : file;
-            });
+                this.showInvalidCharError = this.showInvalidCharError || shouldRename;
+
+                let indexOfExt = newName.lastIndexOf(".");
+                let newFileName = newName.substring(0, indexOfExt);
+                this.omitsFilesOrDirectory = this.omitsFilesOrDirectory
+                    || newFileName.length === 0
+                    || newFileName.replaceAll("_", "").length === 0;
+
+                if (newFileName.length > 0 && newFileName.replaceAll("_", "").length > 0) {
+                    res.push(shouldRename ? new File([file], newName, { type: file.type }) : file);
+                }
+                return res;
+            }, []);
 
             let files = this.selectedDirectory.files;
 
@@ -231,8 +242,15 @@ export default {
             let name = prompt('Please enter the new directory name');
             if (name) {
                 let newName = this.removeInvalidCharacters(name);
-                this.showInvalidCharError = (name !== newName) || this.showInvalidCharError;
-                name = (name !== newName) ? newName : name;
+                let shouldRename = name !== newName;
+                this.showInvalidCharError = this.showInvalidCharError || shouldRename;
+
+                if (newName.length === 0 || newName.replaceAll("_", "").length === 0) {
+                    this.omitsFilesOrDirectory = true;
+                    return;
+                }
+
+                name = shouldRename ? newName : name;
                 this.handleNewDirectory(name, root === true);
             }
         },
