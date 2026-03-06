@@ -5,7 +5,7 @@
 @push('scripts')
     {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/js/main.js'], 'vendor/user-storage')}}
     <script type="module">
-        biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
+        biigle.$declare('user-storage.previousRequest', {!! $previousRequest ? Js::from($previousRequest) : 'null' !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
