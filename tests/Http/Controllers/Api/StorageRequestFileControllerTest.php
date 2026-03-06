@@ -71,7 +71,7 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertStringNotContainsString($invalidChar, $fileName);
         $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
 
-        // Trailing spaces in prefix are allowed since they are trimmend anyway.
+        // Trailing spaces in the prefix are allowed since they are trimmed anyway.
         // Prohibit spaces only between other characters.
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
             'file' => $file,
