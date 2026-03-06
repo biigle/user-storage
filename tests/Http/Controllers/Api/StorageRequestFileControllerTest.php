@@ -69,18 +69,33 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $fileName = str_replace($invalidChar, "_", $fileName);
         $this->assertStringNotContainsString($invalidChar, $fileName);
-
-        $this->postJson("/api/v1/storage-requests/{$id}/files", [
-            'file' => $file,
-            'prefix' => "“curly quotationmarks”"
-        ])
-            ->assertStatus(422)
-            ->assertJsonValidationErrors('file_name');
-
         $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
+
         $this->postJson("/api/v1/storage-requests/{$id}/files", [
             'file' => $file,
+            'prefix' => " test "
         ])->assertSuccessful();
+
+        $denyChars = config('user_storage.deny_characters');
+        foreach ($denyChars as $c) {
+            // valid filename but invalid prefix
+            $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'prefix' => "te{$c}st"
+            ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('file_name');
+
+            // valid prefix but invalid filename
+            $fileName = "{$c}test.jpg";
+            $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
+            $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'prefix' => 'test'
+            ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('file_name');
+        }
     }
 
     public function testStoreChunks()
