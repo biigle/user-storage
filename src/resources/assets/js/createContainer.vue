@@ -173,11 +173,10 @@ export default {
 
                 let indexOfExt = newName.lastIndexOf(".");
                 let newFileName = newName.substring(0, indexOfExt);
-                this.omitsFilesOrDirectory = this.omitsFilesOrDirectory
-                    || newFileName.length === 0
-                    || newFileName.replaceAll("_", "").length === 0;
+                let newNameIsValid = newFileName.length > 0 && newFileName.replaceAll("_", "").length > 0;
+                this.omitsFilesOrDirectory = this.omitsFilesOrDirectory || !newNameIsValid
 
-                if (newFileName.length > 0 && newFileName.replaceAll("_", "").length > 0) {
+                if (newNameIsValid) {
                     res.push(shouldRename ? new File([file], newName, { type: file.type }) : file);
                 }
                 return res;
