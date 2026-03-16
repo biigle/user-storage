@@ -163,8 +163,8 @@ export default {
 
             newFiles = newFiles.filter(file => this.allowedMimetypes.includes(file.type));
 
-            // Replace spaces by underscores and remove quotation marks "“" in file name due to error when uploading
-            // files >5GB.
+            // Replace spaces by underscores in file name due to error when uploading files >5GB. 
+            // Also removes some other characters.
             // See: https://github.com/biigle/user-storage/issues/16.
             newFiles = newFiles.reduce((res, file) => {
                 let newName = this.removeInvalidCharacters(file.name);
