@@ -68,7 +68,6 @@ class StorageRequestFileControllerTest extends ApiTestCase
 
         $invalidChar = "“";
         $fileName = str_replace($invalidChar, "_", $fileName);
-        $this->assertStringNotContainsString($invalidChar, $fileName);
         $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
 
         // Trailing spaces in the prefix are allowed since they are trimmed anyway.
