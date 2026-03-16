@@ -3,14 +3,14 @@
 namespace Biigle\Modules\UserStorage\Http\Requests;
 
 use Biigle\Image;
-use Biigle\Video;
-use Illuminate\Support\Str;
-use Biigle\Modules\UserStorage\User;
-use Illuminate\Foundation\Http\FormRequest;
-use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Modules\UserStorage\Rules\FilePrefix;
-use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
+use Biigle\Modules\UserStorage\Rules\FilePrefix;
+use Biigle\Modules\UserStorage\StorageRequest;
+use Biigle\Modules\UserStorage\StorageRequestFile;
+use Biigle\Modules\UserStorage\User;
+use Biigle\Video;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 
 class StoreStorageRequestFile extends FormRequest
 {
