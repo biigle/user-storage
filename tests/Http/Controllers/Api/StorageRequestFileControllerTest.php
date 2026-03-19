@@ -52,6 +52,53 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertNull($file->received_chunks);
     }
 
+    public function testStoreInvalidFileName()
+    {
+        $request = StorageRequest::factory()->create();
+        $this->be($request->user);
+        $id = $request->id;
+
+        $fileName = "“My_Video_III_(2).mp4%0Adone%0A%0A%0A%0A%0A%0Afor_f_in_*.MOV;_do%0A____ffmpeg_-i_My_Video_III_(2).MOV_-c:v_libx264_-crf_0_-c:a_aac_-b:a_192k_“My_Video_III_(2).mp4";
+        $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('file_name');
+
+        $invalidChar = "“";
+        $fileName = str_replace($invalidChar, "_", $fileName);
+        $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
+
+        // Trailing spaces in the prefix are allowed since they are trimmed anyway.
+        // Prohibit spaces only between other characters.
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'prefix' => " test "
+        ])->assertSuccessful();
+
+        $denyChars = config('user_storage.deny_characters');
+        foreach ($denyChars as $c) {
+            // valid filename but invalid prefix
+            $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'prefix' => "te{$c}st"
+            ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('file_name');
+
+            // valid prefix but invalid filename
+            $fileName = "{$c}test.jpg";
+            $file = UploadedFile::fake()->create($fileName, 0, "video/mp4");
+            $this->postJson("/api/v1/storage-requests/{$id}/files", [
+                'file' => $file,
+                'prefix' => 'test'
+            ])
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('file_name');
+        }
+    }
+
     public function testStoreChunks()
     {
         config(['user_storage.pending_disk' => 'test']);

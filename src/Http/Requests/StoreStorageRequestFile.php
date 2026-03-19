@@ -10,7 +10,7 @@ use Biigle\Modules\UserStorage\StorageRequestFile;
 use Biigle\Modules\UserStorage\User;
 use Biigle\Video;
 use Illuminate\Foundation\Http\FormRequest;
-use Storage;
+use Illuminate\Support\Str;
 
 class StoreStorageRequestFile extends FormRequest
 {
@@ -101,6 +101,14 @@ class StoreStorageRequestFile extends FormRequest
             }
 
             $file = $this->file('file');
+            $filePath = $this->getFilePath();
+
+            $deniedChars = config('user_storage.deny_characters');
+            if (Str::contains($filePath, $deniedChars)) {
+                $limitedPath = Str::limit($filePath, 40);
+                $validator->errors()->add('file_name', "The file path '$limitedPath' contains invalid characters ('" . implode("', '", $deniedChars) . "').");
+            }
+
             $user = User::convert($this->storageRequest->user);
             $shouldDeletePreviousChunks = false;
 

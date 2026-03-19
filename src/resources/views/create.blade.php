@@ -5,12 +5,13 @@
 @push('scripts')
     {{vite_hot(base_path('vendor/biigle/user-storage/hot'), ['src/resources/assets/js/main.js'], 'vendor/user-storage')}}
     <script type="module">
-        biigle.$declare('user-storage.previousRequest', {!! $previousRequest ?? 'null' !!});
+        biigle.$declare('user-storage.previousRequest', {!! $previousRequest ? Js::from($previousRequest) : 'null' !!});
         biigle.$declare('user-storage.availableQuota', {!! $availableQuota !!});
         biigle.$declare('user-storage.maxFilesize', {!! $maxFilesize !!});
         biigle.$declare('user-storage.chunkSize', {!! $chunkSize !!});
         biigle.$declare('user-storage.usedQuota', {!! $usedQuota !!});
         biigle.$declare('user-storage.allowedMimetypes', {!! $allowedMimeTypes !!});
+        biigle.$declare('user-storage.denyCharacters', {!! $denyCharacters !!});
     </script>
 @endpush
 
@@ -187,8 +188,12 @@
             <span v-else>Selected files with a total size of <span v-text="totalSizeForHumans"></span>.</span>
         </p>
 
-        <p v-cloak v-if="pathContainsSpaces" class="text-warning">
-            Spaces in the file and directory names were replaced by underscores.
+        <p v-cloak v-if="showInvalidCharError" class="text-warning">
+            File or directory name contains invalid character(s). Some characters were removed or replaced.
+        </p>
+
+        <p v-cloak v-if="omitsFilesOrDirectory" class="text-warning">
+            Files or directories with names consisting only of invalid characters are omitted.
         </p>
 
         <file-browser

@@ -38,11 +38,13 @@ export default {
             maxFilesizeBytes: 0,
             exceedsMaxFilesize: false,
             chunkSize: 0,
-            pathContainsSpaces: false,
+            showInvalidCharError: false,
             failedFiles: [],
             nbrDuplicatedFiles: 0,
             ignoreFiles: false,
             allowedMimetypes: [],
+            denyCharacterRegex: null,
+            omitsFilesOrDirectory: false
         };
     },
     computed: {
@@ -161,18 +163,24 @@ export default {
 
             newFiles = newFiles.filter(file => this.allowedMimetypes.includes(file.type));
 
-            // Replace spaces by underscores in file name due to error when uploading
-            // files >5GB.
+            // Replace spaces by underscores in file name due to error when uploading files >5GB. 
+            // Also removes some other characters.
             // See: https://github.com/biigle/user-storage/issues/16.
-            newFiles = newFiles.map((file) => {
-                if (file.name.includes(' ')) {
-                    this.pathContainsSpaces = true;
-                    let newName = file.name.replace(/ /g, '_');
-                    return new File([file], newName, {type: file.type});
-                }
+            newFiles = newFiles.reduce((res, file) => {
+                let newName = this.removeInvalidCharacters(file.name);
+                let shouldRename = file.name !== newName;
+                this.showInvalidCharError = this.showInvalidCharError || shouldRename;
 
-                return file;
-            });
+                let indexOfExt = newName.lastIndexOf(".");
+                let newFileName = newName.substring(0, indexOfExt);
+                let newNameIsValid = newFileName.length > 0 && newFileName.replaceAll("_", "").length > 0;
+                this.omitsFilesOrDirectory = this.omitsFilesOrDirectory || !newNameIsValid
+
+                if (newNameIsValid) {
+                    res.push(shouldRename ? new File([file], newName, { type: file.type }) : file);
+                }
+                return res;
+            }, []);
 
             let files = this.selectedDirectory.files;
 
@@ -195,6 +203,9 @@ export default {
 
             this.selectedDirectory.files = files;
             this.syncFiles();
+        },
+        removeInvalidCharacters(path) {
+            return path.replace(this.denyCharacterRegex, (c) => (c === ' ' ? '_' : ''));
         },
         getNewDirectory(name) {
             return {
@@ -229,10 +240,16 @@ export default {
         addDirectory(root) {
             let name = prompt('Please enter the new directory name');
             if (name) {
-                if (name.includes(' ')) {
-                    this.pathContainsSpaces = true;
-                    name = name.replace(/ /g, '_');
+                let newName = this.removeInvalidCharacters(name);
+                let shouldRename = name !== newName;
+                this.showInvalidCharError = this.showInvalidCharError || shouldRename;
+
+                if (newName.length === 0 || newName.replaceAll("_", "").length === 0) {
+                    this.omitsFilesOrDirectory = true;
+                    return;
                 }
+
+                name = shouldRename ? newName : name;
                 this.handleNewDirectory(name, root === true);
             }
         },
@@ -636,6 +653,8 @@ export default {
         this.chunkSize = biigle.$require('user-storage.chunkSize');
         this.usedQuota = biigle.$require('user-storage.usedQuota');
         this.allowedMimetypes = biigle.$require('user-storage.allowedMimetypes');
+        const denyCharacters = biigle.$require('user-storage.denyCharacters');
+        this.denyCharacterRegex = new RegExp(`[${denyCharacters.join('')}]`, 'gu');
         // This remains null if no previous request exists.
         this.storageRequest = biigle.$require('user-storage.previousRequest');
         if (this.storageRequest && this.storageRequest.files.length > 0) {
