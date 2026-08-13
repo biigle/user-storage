@@ -29,6 +29,12 @@
       <p>
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
       </p>
+      <div class="panel panel-info">
+          <div class="panel-body text-info">
+              Supported image file formats are JPEG, PNG, WebP and TIFF.<br>
+              Supported video file formats are MP4 (H.264, H.265/HEVC) and WebM (VP8, VP9, AV1).
+          </div>
+      </div>
       <div class="create-storage-request">
           @if ($previousRequest && $previousRequest->files_count > 0)
             <div v-if="!finished" class="panel panel-info">

@@ -25,7 +25,9 @@ class StorageRequestControllerTest extends TestCase
 
         $this->actingAs($user)
             ->get('storage-requests/create')
-            ->assertViewIs('user-storage::create');
+            ->assertViewIs('user-storage::create')
+            ->assertSee('Supported image file formats are JPEG, PNG, WebP and TIFF.')
+            ->assertSee('Supported video file formats are MP4 (H.264, H.265/HEVC) and WebM (VP8, VP9, AV1).');
     }
 
     public function testCreateMaintenanceMode()
