@@ -7,10 +7,12 @@ use Biigle\Modules\UserStorage\Notifications\StorageRequestApproved;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Storage;
 
+#[DeleteWhenMissingModels]
 class ApproveStorageRequest extends Job implements ShouldQueue
 {
     use InteractsWithQueue, SerializesModels;
@@ -21,13 +23,6 @@ class ApproveStorageRequest extends Job implements ShouldQueue
      * @var StorageRequest
      */
     public $request;
-
-    /**
-     * Ignore this job if the image does not exist any more.
-     *
-     * @var bool
-     */
-    protected $deleteWhenMissingModels = true;
 
     /**
      * Create a new job instance.
