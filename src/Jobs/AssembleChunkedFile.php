@@ -10,11 +10,13 @@ use GuzzleHttp\Psr7\PumpStream;
 use GuzzleHttp\Psr7\StreamWrapper;
 use Illuminate\Bus\Batchable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Queue\Attributes\DeleteWhenMissingModels;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Storage;
 
 
+#[DeleteWhenMissingModels]
 class AssembleChunkedFile extends Job implements ShouldQueue
 {
     use Batchable, InteractsWithQueue, SerializesModels;
@@ -25,13 +27,6 @@ class AssembleChunkedFile extends Job implements ShouldQueue
      * @var StorageRequestFile
      */
     public $file;
-
-    /**
-     * Ignore this job if the image does not exist any more.
-     *
-     * @var bool
-     */
-    protected $deleteWhenMissingModels = true;
 
     /**
      * Create a new job instance.
