@@ -206,6 +206,10 @@
             v-on:remove-file="removeFile"
             ></file-browser>
       </div>
+      <p class="text-muted">
+          Supported image formats: JPEG, PNG, WebP and TIFF.<br>
+          Supported video formats: MP4 (H.264, H.265/HEVC) and WebM (VP8, VP9, AV1).
+      </p>
     </div>
 </div>
 @endsection
