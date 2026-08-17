@@ -29,10 +29,6 @@
       <p>
           Add directories and files below. Then submit the storage request to upload the files for review by the instance administrators.
       </p>
-      <p>
-          Supported image file formats are JPEG, PNG, WebP and TIFF.<br>
-          Supported video file formats are MP4 (H.264, H.265/HEVC) and WebM (VP8, VP9, AV1).
-      </p>
       <div class="create-storage-request">
           @if ($previousRequest && $previousRequest->files_count > 0)
             <div v-if="!finished" class="panel panel-info">
@@ -210,6 +206,10 @@
             v-on:remove-file="removeFile"
             ></file-browser>
       </div>
+      <p class="text-muted">
+          Supported image formats: JPEG, PNG, WebP and TIFF.<br>
+          Supported video formats: MP4 (H.264, H.265/HEVC) and WebM (VP8, VP9, AV1).
+      </p>
     </div>
 </div>
 @endsection
