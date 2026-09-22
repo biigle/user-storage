@@ -24,7 +24,7 @@ class UserStorageServiceProviderTest extends TestCase
     {
         $user = User::factory()->create();
         $admin = User::factory()->create([
-            'role_id' => Role::adminId(),
+            'role' => Role::ADMIN,
         ]);
         $this->be($admin);
         $this->assertTrue(Gate::allows('use-disk', "user-{$user->id}"));

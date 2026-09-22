@@ -41,7 +41,7 @@ class StorageRequestPolicy extends CachedPolicy
             return false;
         }
 
-        return $user->role_id === Role::editorId() || $user->role_id === Role::adminId();
+        return $user->role === Role::EDITOR || $user->role === Role::ADMIN;
     }
 
     /**
