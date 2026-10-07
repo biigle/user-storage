@@ -2,8 +2,8 @@
 
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Views;
 
+use Biigle\Enums\Role;
 use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Role;
 use Biigle\Tests\UserTest;
 use TestCase;
 

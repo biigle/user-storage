@@ -2,7 +2,7 @@
 
 namespace Biigle\Tests\Modules\UserStorage;
 
-use Biigle\Role;
+use Biigle\Enums\Role;
 use Biigle\User;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Gate;

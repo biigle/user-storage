@@ -2,9 +2,9 @@
 
 namespace Biigle\Modules\UserStorage\Policies;
 
+use Biigle\Enums\Role;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Policies\CachedPolicy;
-use Biigle\Role;
 use Biigle\User;
 use DB;
 use Illuminate\Auth\Access\HandlesAuthorization;
