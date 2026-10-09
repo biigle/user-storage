@@ -2,7 +2,7 @@
 
 namespace Biigle\Tests\Modules\UserStorage;
 
-use Biigle\Role;
+use Biigle\Enums\Role;
 use Biigle\User;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Gate;
@@ -24,7 +24,7 @@ class UserStorageServiceProviderTest extends TestCase
     {
         $user = User::factory()->create();
         $admin = User::factory()->create([
-            'role_id' => Role::adminId(),
+            'role' => Role::ADMIN,
         ]);
         $this->be($admin);
         $this->assertTrue(Gate::allows('use-disk', "user-{$user->id}"));

@@ -2,8 +2,8 @@
 
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Views;
 
+use Biigle\Enums\Role;
 use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Role;
 use Biigle\Tests\UserTest;
 use TestCase;
 
@@ -13,14 +13,14 @@ class StorageRequestControllerTest extends TestCase
     {
         $this->get('storage-requests/create')->assertRedirect('login');
         $user = UserTest::create([
-            'role_id' => Role::guestId(),
+            'role' => Role::GUEST,
         ]);
 
         $this->actingAs($user)
             ->get('storage-requests/create')
             ->assertStatus(403);
 
-        $user->role_id = Role::editorId();
+        $user->role = Role::EDITOR;
         $user->save();
 
         $this->actingAs($user)
@@ -34,7 +34,7 @@ class StorageRequestControllerTest extends TestCase
     {
         config(['user_storage.maintenance_mode' => true]);
         $user = UserTest::create([
-            'role_id' => Role::editorId(),
+            'role' => Role::EDITOR,
         ]);
         $this->actingAs($user)
             ->get('storage-requests/create')
@@ -45,7 +45,7 @@ class StorageRequestControllerTest extends TestCase
     {
         $this->get('storage-requests')->assertRedirect('login');
         $user = UserTest::create([
-            'role_id' => Role::guestId(),
+            'role' => Role::GUEST,
         ]);
 
         $this->actingAs($user)
@@ -65,14 +65,14 @@ class StorageRequestControllerTest extends TestCase
             ->assertStatus(403);
 
         $user = UserTest::create([
-            'role_id' => Role::editorId(),
+            'role' => Role::EDITOR,
         ]);
 
         $this->actingAs($user)
             ->get("storage-requests/{$id}/review")
             ->assertStatus(403);
 
-        $user->role_id = Role::adminId();
+        $user->role = Role::ADMIN;
         $user->save();
 
         $this->actingAs($user)
@@ -87,7 +87,7 @@ class StorageRequestControllerTest extends TestCase
 
     public function testReviewUnsubmittedRequest(){
         $user = UserTest::create([
-            'role_id' => Role::adminId(),
+            'role' => Role::ADMIN,
         ]);
         $unsubmittedRequest = StorageRequest::factory()->create([
             'submitted_at' => null,

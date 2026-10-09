@@ -3,8 +3,8 @@
 namespace Biigle\Tests\Modules\UserStorage\Policies;
 
 use ApiTestCase;
+use Biigle\Enums\Role;
 use Biigle\Modules\UserStorage\StorageRequest;
-use Biigle\Role;
 
 class StorageRequestPolicyTest extends ApiTestCase
 {
