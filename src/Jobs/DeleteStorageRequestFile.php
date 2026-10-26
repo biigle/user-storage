@@ -109,7 +109,7 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
             throw new Exception("Could not delete file '{$this->path}' for storage request with prefix '{$this->prefix}'.");
         }
 
-        if ($success && count($disk->allFiles($this->prefix)) === 0) {
+        if ($success && $this->isDirectoryEmpty($disk)) {
             $success = $disk->deleteDirectory($this->prefix);
 
             if (!$success) {
@@ -120,5 +120,25 @@ class DeleteStorageRequestFile extends Job implements ShouldQueue
         if ($file) {
             $file->delete();
         }
+    }
+
+    /**
+     * Check if the storage request directory contains no more files.
+     *
+     * @param \Illuminate\Filesystem\FilesystemAdapter $disk
+     *
+     * @return bool
+     */
+    protected function isDirectoryEmpty($disk)
+    {
+        // Access the adapter directly and stop at the first file to not load the full
+        // file listing (expensive on S3 with many files).
+        foreach ($disk->getAdapter()->listContents($this->prefix, true) as $item) {
+            if ($item->isFile()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
