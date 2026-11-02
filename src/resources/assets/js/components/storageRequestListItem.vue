@@ -1,10 +1,27 @@
 <template>
 <a
     href="#"
-    class="list-group-item"
+    class="list-group-item clearfix"
     :class="classObject"
     @click.prevent="handleSelect"
     >
+    <span class="pull-right">
+        <button
+            class="btn btn-default btn-xs delete-button"
+            title="Delete this storage request"
+            @click.prevent="handleDelete"
+            >
+            <i class="fa fa-trash"></i>
+        </button>
+        <button
+            v-if="expiresSoon"
+            class="btn btn-default btn-xs"
+            title="Extend this storage request"
+            @click.prevent="handleExtend"
+            >
+            <i class="fa fa-redo"></i>
+        </button>
+    </span>
     #<span v-text="request.id"></span> created <span v-text="request.created_at_for_humans"></span> with <span v-text="request.files_count"></span> files (<span v-text="sizeForHumans"></span>).
     <span v-if="pending">
         <span class="label label-default" title="Waiting for review">pending</span>
@@ -29,23 +46,6 @@
                 approved
             </span>
         </span>
-    </span>
-    <span class="pull-right">
-        <button
-            class="btn btn-default btn-xs delete-button"
-            title="Delete this storage request"
-            @click.prevent="handleDelete"
-            >
-            <i class="fa fa-trash"></i>
-        </button>
-        <button
-            v-if="expiresSoon"
-            class="btn btn-default btn-xs"
-            title="Extend this storage request"
-            @click.prevent="handleExtend"
-            >
-            <i class="fa fa-redo"></i>
-        </button>
     </span>
 </a>
 </template>
