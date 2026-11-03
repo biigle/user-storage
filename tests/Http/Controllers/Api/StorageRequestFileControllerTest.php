@@ -3,6 +3,7 @@
 namespace Biigle\Tests\Modules\UserStorage\Http\Controllers\Api;
 
 use ApiTestCase;
+use Biigle\Modules\UserStorage\Http\Requests\StoreStorageRequestFile;
 use Biigle\Modules\UserStorage\Jobs\DeleteStorageRequestFile;
 use Biigle\Modules\UserStorage\StorageRequest;
 use Biigle\Modules\UserStorage\StorageRequestFile;
@@ -653,6 +654,88 @@ class StorageRequestFileControllerTest extends ApiTestCase
         $this->assertSame('abc', $disk->get("request-{$id}/test.jpg"));
         $this->assertSame(1, $request->files()->count());
         $this->assertSame(123, $request->files()->first()->size);
+    }
+
+    public function testStoreCreatedConcurrently()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        Storage::fake('test');
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        // Emulate a concurrent request (e.g. a retry of the client after a timeout)
+        // that creates the file after this request was validated.
+        $this->app->afterResolving(StoreStorageRequestFile::class, function () use ($request) {
+            StorageRequestFile::factory()->create([
+                'path' => 'test.jpg',
+                'storage_request_id' => $request->id,
+                'size' => 123,
+                'retry_count' => 1,
+            ]);
+        });
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file, 'retry' => true])
+            ->assertStatus(200);
+
+        $this->assertSame(1, $request->files()->count());
+        $f = $request->files()->first();
+        $this->assertSame(123, $f->size);
+        $this->assertEquals(2, $f->retry_count);
+    }
+
+    public function testStoreCreatedConcurrentlyWithoutRetry()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        Storage::fake('test');
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->app->afterResolving(StoreStorageRequestFile::class, function () use ($request) {
+            StorageRequestFile::factory()->create([
+                'path' => 'test.jpg',
+                'storage_request_id' => $request->id,
+            ]);
+        });
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", ['file' => $file])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['uploaded_file']);
+
+        $this->assertSame(1, $request->files()->count());
+    }
+
+    public function testStoreChunkCreatedConcurrently()
+    {
+        config(['user_storage.pending_disk' => 'test']);
+        Storage::fake('test');
+        $request = StorageRequest::factory()->create();
+        $id = $request->id;
+
+        $this->app->afterResolving(StoreStorageRequestFile::class, function () use ($request) {
+            StorageRequestFile::factory()->create([
+                'path' => 'test.jpg',
+                'storage_request_id' => $request->id,
+                'received_chunks' => [0],
+                'total_chunks' => 2,
+                'retry_count' => 1,
+            ]);
+        });
+
+        $file = new UploadedFile(__DIR__."/../../../files/test.jpg", 'test.jpg', 'image/jpeg', null, true);
+        $this->be($request->user);
+        $this->postJson("/api/v1/storage-requests/{$id}/files", [
+            'file' => $file,
+            'chunk_index' => 0,
+            'chunk_total' => 2,
+            'retry' => true,
+        ])->assertStatus(200);
+
+        $this->assertSame(1, $request->files()->count());
+        $this->assertEquals(2, $request->files()->first()->retry_count);
     }
 
     public function testStoreExistsInOtherRequest()

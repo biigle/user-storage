@@ -13,6 +13,7 @@ use DB;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 use League\Flysystem\UnableToReadFile;
 use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\UnableToWriteFile;
@@ -77,13 +78,16 @@ class StorageRequestFileController extends Controller
                         'received_chunks' => array_merge($fileModel->received_chunks, [$chunkIndex]),
                     ]);
                 } elseif ($chunkIndex === 0) {
-                    $fileModel = $sr->files()->create([
-                        'path' => $filePath,
+                    $fileModel = $sr->files()->createOrFirst(['path' => $filePath], [
                         'size' => $file->getSize(),
                         'received_chunks' => [0],
                         'total_chunks' => $request->input('chunk_total'),
                         'retry_count' => 1,
                     ]);
+
+                    if (!$fileModel->wasRecentlyCreated) {
+                        return $this->handleConcurrentUpload($request, $fileModel);
+                    }
                 } else {
                     // This should never be allowed by the validation.
                     throw new Exception('The first chunk must be uploaded first.');
@@ -91,10 +95,13 @@ class StorageRequestFileController extends Controller
 
                 $filePath .= '.'.$chunkIndex;
             } else {
-                $fileModel = $sr->files()->create([
-                    'path' => $filePath,
+                $fileModel = $sr->files()->createOrFirst(['path' => $filePath], [
                     'size' => $file->getSize(),
                 ]);
+
+                if (!$fileModel->wasRecentlyCreated) {
+                    return $this->handleConcurrentUpload($request, $fileModel);
+                }
             }
 
             // Retry the upload a few times, as we observed storage backends that threw
@@ -120,6 +127,36 @@ class StorageRequestFileController extends Controller
 
             return $fileModel;
         });
+    }
+
+    /**
+     * Handle an upload of a file that was created by another (concurrent) request in
+     * the meantime.
+     *
+     * This happens e.g. if a request takes too long and the client retries the upload
+     * while the first request is still storing the file. The file was not found during
+     * validation but the database row of the other request was committed before this
+     * request could create it. Without this, the request would fail with a unique
+     * constraint violation. See: https://github.com/biigle/user-storage/issues/23
+     *
+     * @param StoreStorageRequestFile $request
+     * @param StorageRequestFile $fileModel
+     *
+     * @return StorageRequestFile
+     */
+    protected function handleConcurrentUpload(StoreStorageRequestFile $request, StorageRequestFile $fileModel)
+    {
+        // Same response as if the file existed during validation.
+        if (!$request->input('retry')) {
+            throw ValidationException::withMessages([
+                'uploaded_file' => ['The file was already uploaded but the retry option is not enabled.'],
+            ]);
+        }
+
+        $fileModel->retry_count += 1;
+        $fileModel->save();
+
+        return $fileModel;
     }
 
     /**
