@@ -9,7 +9,9 @@ use Biigle\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 
+#[Fillable(['user_id','expires_at','submitted_at',])]
 class StorageRequest extends Model
 {
     use HasFactory;
@@ -24,16 +26,7 @@ class StorageRequest extends Model
         'expires_at' => 'datetime',
     ];
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'user_id',
-        'expires_at',
-        'submitted_at',
-    ];
+    
 
     /**
      * The accessors to append to the model's array form.
