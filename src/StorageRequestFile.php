@@ -5,17 +5,19 @@ namespace Biigle\Modules\UserStorage;
 use Biigle\Modules\UserStorage\Database\Factories\StorageRequestFileFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\WithoutTimestamps;
+
+#[Hidden(['received_chunks','total_chunks',])]
+#[Fillable(['path','size','received_chunks','total_chunks','retry_count',])]
+#[WithoutTimestamps]
 class StorageRequestFile extends Model
 {
     use HasFactory;
 
-    /**
-     * Indicates if the model should be timestamped.
-     *
-     * @var bool
-     */
-    public $timestamps = false;
+    
 
     /**
      * The attributes that should be cast.
@@ -29,28 +31,8 @@ class StorageRequestFile extends Model
         'retry_count' => 'int',
     ];
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'path',
-        'size',
-        'received_chunks',
-        'total_chunks',
-        'retry_count'
-    ];
 
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'received_chunks',
-        'total_chunks',
-    ];
+    
 
     /**
      * The request to which this file belongs.
